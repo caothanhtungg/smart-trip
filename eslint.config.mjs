@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    ".agents/**",
+    ".cline/**",
+    "sodothietke/**",
+    "stitch_smart_trip_dashboard_design/**",
   ]),
 ]);
 

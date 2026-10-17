@@ -4,11 +4,7 @@ import * as React from "react";
 import {
   MapPin,
   Calendar,
-  Wallet,
-  Users,
   ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
