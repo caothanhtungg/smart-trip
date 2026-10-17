@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Ticket,
   Compass,
   Sparkles,
   Info,
-  Layers,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppFooter } from "@/components/layout/app-footer";
@@ -23,16 +24,20 @@ import {
   MOCK_TRIPS,
   getOverallBalance,
   filterTrips,
+  sortTrips,
 } from "@/lib/mock-trips";
-import { Trip, TripFilterTab } from "@/types/trip";
+import { Trip, TripFilterTab, TripSortOption } from "@/types/trip";
 
-export default function TripsPage() {
+function TripsContent() {
+  const searchParams = useSearchParams();
+  const simulateEmptyState = searchParams.get("empty") === "true";
+
   const [activeTab, setActiveTab] = React.useState<TripFilterTab>("all");
+  const [sortBy, setSortBy] = React.useState<TripSortOption>("latest");
   const [inviteModalOpen, setInviteModalOpen] = React.useState(false);
   const [createNoticeModalOpen, setCreateNoticeModalOpen] = React.useState(false);
   const [selectedTripModal, setSelectedTripModal] = React.useState<Trip | null>(null);
   const [settlementNoticeOpen, setSettlementNoticeOpen] = React.useState(false);
-  const [simulateEmptyState, setSimulateEmptyState] = React.useState(false);
 
   // Compute counts
   const allCount = MOCK_TRIPS.length;
@@ -43,10 +48,10 @@ export default function TripsPage() {
     (t) => t.status === "COMPLETED"
   ).length;
 
-  // Filter trips
+  // Filter and sort trips without mutating mock data
   const currentTrips = simulateEmptyState
     ? []
-    : filterTrips(MOCK_TRIPS, activeTab);
+    : sortTrips(filterTrips(MOCK_TRIPS, activeTab), sortBy);
 
   const summary = getOverallBalance(MOCK_TRIPS);
 
@@ -61,27 +66,9 @@ export default function TripsPage() {
           {/* Header Section: Title + Actions */}
           <section className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 sm:mb-8">
             <div className="flex flex-col">
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-bold text-yale-blue tracking-tight">
-                  Chuyến đi của tôi
-                </h1>
-                {/* Visual toggle for Empty State demo */}
-                <button
-                  type="button"
-                  onClick={() => setSimulateEmptyState((prev) => !prev)}
-                  title="Chuyển đổi kiểm tra giao diện Empty State"
-                  className={`text-xs px-2.5 py-1 rounded-full border transition-all cursor-pointer font-medium flex items-center gap-1.5 ${
-                    simulateEmptyState
-                      ? "bg-functional-warning/10 text-functional-warning border-functional-warning/30 font-semibold"
-                      : "bg-white text-text-muted border-border-hairline hover:bg-hover-row"
-                  }`}
-                >
-                  <Layers className="w-3 h-3" />
-                  <span>
-                    {simulateEmptyState ? "Thoát xem Empty State" : "Thử Empty State"}
-                  </span>
-                </button>
-              </div>
+              <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-bold text-yale-blue tracking-tight">
+                Chuyến đi của tôi
+              </h1>
               <p className="text-text-muted mt-1 text-sm sm:text-[15px]">
                 Quản lý lịch trình và phân chia chi phí cùng nhóm bạn
               </p>
@@ -119,7 +106,7 @@ export default function TripsPage() {
             onViewSettlementDetails={() => setSettlementNoticeOpen(true)}
           />
 
-          {/* Filter Tabs Row */}
+          {/* Filter Tabs and Sort Row */}
           <TripFilters
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -128,6 +115,8 @@ export default function TripsPage() {
               active: activeCount,
               completed: completedCount,
             }}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
           />
 
           {/* Trips Grid or Empty State */}
@@ -166,7 +155,6 @@ export default function TripsPage() {
               }
               onAction={() => {
                 if (simulateEmptyState) {
-                  setSimulateEmptyState(false);
                   setCreateNoticeModalOpen(true);
                 } else {
                   setActiveTab("all");
@@ -239,6 +227,12 @@ export default function TripsPage() {
         {selectedTripModal && (
           <div className="space-y-4 py-2 text-sm text-text-body">
             <div className="p-4 rounded-xl bg-bg-canvas border border-border-hairline space-y-2">
+              <div className="flex items-center justify-between text-xs text-text-muted">
+                <span>Mã mời chuyến đi:</span>
+                <span className="font-mono font-bold text-cerulean bg-white px-2 py-0.5 rounded border border-border-hairline">
+                  {selectedTripModal.inviteCode}
+                </span>
+              </div>
               <div className="flex items-center justify-between text-xs text-text-muted">
                 <span>Trạng thái:</span>
                 <span className="font-semibold text-yale-blue">
@@ -335,5 +329,19 @@ export default function TripsPage() {
         </div>
       </Modal>
     </div>
+  );
+}
+
+export default function TripsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full min-h-screen bg-bg-canvas flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-cerulean border-t-transparent animate-spin" />
+        </div>
+      }
+    >
+      <TripsContent />
+    </Suspense>
   );
 }

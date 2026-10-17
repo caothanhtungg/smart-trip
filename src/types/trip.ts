@@ -26,6 +26,8 @@ export interface Trip {
   endDate: string; // ISO date string YYYY-MM-DD
   durationText: string; // e.g. "3 ngày 2 đêm"
   status: TripStatus;
+  inviteCode: string; // 10-12 alphanumeric characters, e.g. "DL3N2D-TRIP99"
+  updatedAt: string; // ISO timestamp string for "Cập nhật gần nhất" sorting
   members: TripMember[];
   totalMembers: number;
   userBalance: UserTripBalance;
@@ -38,8 +40,16 @@ export interface Trip {
 
 export type TripFilterTab = "all" | "active" | "completed";
 
+export type TripSortOption = "latest" | "departure" | "name";
+
 export interface OverallBalanceSummary {
   toReceive: number;
   toPay: number;
   net: number;
+}
+
+export interface InviteCodeValidationResult {
+  isValid: boolean;
+  error?: string;
+  normalizedCode?: string;
 }

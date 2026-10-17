@@ -1,4 +1,10 @@
-import type { Trip, OverallBalanceSummary, TripFilterTab } from "../types/trip";
+import type {
+  Trip,
+  OverallBalanceSummary,
+  TripFilterTab,
+  TripSortOption,
+  InviteCodeValidationResult,
+} from "../types/trip";
 
 /**
  * Mock current authenticated user profile for UI demonstration.
@@ -14,10 +20,12 @@ export const MOCK_CURRENT_USER = {
 
 /**
  * Standard mock trips data aligned with Stitch screen 'chuy_n_i_c_a_t_i'
- * Note: Sa Pa trip dates are adjusted to 10/10/2026 - 13/10/2026 to ensure
- * consistency with COMPLETED status relative to the current project date (17/10/2026).
+ * - Trip 1: Đà Lạt 3N2Đ (ACTIVE)
+ * - Trip 2: Phú Quốc cùng team (SETTLING)
+ * - Trip 3: Sa Pa mùa lúa chín (COMPLETED, 10/10/2026 - 13/10/2026)
+ * - All invite codes follow 10-12 alphanumeric characters standard (e.g. DL3N2D-TRIP99).
  */
-export const MOCK_TRIPS: Trip[] = [
+export const MOCK_TRIPS: readonly Trip[] = Object.freeze([
   {
     id: "trip-dalat-3n2d",
     title: "Đà Lạt 3N2Đ",
@@ -26,6 +34,8 @@ export const MOCK_TRIPS: Trip[] = [
     endDate: "2026-11-22",
     durationText: "3 ngày 2 đêm",
     status: "ACTIVE", // "Đang lên kế hoạch"
+    inviteCode: "DL3N2D-TRIP99",
+    updatedAt: "2026-10-16T10:00:00Z",
     members: [
       { id: "m1", name: "Lan Nguyễn", role: "HOST" },
       { id: "m2", name: "Tuấn Huy", role: "MEMBER" },
@@ -53,6 +63,8 @@ export const MOCK_TRIPS: Trip[] = [
     endDate: "2026-12-15",
     durationText: "4 ngày 3 đêm",
     status: "SETTLING", // "Đang thanh toán"
+    inviteCode: "PQ2026-TEAM01",
+    updatedAt: "2026-10-17T09:30:00Z",
     members: [
       { id: "m6", name: "Hoàng Anh", role: "HOST" },
       { id: "m7", name: "Bảo Minh", role: "MEMBER" },
@@ -77,10 +89,12 @@ export const MOCK_TRIPS: Trip[] = [
     id: "trip-sapa-harvest",
     title: "Sa Pa mùa lúa chín",
     destination: "Sa Pa, Lào Cai",
-    startDate: "2026-10-10", // Adjusted from 15/10 to 10/10 as requested
-    endDate: "2026-10-13",   // Adjusted from 18/10 to 13/10 (past date for COMPLETED status)
+    startDate: "2026-10-10",
+    endDate: "2026-10-13",
     durationText: "4 ngày 3 đêm",
     status: "COMPLETED", // "Đã hoàn tất"
+    inviteCode: "SP2026-LUA99",
+    updatedAt: "2026-10-13T16:00:00Z",
     members: [
       { id: "m12", name: "Phương Linh", role: "HOST" },
       { id: "m13", name: "Việt Anh", role: "MEMBER" },
@@ -99,12 +113,77 @@ export const MOCK_TRIPS: Trip[] = [
       to: "#1E6091",
     },
   },
-];
+]);
+
+/**
+ * Validates invite code format according to project specifications:
+ * - 10-12 alphanumeric characters excluding hyphens
+ * - Rejects 6-character codes
+ * - Normalizes leading/trailing whitespace and uppercase
+ * - Validates hyphen formatting (cannot start/end with hyphen, no consecutive hyphens)
+ * - Returns structured validation result
+ */
+export function validateInviteCode(rawCode: string | null | undefined): InviteCodeValidationResult {
+  if (!rawCode) {
+    return {
+      isValid: false,
+      error: "Vui lòng nhập mã mời.",
+    };
+  }
+
+  // 1. Normalize whitespace & uppercase
+  const normalized = rawCode.trim().toUpperCase();
+
+  if (!normalized) {
+    return {
+      isValid: false,
+      error: "Vui lòng nhập mã mời.",
+    };
+  }
+
+  // 2. Validate allowed characters: only alphanumeric [A-Z0-9] and hyphen [-]
+  if (!/^[A-Z0-9-]+$/.test(normalized)) {
+    return {
+      isValid: false,
+      error: "Mã mời chỉ được chứa chữ cái (A-Z), số (0-9) và dấu gạch nối (-).",
+    };
+  }
+
+  // 3. Validate hyphen formatting
+  if (normalized.startsWith("-") || normalized.endsWith("-") || normalized.includes("--")) {
+    return {
+      isValid: false,
+      error: "Dấu gạch nối không đúng định dạng (không được ở đầu, cuối hoặc liền nhau).",
+    };
+  }
+
+  // 4. Count alphanumeric characters (excluding hyphens)
+  const alnumOnly = normalized.replace(/-/g, "");
+
+  if (alnumOnly.length < 10) {
+    return {
+      isValid: false,
+      error: "Mã mời quá ngắn (phải có từ 10 đến 12 ký tự chữ/số, không tính dấu gạch nối).",
+    };
+  }
+
+  if (alnumOnly.length > 12) {
+    return {
+      isValid: false,
+      error: "Mã mời quá dài (tối đa 12 ký tự chữ/số, không tính dấu gạch nối).",
+    };
+  }
+
+  return {
+    isValid: true,
+    normalizedCode: normalized,
+  };
+}
 
 /**
  * Calculates overall summary of balances across all trips for the current user.
  */
-export function getOverallBalance(trips: Trip[] = MOCK_TRIPS): OverallBalanceSummary {
+export function getOverallBalance(trips: readonly Trip[] = MOCK_TRIPS): OverallBalanceSummary {
   let toReceive = 0;
   let toPay = 0;
 
@@ -128,13 +207,41 @@ export function getOverallBalance(trips: Trip[] = MOCK_TRIPS): OverallBalanceSum
  * - 'all': All trips
  * - 'active': 'ACTIVE' (Đang lên kế hoạch) or 'SETTLING' (Đang thanh toán)
  * - 'completed': 'COMPLETED' (Đã hoàn tất)
+ * Guaranteed not to mutate input array.
  */
-export function filterTrips(trips: Trip[], tab: TripFilterTab): Trip[] {
+export function filterTrips(trips: readonly Trip[], tab: TripFilterTab): Trip[] {
+  const copy = [...trips];
   if (tab === "active") {
-    return trips.filter((t) => t.status === "ACTIVE" || t.status === "SETTLING");
+    return copy.filter((t) => t.status === "ACTIVE" || t.status === "SETTLING");
   }
   if (tab === "completed") {
-    return trips.filter((t) => t.status === "COMPLETED");
+    return copy.filter((t) => t.status === "COMPLETED");
   }
-  return trips;
+  return copy;
+}
+
+/**
+ * Sorts trips based on selected option:
+ * - 'latest': Most recently updated first (updatedAt descending)
+ * - 'departure': Earliest start date first (startDate ascending)
+ * - 'name': Alphabetical by title (A-Z)
+ * Guaranteed not to mutate input array.
+ */
+export function sortTrips(trips: readonly Trip[], sortBy: TripSortOption): Trip[] {
+  const copy = [...trips];
+
+  switch (sortBy) {
+    case "latest":
+      return copy.sort(
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+    case "departure":
+      return copy.sort(
+        (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+      );
+    case "name":
+      return copy.sort((a, b) => a.title.localeCompare(b.title, "vi"));
+    default:
+      return copy;
+  }
 }
