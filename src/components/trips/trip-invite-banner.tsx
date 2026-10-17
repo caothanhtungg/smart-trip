@@ -23,7 +23,7 @@ export function TripInviteBanner({ onOpenInviteModal }: TripInviteBannerProps) {
             Bạn được bạn bè mời tham gia chuyến đi?
           </h3>
           <p className="text-sm text-text-muted mt-0.5">
-            Nhập mã mời 10–12 ký tự do bạn bè gửi để xem trước và gửi yêu cầu tham gia
+            Nhập mã mời 10–12 ký tự chữ/số (không tính tối đa một dấu gạch nối) do bạn bè gửi để xem trước và gửi yêu cầu tham gia
           </p>
         </div>
       </div>

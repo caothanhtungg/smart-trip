@@ -81,7 +81,7 @@ export function InviteCodeModal({ isOpen, onClose }: InviteCodeModalProps) {
               </div>
             )}
             <p className="text-xs text-text-muted">
-              Mã mời gồm <strong>10–12 ký tự chữ/số</strong> kèm tối đa 1 dấu gạch nối (tối đa 13 ký tự), ví dụ: <code className="font-mono bg-bg-canvas px-1 py-0.5 rounded border border-border-hairline">DL3N2D-TRIP99</code>. Không chấp nhận mã ngắn 6 ký tự.
+              Mã mời gồm <strong>10–12 ký tự chữ/số</strong> (không tính tối đa một dấu gạch nối), độ dài tối đa 13 ký tự, ví dụ: <code className="font-mono bg-bg-canvas px-1 py-0.5 rounded border border-border-hairline">DL3N2D-TRIP99</code>.
             </p>
           </div>
 
@@ -116,7 +116,7 @@ export function InviteCodeModal({ isOpen, onClose }: InviteCodeModalProps) {
                 </span>
               </p>
               <p className="text-xs text-text-muted leading-relaxed">
-                Cú pháp mã mời đáp ứng tiêu chuẩn 10–12 ký tự chữ/số. Theo quy chuẩn kỹ thuật Release 1, giao diện không giả lập dữ liệu tồn tại của chuyến đi hay trạng thái tham gia thành công.
+                Cú pháp mã mời đáp ứng tiêu chuẩn 10–12 ký tự chữ/số (không tính tối đa một dấu gạch nối). Theo quy chuẩn kỹ thuật Release 1, giao diện không giả lập dữ liệu tồn tại của chuyến đi hay trạng thái tham gia thành công.
               </p>
             </div>
           </div>

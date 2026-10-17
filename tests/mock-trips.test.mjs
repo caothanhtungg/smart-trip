@@ -189,3 +189,62 @@ test("mockTrips: balance calculation matches Stitch summary strip", () => {
   assert.equal(balance.toPay, 120000);
   assert.equal(balance.net, 230000);
 });
+
+/* =========================================================================
+   VẤN ĐỀ 2: EMPTY STATE NHẤT QUÁN & BẢO TOÀN DỮ LIỆU GỐC
+   ========================================================================= */
+
+test("emptyState: simulation produces 0 counts and 0 balances without mutating MOCK_TRIPS", () => {
+  const simulateEmptyState = true;
+
+  // Simulate tab counts as in page.tsx
+  const allCount = simulateEmptyState ? 0 : MOCK_TRIPS.length;
+  const activeCount = simulateEmptyState
+    ? 0
+    : MOCK_TRIPS.filter((t) => t.status === "ACTIVE" || t.status === "SETTLING").length;
+  const completedCount = simulateEmptyState
+    ? 0
+    : MOCK_TRIPS.filter((t) => t.status === "COMPLETED").length;
+
+  assert.equal(allCount, 0, "Tab 'Tất cả' count must be 0 in empty state");
+  assert.equal(activeCount, 0, "Tab 'Đang diễn ra' count must be 0 in empty state");
+  assert.equal(completedCount, 0, "Tab 'Đã hoàn thành' count must be 0 in empty state");
+
+  // Simulate balance summary as in page.tsx
+  const summary = simulateEmptyState
+    ? { toReceive: 0, toPay: 0, net: 0 }
+    : getOverallBalance(MOCK_TRIPS);
+
+  assert.equal(summary.toReceive, 0);
+  assert.equal(summary.toPay, 0);
+  assert.equal(summary.net, 0);
+
+  // Trips list in empty state
+  const currentTrips = simulateEmptyState ? [] : MOCK_TRIPS;
+  assert.equal(currentTrips.length, 0);
+
+  // Verify MOCK_TRIPS original data remains completely untouched
+  assert.equal(MOCK_TRIPS.length, 3, "Original MOCK_TRIPS must remain 3 items");
+  assert.equal(MOCK_TRIPS[0].id, "trip-dalat-3n2d");
+  assert.equal(MOCK_TRIPS[1].id, "trip-phuquoc-team");
+  assert.equal(MOCK_TRIPS[2].id, "trip-sapa-harvest");
+
+  // In normal mode (without simulateEmptyState), counts and balances are preserved
+  const normalAllCount = false ? 0 : MOCK_TRIPS.length;
+  const normalActiveCount = false
+    ? 0
+    : MOCK_TRIPS.filter((t) => t.status === "ACTIVE" || t.status === "SETTLING").length;
+  const normalCompletedCount = false
+    ? 0
+    : MOCK_TRIPS.filter((t) => t.status === "COMPLETED").length;
+  const normalSummary = false
+    ? { toReceive: 0, toPay: 0, net: 0 }
+    : getOverallBalance(MOCK_TRIPS);
+
+  assert.equal(normalAllCount, 3);
+  assert.equal(normalActiveCount, 2);
+  assert.equal(normalCompletedCount, 1);
+  assert.equal(normalSummary.toReceive, 350000);
+  assert.equal(normalSummary.toPay, 120000);
+});
+

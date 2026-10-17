@@ -39,21 +39,25 @@ function TripsContent() {
   const [selectedTripModal, setSelectedTripModal] = React.useState<Trip | null>(null);
   const [settlementNoticeOpen, setSettlementNoticeOpen] = React.useState(false);
 
-  // Compute counts
-  const allCount = MOCK_TRIPS.length;
-  const activeCount = MOCK_TRIPS.filter(
-    (t) => t.status === "ACTIVE" || t.status === "SETTLING"
-  ).length;
-  const completedCount = MOCK_TRIPS.filter(
-    (t) => t.status === "COMPLETED"
-  ).length;
+  // Compute counts (set all counts to 0 in simulated empty state)
+  const allCount = simulateEmptyState ? 0 : MOCK_TRIPS.length;
+  const activeCount = simulateEmptyState
+    ? 0
+    : MOCK_TRIPS.filter(
+        (t) => t.status === "ACTIVE" || t.status === "SETTLING"
+      ).length;
+  const completedCount = simulateEmptyState
+    ? 0
+    : MOCK_TRIPS.filter((t) => t.status === "COMPLETED").length;
 
   // Filter and sort trips without mutating mock data
   const currentTrips = simulateEmptyState
     ? []
     : sortTrips(filterTrips(MOCK_TRIPS, activeTab), sortBy);
 
-  const summary = getOverallBalance(MOCK_TRIPS);
+  const summary = simulateEmptyState
+    ? { toReceive: 0, toPay: 0, net: 0 }
+    : getOverallBalance(MOCK_TRIPS);
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-bg-canvas font-sans antialiased text-text-body">
@@ -100,11 +104,13 @@ function TripsContent() {
             </div>
           </section>
 
-          {/* Slim Summary Strip (Balance Overview) */}
-          <TripSummaryStrip
-            summary={summary}
-            onViewSettlementDetails={() => setSettlementNoticeOpen(true)}
-          />
+          {/* Slim Summary Strip (Balance Overview) - Ẩn khi ở trạng thái chưa có chuyến đi */}
+          {!simulateEmptyState && (
+            <TripSummaryStrip
+              summary={summary}
+              onViewSettlementDetails={() => setSettlementNoticeOpen(true)}
+            />
+          )}
 
           {/* Filter Tabs and Sort Row */}
           <TripFilters
