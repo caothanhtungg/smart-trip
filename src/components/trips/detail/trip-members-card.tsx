@@ -4,7 +4,7 @@ import * as React from "react";
 import { Users, UserPlus, Info } from "lucide-react";
 import { TripDetailData } from "@/types/trip";
 import { formatMoney, getInitials } from "@/lib/utils";
-import { InviteCodeModal } from "@/components/trips/invite-code-modal";
+import { TripInviteShareModal } from "./trip-invite-share-modal";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 
@@ -104,6 +104,7 @@ export function TripMembersCard({ trip }: TripMembersCardProps) {
 
       {/* Action: + Mời thêm bạn */}
       <button
+        id="member-add-invite-btn"
         type="button"
         onClick={() => setInviteModalOpen(true)}
         className="w-full h-11 mt-2 rounded-xl bg-white hover:bg-hover-row text-cerulean border border-border-hairline font-semibold text-sm inline-flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(24,78,119,0.08)] transition-all cursor-pointer"
@@ -112,10 +113,12 @@ export function TripMembersCard({ trip }: TripMembersCardProps) {
         <span>+ Mời thêm bạn</span>
       </button>
 
-      {/* Invite Modal */}
-      <InviteCodeModal
+      {/* Trip Invite Share Modal */}
+      <TripInviteShareModal
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
+        tripTitle={trip.title}
+        inviteCode={trip.inviteCode}
       />
 
       {/* Manage Members Scope Notice Modal */}

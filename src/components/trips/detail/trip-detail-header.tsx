@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { TripDetailData } from "@/types/trip";
 import { formatDate } from "@/lib/utils";
-import { InviteCodeModal } from "@/components/trips/invite-code-modal";
+import { TripInviteShareModal } from "./trip-invite-share-modal";
 
 interface TripDetailHeaderProps {
   trip: TripDetailData;
@@ -104,6 +104,7 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
           {/* Action Button: Mời bạn bè */}
           <div className="flex items-center gap-3 shrink-0">
             <button
+              id="header-invite-btn"
               type="button"
               onClick={() => setInviteModalOpen(true)}
               className="h-10 sm:h-11 px-4 sm:px-5 rounded-xl bg-white hover:bg-hover-row text-cerulean border border-border-hairline font-semibold text-sm inline-flex items-center gap-2 shadow-[0_2px_8px_rgba(24,78,119,0.08)] transition-all cursor-pointer"
@@ -115,10 +116,12 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
         </div>
       </div>
 
-      {/* Invite Code Modal */}
-      <InviteCodeModal
+      {/* Trip Invite Share Modal */}
+      <TripInviteShareModal
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
+        tripTitle={trip.title}
+        inviteCode={trip.inviteCode}
       />
     </div>
   );

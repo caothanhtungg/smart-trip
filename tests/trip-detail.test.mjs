@@ -91,3 +91,21 @@ test("approved terminology: role HOST exists as Trưởng nhóm and isNoAccount 
     }
   }
 });
+
+test("invite code consistency: each trip has distinct valid invite code matching specifications", () => {
+  const dalat = getTripDetailById("trip-dalat-3n2d");
+  assert.equal(dalat.inviteCode, "DL3N2D-TRIP99");
+
+  const phuquoc = getTripDetailById("trip-phuquoc-team");
+  assert.equal(phuquoc.inviteCode, "PQ2026-TEAM01");
+
+  const sapa = getTripDetailById("trip-sapa-harvest");
+  assert.equal(sapa.inviteCode, "SP2026-LUA99");
+
+  for (const trip of [dalat, phuquoc, sapa]) {
+    const val = validateInviteCode(trip.inviteCode);
+    assert.equal(val.isValid, true);
+    assert.equal(val.normalizedCode, trip.inviteCode);
+  }
+});
+

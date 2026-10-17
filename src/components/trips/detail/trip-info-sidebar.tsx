@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Info, CloudSun, Copy, Check, MapPin } from "lucide-react";
+import { Info, CloudSun, Copy, Check, AlertCircle, MapPin } from "lucide-react";
 import { TripDetailData } from "@/types/trip";
 
 interface TripInfoSidebarProps {
@@ -9,19 +9,49 @@ interface TripInfoSidebarProps {
 }
 
 export function TripInfoSidebar({ trip }: TripInfoSidebarProps) {
-  const [copied, setCopied] = React.useState(false);
+  const [copyStatus, setCopyStatus] = React.useState<"idle" | "success" | "error">("idle");
 
   const handleCopyCode = async () => {
+    let success = false;
     try {
-      if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(trip.inviteCode);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+      if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+        const copyPromise = navigator.clipboard.writeText(trip.inviteCode);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), 400)
+        );
+        await Promise.race([copyPromise, timeoutPromise]);
+        success = true;
       }
     } catch {
-      // Fallback
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Fallback if clipboard API throws error (e.g. unfocused)
+    }
+
+    if (!success) {
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = trip.inviteCode;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const execSuccess = document.execCommand("copy");
+        document.body.removeChild(textArea);
+        if (execSuccess) {
+          success = true;
+        }
+      } catch {
+        // execCommand failed
+      }
+    }
+
+    if (success) {
+      setCopyStatus("success");
+      setTimeout(() => setCopyStatus("idle"), 2500);
+    } else {
+      setCopyStatus("error");
+      setTimeout(() => setCopyStatus("idle"), 3000);
     }
   };
 
@@ -67,15 +97,21 @@ export function TripInfoSidebar({ trip }: TripInfoSidebarProps) {
         </div>
 
         <button
+          id="sidebar-copy-btn"
           type="button"
           onClick={handleCopyCode}
           className="h-9 px-3 rounded-lg bg-white hover:bg-hover-row text-cerulean text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs border border-border-hairline transition-all cursor-pointer"
           aria-label="Sao chép mã mời"
         >
-          {copied ? (
+          {copyStatus === "success" ? (
             <>
               <Check className="w-3.5 h-3.5 text-functional-positive" />
               <span className="text-functional-positive font-bold">Đã chép!</span>
+            </>
+          ) : copyStatus === "error" ? (
+            <>
+              <AlertCircle className="w-3.5 h-3.5 text-functional-negative" />
+              <span className="text-functional-negative font-bold">Lỗi chép</span>
             </>
           ) : (
             <>
