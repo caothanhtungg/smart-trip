@@ -312,7 +312,13 @@ export default function LoginPage() {
             <p>• Tuân thủ nghiêm ngặt quy chuẩn UC01 và tài liệu ENGINEERING_STANDARDS.md.</p>
           </div>
 
-          <div className="flex justify-end pt-3 border-t border-border-hairline">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-hairline">
+            <Link
+              href="/trips"
+              className="inline-flex items-center justify-center h-11 px-4 text-sm font-semibold text-cerulean hover:bg-hover-row rounded-xl border border-cerulean/30 transition-colors"
+            >
+              Vào màn hình Chuyến đi (/trips)
+            </Link>
             <Button
               variant="primary"
               onClick={() => setOauthNoticeOpen(false)}
@@ -325,37 +331,52 @@ export default function LoginPage() {
       </Modal>
 
       {/* =========================================================================
-          LEGAL TERMS & PRIVACY MODAL (Prevents 404 broken links - Requirement 3)
+          LEGAL TERMS & PRIVACY MODAL (Sample / Draft Mockup Notice)
           ========================================================================= */}
       <Modal
         isOpen={legalModalOpen !== null}
         onClose={() => setLegalModalOpen(null)}
-        title={legalModalOpen === "terms" ? "Điều khoản Sử dụng Smart Trip" : "Chính sách Bảo mật Thông tin"}
-        description="Quy chuẩn hoạt động & Bảo vệ dữ liệu chuyến đi nhóm"
+        title={
+          legalModalOpen === "terms"
+            ? "Điều khoản Sử dụng (Bản mẫu)"
+            : "Chính sách Bảo mật (Bản mẫu)"
+        }
+        description="Nội dung mô phỏng giao diện — Chưa phải văn bản pháp lý chính thức"
       >
         <div className="space-y-4 py-2 text-sm text-text-body leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
+          {/* Prominent Sample / Draft Notice */}
+          <div className="p-3.5 rounded-xl bg-bg-canvas border border-border-hairline text-xs text-text-muted space-y-1">
+            <div className="flex items-center gap-1.5 font-semibold text-yale-blue">
+              <Info className="w-4 h-4 text-cerulean shrink-0" />
+              <span>Ghi chú dữ liệu mẫu (Mockup Notice)</span>
+            </div>
+            <p>
+              Đây là nội dung bản mẫu được thiết kế để mô phỏng tương tác giao diện người dùng trong giai đoạn hoàn thiện Frontend Release 1. Nội dung này không phải là văn bản pháp lý hay chính sách chính thức của Smart Trip.
+            </p>
+          </div>
+
           {legalModalOpen === "terms" ? (
             <>
               <p>
-                <strong>1. Mục đích sử dụng:</strong> Smart Trip hỗ trợ các nhóm bạn lên lịch trình, chia sẻ chi phí và giải quyết công nợ sau chuyến đi một cách minh bạch, tự nguyện.
+                <strong>1. Mục đích sử dụng (Mô phỏng):</strong> Smart Trip hỗ trợ các nhóm bạn lên lịch trình, chia sẻ chi phí và giải quyết công nợ sau chuyến đi một cách minh bạch, tự nguyện.
               </p>
               <p>
-                <strong>2. Quyền hạn Trưởng nhóm:</strong> Người tạo chuyến đi giữ vai trò Trưởng nhóm, có trách nhiệm điều phối lịch trình, quản lý thành viên và chốt sổ công nợ.
+                <strong>2. Quyền hạn Trưởng nhóm (Mô phỏng):</strong> Người tạo chuyến đi giữ vai trò Trưởng nhóm, có trách nhiệm điều phối lịch trình, quản lý thành viên và chốt sổ công nợ.
               </p>
               <p>
-                <strong>3. Giao dịch tài chính:</strong> Các khoản thanh toán qua mã VietQR hoặc tiền mặt diễn ra trực tiếp giữa các thành viên ngoài hệ thống. Smart Trip chỉ đóng vai trò tính toán rút gọn nợ chính xác.
+                <strong>3. Giao dịch tài chính (Mô phỏng):</strong> Các khoản thanh toán qua mã VietQR hoặc tiền mặt diễn ra trực tiếp giữa các thành viên ngoài hệ thống. Smart Trip chỉ đóng vai trò tính toán rút gọn nợ.
               </p>
             </>
           ) : (
             <>
               <p>
-                <strong>1. Thu thập thông tin:</strong> Hệ thống chỉ lưu trữ thông tin cơ bản do người dùng cung cấp qua tài khoản Google (tên hiển thị, email, avatar) và thông tin STK ngân hàng (nếu cung cấp để nhận tiền chuyển khoản).
+                <strong>1. Thu thập thông tin (Mô phỏng):</strong> Hệ thống chỉ lưu trữ thông tin cơ bản do người dùng cung cấp qua tài khoản Google (tên hiển thị, email, avatar) và thông tin STK ngân hàng (nếu cung cấp để nhận tiền chuyển khoản).
               </p>
               <p>
-                <strong>2. Bảo mật mã mời:</strong> Mã mời chuyến đi chỉ cung cấp quyền xem trước thẻ chuyến đi (Preview Card). Thành viên chỉ được xem chi tiết lịch trình và chi tiêu sau khi được phê duyệt tham gia.
+                <strong>2. Bảo mật mã mời (Mô phỏng):</strong> Mã mời chuyến đi chỉ cung cấp quyền xem trước thẻ chuyến đi (Preview Card). Thành viên chỉ được xem chi tiết lịch trình và chi tiêu sau khi được phê duyệt tham gia.
               </p>
               <p>
-                <strong>3. Không chia sẻ bên thứ ba:</strong> Dữ liệu nhóm du lịch không được thương mại hóa hoặc chuyển giao cho mục đích quảng cáo bên ngoài.
+                <strong>3. Không chia sẻ bên thứ ba (Mô phỏng):</strong> Dữ liệu nhóm du lịch không được thương mại hóa hoặc chuyển giao cho mục đích quảng cáo bên ngoài.
               </p>
             </>
           )}

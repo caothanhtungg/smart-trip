@@ -21,8 +21,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={`${beVietnamPro.variable} h-full`}>
-      <body className="min-h-full flex flex-col bg-bg-canvas text-text-body font-sans antialiased">
+    <html
+      lang="vi"
+      className={`${beVietnamPro.variable} h-full`}
+      suppressHydrationWarning
+    >
+      <body
+        className="min-h-full flex flex-col bg-bg-canvas text-text-body font-sans antialiased"
+        suppressHydrationWarning
+      >
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
