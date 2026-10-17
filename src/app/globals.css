@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-canvas: #F4F9EC;
+  --color-surface-card: #FFFFFF;
+  --color-border-hairline: #DDEBD0;
+  --color-hover-row: #EEF6E4;
+  --color-text-body: #2B3A46;
+  --color-text-muted: #5B6B78;
+
+  --color-cerulean: #1A759F;
+  --color-baltic-blue: #1E6091;
+  --color-yale-blue: #184E77;
+  --color-ocean-mist: #52B69A;
+  --color-lime-cream: #D9ED92;
+  --color-light-green: #B5E48C;
+  --color-mint-green: #99D98C;
+  --color-emerald-fill: #76C893;
+  --color-tropical-teal: #34A0A4;
+  --color-bondi-blue: #168AAD;
+
+  --color-functional-negative: #B42318;
+  --color-functional-positive: #2E7D5B;
+  --color-functional-warning: #C2410C;
+  --color-functional-warning-bg: #FFF1E6;
+
+  --font-sans: var(--font-be-vietnam-pro), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  --radius-card: 20px;
+  --radius-modal: 24px;
+  --radius-control: 12px;
+
+  --shadow-card: 0 4px 16px rgba(24, 78, 119, 0.06);
+  --shadow-hover: 0 8px 24px rgba(24, 78, 119, 0.12);
+  --shadow-modal: 0 20px 48px rgba(24, 78, 119, 0.22);
+}
+
+:root {
+  --bg-canvas: #F4F9EC;
+  --surface-card: #FFFFFF;
+  --border-hairline: #DDEBD0;
+  --hover-row: #EEF6E4;
+  --text-body: #2B3A46;
+  --text-muted: #5B6B78;
+
+  --cerulean: #1A759F;
+  --baltic-blue: #1E6091;
+  --yale-blue: #184E77;
+  --ocean-mist: #52B69A;
+  --lime-cream: #D9ED92;
+  --light-green: #B5E48C;
+  --mint-green: #99D98C;
+  --emerald-fill: #76C893;
+  --tropical-teal: #34A0A4;
+  --bondi-blue: #168AAD;
+
+  --functional-negative: #B42318;
+  --functional-positive: #2E7D5B;
+  --functional-warning: #C2410C;
+  --functional-warning-bg: #FFF1E6;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #F4F9EC;
+  color: #2B3A46;
+  font-family: var(--font-be-vietnam-pro), -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ensure tabular figures for financial amounts */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Trip decorative cover gradient */
+.trip-cover-gradient {
+  background: linear-gradient(135deg, #D9ED92 0%, #52B69A 35%, #1A759F 70%, #184E77 100%);
+}
+
+/* Focus ring accessibility */
+.focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  outline: 3px solid #52B69A;
+  outline-offset: 2px;
+}
