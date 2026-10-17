@@ -42,15 +42,70 @@ export function formatSignedMoney(amount: number): {
 }
 
 /**
- * Standard Vietnamese date formatter. Format: dd/mm/yyyy.
+ * Standard Vietnamese date formatter. Format: dd/MM/yyyy.
+ * Handles Date objects, ISO strings (YYYY-MM-DD), full ISO timestamps, and DD/MM/YYYY inputs.
+ * Prevents timezone shifting on date-only strings and validates calendar ranges.
  */
-export function formatDate(date: string | Date): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  if (isNaN(d.getTime())) return "";
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return "";
+
+  if (typeof date === "string") {
+    const trimmed = date.trim();
+    if (!trimmed) return "";
+
+    // 1. Vietnamese format: DD/MM/YYYY or DD-MM-YYYY
+    const vnMatch = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+    if (vnMatch) {
+      const day = parseInt(vnMatch[1], 10);
+      const month = parseInt(vnMatch[2], 10);
+      const year = parseInt(vnMatch[3], 10);
+      const testDate = new Date(year, month - 1, day);
+      if (
+        testDate.getFullYear() === year &&
+        testDate.getMonth() === month - 1 &&
+        testDate.getDate() === day
+      ) {
+        return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
+      }
+      return "";
+    }
+
+    // 2. Date-only ISO format: YYYY-MM-DD (parse directly to prevent UTC midnight timezone shift)
+    const isoDateOnlyMatch = trimmed.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
+    if (isoDateOnlyMatch) {
+      const year = parseInt(isoDateOnlyMatch[1], 10);
+      const month = parseInt(isoDateOnlyMatch[2], 10);
+      const day = parseInt(isoDateOnlyMatch[3], 10);
+      const testDate = new Date(year, month - 1, day);
+      if (
+        testDate.getFullYear() === year &&
+        testDate.getMonth() === month - 1 &&
+        testDate.getDate() === day
+      ) {
+        return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
+      }
+      return "";
+    }
+
+    // 3. Full ISO timestamp (e.g. "2026-11-20T14:30:00Z")
+    const parsed = new Date(trimmed);
+    if (isNaN(parsed.getTime())) return "";
+    const day = String(parsed.getDate()).padStart(2, "0");
+    const month = String(parsed.getMonth() + 1).padStart(2, "0");
+    const year = parsed.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  // 4. Date object
+  if (date instanceof Date) {
+    if (isNaN(date.getTime())) return "";
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  return "";
 }
 
 /**
