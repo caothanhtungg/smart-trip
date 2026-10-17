@@ -2,12 +2,11 @@
 
 import * as React from "react";
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Plus,
   Ticket,
   Compass,
-  Sparkles,
   Info,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
@@ -29,13 +28,13 @@ import {
 import { Trip, TripFilterTab, TripSortOption } from "@/types/trip";
 
 function TripsContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const simulateEmptyState = searchParams.get("empty") === "true";
 
   const [activeTab, setActiveTab] = React.useState<TripFilterTab>("all");
   const [sortBy, setSortBy] = React.useState<TripSortOption>("latest");
   const [inviteModalOpen, setInviteModalOpen] = React.useState(false);
-  const [createNoticeModalOpen, setCreateNoticeModalOpen] = React.useState(false);
   const [selectedTripModal, setSelectedTripModal] = React.useState<Trip | null>(null);
   const [settlementNoticeOpen, setSettlementNoticeOpen] = React.useState(false);
 
@@ -95,7 +94,7 @@ function TripsContent() {
               <Button
                 variant="primary"
                 size="md"
-                onClick={() => setCreateNoticeModalOpen(true)}
+                onClick={() => router.push("/trips/new")}
                 className="h-11 px-5 text-sm font-semibold flex items-center gap-2 rounded-xl shadow-[0_4px_12px_rgba(26,117,159,0.25)]"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -161,7 +160,7 @@ function TripsContent() {
               }
               onAction={() => {
                 if (simulateEmptyState) {
-                  setCreateNoticeModalOpen(true);
+                  router.push("/trips/new");
                 } else {
                   setActiveTab("all");
                 }
@@ -188,38 +187,7 @@ function TripsContent() {
         onClose={() => setInviteModalOpen(false)}
       />
 
-      {/* 2. Create Trip Notice Modal (Phased scope control) */}
-      <Modal
-        isOpen={createNoticeModalOpen}
-        onClose={() => setCreateNoticeModalOpen(false)}
-        title="Tạo chuyến đi mới (UC03)"
-        description="Thông tin phạm vi phát triển Release 1"
-      >
-        <div className="space-y-4 py-2">
-          <div className="p-4 rounded-xl bg-bg-canvas border border-border-hairline flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-cerulean shrink-0 mt-0.5" />
-            <div className="text-sm text-text-body space-y-1">
-              <p className="font-bold text-yale-blue">
-                Màn hình Tạo chuyến đi (`/trips/new`)
-              </p>
-              <p className="text-xs text-text-muted leading-relaxed">
-                Màn hình tạo chuyến đi với các trường: Tên chuyến đi, Điểm đến, Ngày đi - Ngày về (chọn qua Date Picker) và Ngân sách dự kiến được lập trình ở <strong>Giai đoạn 2C.2</strong> theo đúng kế hoạch đã thống nhất.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-3 border-t border-border-hairline">
-            <Button
-              variant="primary"
-              onClick={() => setCreateNoticeModalOpen(false)}
-            >
-              Đã hiểu
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* 3. Trip Detail Preview Notice Modal */}
+      {/* 2. Trip Detail Preview Notice Modal */}
       <Modal
         isOpen={selectedTripModal !== null}
         onClose={() => setSelectedTripModal(null)}

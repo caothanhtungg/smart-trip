@@ -53,3 +53,25 @@ export interface InviteCodeValidationResult {
   error?: string;
   normalizedCode?: string;
 }
+
+export interface CreateTripFormData {
+  name: string;
+  destination: string;
+  startDate: string; // ISO date string YYYY-MM-DD
+  endDate: string; // ISO date string YYYY-MM-DD
+  budgetAmount: number | null; // Integer VND or null if unset
+}
+
+export interface CreateTripValidationErrors {
+  name?: string;
+  destination?: string;
+  startDate?: string;
+  endDate?: string;
+  budgetAmount?: string;
+}
+
+export interface CreateTripValidationResult {
+  isValid: boolean;
+  errors: CreateTripValidationErrors;
+}
+
