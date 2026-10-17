@@ -75,3 +75,48 @@ export interface CreateTripValidationResult {
   errors: CreateTripValidationErrors;
 }
 
+export interface TripRecentExpense {
+  id: string;
+  title: string;
+  category: "FOOD" | "TRANSPORT" | "LODGING" | "TICKET" | "SHOPPING" | "OTHER";
+  categoryLabel: string;
+  paidByName: string;
+  spentAtFormatted: string; // e.g. "20/11 - 19:30"
+  splitMethodText: string; // e.g. "Chia đều 5 người" | "Chia theo món"
+  totalAmount: number; // Integer VND
+  userAmount: number; // Integer VND
+}
+
+export interface TripExpenseCategoryAllocation {
+  category: string;
+  percentage: number;
+  amount: number;
+  color: string;
+}
+
+export interface TripMemberDetail extends TripMember {
+  spentAmount: number; // Integer VND that this member has spent/paid
+  isCurrentUser?: boolean;
+}
+
+export interface TripDetailData extends Omit<Trip, "members"> {
+  members: TripMemberDetail[];
+  plannedBudget: number; // Integer VND
+  totalSpent: number; // Integer VND
+  userSpent: number; // Integer VND paid by current user
+  expenseCount: number;
+  paidActivitiesCount: number;
+  nextDestination?: {
+    title: string;
+    label: string;
+    imageUrl?: string;
+  };
+  recentExpenses: TripRecentExpense[];
+  categoryAllocations: TripExpenseCategoryAllocation[];
+  weatherInfo?: {
+    locationName: string;
+    temperature: string;
+    description: string;
+  };
+}
+

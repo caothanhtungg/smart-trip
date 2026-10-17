@@ -131,7 +131,7 @@ function TripsContent() {
                 <TripCard
                   key={trip.id}
                   trip={trip}
-                  onSelectTrip={(t) => setSelectedTripModal(t)}
+                  onSelectTrip={(t) => router.push(`/trips/${t.id}`)}
                   onMoreActions={(t) => setSelectedTripModal(t)}
                 />
               ))}
@@ -247,12 +247,24 @@ function TripsContent() {
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-border-hairline">
+            <div className="flex justify-end items-center gap-2 pt-3 border-t border-border-hairline">
               <Button
-                variant="primary"
+                variant="outline"
+                size="sm"
                 onClick={() => setSelectedTripModal(null)}
               >
                 Đóng
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  const targetId = selectedTripModal.id;
+                  setSelectedTripModal(null);
+                  router.push(`/trips/${targetId}`);
+                }}
+              >
+                Xem chi tiết chuyến đi
               </Button>
             </div>
           </div>
