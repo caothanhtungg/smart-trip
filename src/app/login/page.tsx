@@ -26,7 +26,7 @@ export default function LoginPage() {
       {/* =========================================================================
           LEFT HALF: Decorative Ambient Visual Showcase (50% on Desktop, hidden on Mobile)
           ========================================================================= */}
-      <div className="w-full lg:w-1/2 relative flex flex-col justify-between p-8 sm:p-12 lg:p-16 overflow-hidden bg-gradient-to-br from-yale-blue via-baltic-blue to-cerulean text-white">
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-8 sm:p-12 lg:p-16 overflow-hidden bg-gradient-to-br from-yale-blue via-baltic-blue to-cerulean text-white">
         {/* Ambient Dynamic Glows (Coastal Palette) */}
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-lime-cream/15 blur-3xl pointer-events-none" />
         <div className="absolute top-1/3 -right-20 w-80 h-80 rounded-full bg-ocean-mist/25 blur-2xl pointer-events-none" />
@@ -151,7 +151,7 @@ export default function LoginPage() {
       {/* =========================================================================
           RIGHT HALF: Authentication Panel (Strict UC01 Single Sign-On via Google)
           ========================================================================= */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-between items-center p-6 sm:p-10 lg:p-12 relative z-10 bg-bg-canvas min-h-screen">
+      <div className="w-full lg:w-1/2 flex flex-col justify-between items-center p-4 sm:p-8 lg:p-12 relative z-10 bg-bg-canvas min-h-screen">
         {/* Top Navigation Bar: Back to Home link */}
         <div className="w-full max-w-[440px] flex items-center justify-between pt-2">
           <Link
@@ -170,7 +170,7 @@ export default function LoginPage() {
 
         {/* Central Auth Card */}
         <div className="w-full max-w-[440px] my-auto py-8">
-          <div className="bg-white rounded-[24px] p-8 sm:p-10 shadow-[0_12px_32px_rgba(24,78,119,0.08)] border border-border-hairline">
+          <div className="bg-white rounded-[24px] p-6 sm:p-8 lg:p-10 shadow-[0_12px_32px_rgba(24,78,119,0.08)] border border-border-hairline">
             {/* Card Header Emblem */}
             <div className="flex items-center gap-2.5 mb-6">
               <div className="w-10 h-10 rounded-xl bg-cerulean/10 flex items-center justify-center text-cerulean">
@@ -262,7 +262,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer Help & Copyright Bar */}
-        <div className="w-full max-w-[440px] flex items-center justify-between text-xs text-text-muted pb-2 pt-4 border-t border-border-hairline/60">
+        <div className="w-full max-w-[440px] flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4 text-xs text-text-muted pb-2 pt-4 border-t border-border-hairline/60">
           <span>© 2026 Smart Trip Vietnam</span>
           <div className="flex items-center gap-4">
             <button
