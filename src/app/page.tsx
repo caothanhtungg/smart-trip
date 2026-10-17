@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   CheckCircle2,
   Calendar,
@@ -15,8 +16,6 @@ import {
   Users,
   ShieldCheck,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { LandingHeader } from "@/components/landing/landing-header";
 import { LandingFooter } from "@/components/landing/landing-footer";
@@ -24,21 +23,11 @@ import { HeroIllustration } from "@/components/landing/hero-illustration";
 
 export default function LandingPage() {
   const { toast } = useToast();
-  const [authNoticeOpen, setAuthNoticeOpen] = React.useState(false);
-  const [authMode, setAuthMode] = React.useState<"login" | "signup">("signup");
-
-  const handleOpenAuth = (mode: "login" | "signup") => {
-    setAuthMode(mode);
-    setAuthNoticeOpen(true);
-  };
 
   return (
     <div className="min-h-screen bg-bg-canvas flex flex-col font-sans antialiased text-text-body">
       {/* 1. TOP NAVIGATION BAR */}
-      <LandingHeader
-        onStartClick={() => handleOpenAuth("signup")}
-        onLoginClick={() => handleOpenAuth("login")}
-      />
+      <LandingHeader />
 
       {/* 2. MAIN BODY */}
       <main className="w-full pt-[72px] flex-1 bg-bg-canvas">
@@ -67,11 +56,9 @@ export default function LandingPage() {
 
               {/* Action Buttons Row */}
               <div className="mt-8 flex flex-wrap items-center gap-4 w-full sm:w-auto">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onClick={() => handleOpenAuth("signup")}
-                  className="h-[52px] px-7 text-base font-semibold shadow-[0_4px_16px_rgba(24,78,119,0.14)] flex items-center gap-3 cursor-pointer"
+                <Link
+                  href="/login"
+                  className="h-[52px] px-7 text-base font-semibold shadow-[0_4px_16px_rgba(24,78,119,0.14)] flex items-center gap-3 cursor-pointer rounded-xl bg-cerulean text-white hover:bg-baltic-blue transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
                 >
                   {/* Google Icon SVG */}
                   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -93,7 +80,7 @@ export default function LandingPage() {
                     />
                   </svg>
                   <span>Tiếp tục với Google</span>
-                </Button>
+                </Link>
 
                 <a
                   href="#cach-hoat-dong"
@@ -512,15 +499,13 @@ export default function LandingPage() {
                 Tạo chuyến đi đầu tiên cùng bạn bè ngay hôm nay. Hoàn toàn miễn phí, không yêu cầu thẻ tín dụng.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onClick={() => handleOpenAuth("signup")}
-                  className="bg-emerald-fill hover:bg-ocean-mist text-yale-blue font-bold text-base py-4 px-8 rounded-xl transition-all shadow-[0_4px_16px_rgba(24,78,119,0.12)] active:scale-[0.99] cursor-pointer flex items-center gap-2"
+                <Link
+                  href="/login"
+                  className="bg-emerald-fill hover:bg-ocean-mist text-yale-blue font-bold text-base py-4 px-8 rounded-xl transition-all shadow-[0_4px_16px_rgba(24,78,119,0.12)] active:scale-[0.99] cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
                 >
                   <span>Bắt đầu miễn phí ngay</span>
                   <ArrowRight className="w-5 h-5" />
-                </Button>
+                </Link>
               </div>
               <button
                 type="button"
@@ -536,47 +521,6 @@ export default function LandingPage() {
 
       {/* 3. FOOTER */}
       <LandingFooter />
-
-      {/* 4. AUTH NOTICE MODAL (Prevents 404 broken links during Frontend Phase) */}
-      <Modal
-        isOpen={authNoticeOpen}
-        onClose={() => setAuthNoticeOpen(false)}
-        title={authMode === "login" ? "Đăng nhập Smart Trip" : "Bắt đầu cùng Smart Trip"}
-        description="Đăng nhập 1 chạm an toàn bằng tài khoản Google"
-      >
-        <div className="space-y-5 py-2">
-          <p className="text-sm text-text-body leading-relaxed">
-            Hệ thống Smart Trip sử dụng cơ chế đăng nhập một chạm qua <strong>Google Single Sign-On</strong>, không cần ghi nhớ mật khẩu hay xác thực SMS phức tạp.
-          </p>
-
-          <div className="p-4 rounded-xl bg-bg-canvas border border-border-hairline space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-yale-blue">
-              <CheckCircle2 className="w-4 h-4 text-functional-positive" />
-              <span>Giai đoạn 2A: Đã hoàn thiện toàn bộ giao diện Landing Page</span>
-            </div>
-            <p className="text-xs text-text-muted pl-6">
-              Màn hình đăng nhập chi tiết (`/login`) và danh sách chuyến đi (`/trips`) sẽ được triển khai trong <strong>Giai đoạn 2B</strong> theo đúng lộ trình đã thống nhất.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-3 border-t border-border-hairline">
-            <Button variant="outline" onClick={() => setAuthNoticeOpen(false)}>
-              Quay lại trang chủ
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                setAuthNoticeOpen(false);
-                toast("Sẵn sàng triển khai màn hình đăng nhập (Giai đoạn 2B)!", "success");
-              }}
-              className="flex items-center gap-2"
-            >
-              <span>Hiểu và tiếp tục</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

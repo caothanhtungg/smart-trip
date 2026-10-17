@@ -3,14 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { MapPin, Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
-interface LandingHeaderProps {
-  onStartClick: () => void;
-  onLoginClick: () => void;
-}
-
-export function LandingHeader({ onStartClick, onLoginClick }: LandingHeaderProps) {
+export function LandingHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   return (
@@ -49,21 +43,18 @@ export function LandingHeader({ onStartClick, onLoginClick }: LandingHeaderProps
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onLoginClick}
+          <Link
+            href="/login"
             className="hidden sm:inline-flex items-center justify-center text-sm font-semibold text-yale-blue px-3.5 py-2 rounded-xl hover:text-cerulean hover:bg-hover-row transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
           >
             Đăng nhập
-          </button>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={onStartClick}
-            className="h-11 px-5 text-sm sm:text-base font-semibold shadow-[0_4px_16px_rgba(24,78,119,0.12)]"
+          </Link>
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center h-11 px-5 text-sm sm:text-base font-semibold text-white bg-cerulean hover:bg-baltic-blue rounded-xl shadow-[0_4px_16px_rgba(24,78,119,0.12)] transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
           >
             Bắt đầu miễn phí
-          </Button>
+          </Link>
 
           {/* Mobile menu hamburger button */}
           <button
@@ -94,16 +85,13 @@ export function LandingHeader({ onStartClick, onLoginClick }: LandingHeaderProps
           >
             Cách hoạt động
           </a>
-          <button
-            type="button"
-            onClick={() => {
-              setMobileMenuOpen(false);
-              onLoginClick();
-            }}
+          <Link
+            href="/login"
+            onClick={() => setMobileMenuOpen(false)}
             className="text-left text-base font-semibold text-cerulean py-2"
           >
             Đăng nhập tài khoản
-          </button>
+          </Link>
         </div>
       )}
     </header>
