@@ -149,11 +149,19 @@ export function validateInviteCode(rawCode: string | null | undefined): InviteCo
     };
   }
 
-  // 3. Validate hyphen formatting
-  if (normalized.startsWith("-") || normalized.endsWith("-") || normalized.includes("--")) {
+  // 3. Validate hyphen formatting & count limit (at most 1 hyphen allowed, e.g. DL3N2D-TRIP99)
+  const hyphenCount = (normalized.match(/-/g) || []).length;
+  if (hyphenCount > 1) {
     return {
       isValid: false,
-      error: "Dấu gạch nối không đúng định dạng (không được ở đầu, cuối hoặc liền nhau).",
+      error: "Mã mời chỉ được chứa tối đa 1 dấu gạch nối phân đoạn.",
+    };
+  }
+
+  if (normalized.startsWith("-") || normalized.endsWith("-")) {
+    return {
+      isValid: false,
+      error: "Dấu gạch nối không đúng định dạng (không được ở đầu hoặc cuối mã mời).",
     };
   }
 
@@ -171,6 +179,14 @@ export function validateInviteCode(rawCode: string | null | undefined): InviteCo
     return {
       isValid: false,
       error: "Mã mời quá dài (tối đa 12 ký tự chữ/số, không tính dấu gạch nối).",
+    };
+  }
+
+  // 5. Total raw string length must not exceed 13 characters (matching ERD varchar(13))
+  if (normalized.length > 13) {
+    return {
+      isValid: false,
+      error: "Độ dài mã mời không được vượt quá 13 ký tự.",
     };
   }
 

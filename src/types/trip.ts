@@ -26,7 +26,7 @@ export interface Trip {
   endDate: string; // ISO date string YYYY-MM-DD
   durationText: string; // e.g. "3 ngày 2 đêm"
   status: TripStatus;
-  inviteCode: string; // 10-12 alphanumeric characters, e.g. "DL3N2D-TRIP99"
+  inviteCode: string; // 10-12 alphanumeric characters + max 1 hyphen (10-13 chars total, matching ERD varchar(13))
   updatedAt: string; // ISO timestamp string for "Cập nhật gần nhất" sorting
   members: TripMember[];
   totalMembers: number;

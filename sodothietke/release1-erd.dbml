@@ -81,7 +81,7 @@ Table trips {
   end_date date [not null]
   budget_amount integer [note: 'ngân sách dự kiến, có thể để trống']
   status trip_status [not null, default: 'ACTIVE']
-  invite_code varchar(12) [not null, unique, note: 'đổi mã = ghi đè cột này (UC28, R14)']
+  invite_code varchar(13) [not null, unique, note: '10-12 ký tự chữ/số + tối đa 1 dấu gạch nối (tối đa 13 ký tự), đổi mã = ghi đè cột này (UC28, R14)']
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
   Note: 'CHECK (end_date >= start_date). Chuyến đã có khoản chi chỉ được ARCHIVED, không xóa (R15).'

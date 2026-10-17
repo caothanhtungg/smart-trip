@@ -62,7 +62,7 @@ export function InviteCodeModal({ isOpen, onClose }: InviteCodeModalProps) {
               <Input
                 id="invite-code-input"
                 type="text"
-                maxLength={15}
+                maxLength={13}
                 placeholder="VD: DL3N2D-TRIP99"
                 value={code}
                 onChange={(e) => {
@@ -81,7 +81,7 @@ export function InviteCodeModal({ isOpen, onClose }: InviteCodeModalProps) {
               </div>
             )}
             <p className="text-xs text-text-muted">
-              Mã mời gồm <strong>10–12 ký tự chữ/số</strong> (không tính dấu gạch nối phân đoạn), ví dụ: <code className="font-mono bg-bg-canvas px-1 py-0.5 rounded border border-border-hairline">DL3N2D-TRIP99</code>. Không chấp nhận mã ngắn 6 ký tự.
+              Mã mời gồm <strong>10–12 ký tự chữ/số</strong> kèm tối đa 1 dấu gạch nối (tối đa 13 ký tự), ví dụ: <code className="font-mono bg-bg-canvas px-1 py-0.5 rounded border border-border-hairline">DL3N2D-TRIP99</code>. Không chấp nhận mã ngắn 6 ký tự.
             </p>
           </div>
 

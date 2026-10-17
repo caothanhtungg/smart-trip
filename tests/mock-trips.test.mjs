@@ -77,11 +77,23 @@ test("validateInviteCode: rejects malformed hyphen placement", () => {
   const resultEnd = validateInviteCode("DL3N2DTRIP99-");
   assert.equal(resultEnd.isValid, false);
   assert.match(resultEnd.error, /Dấu gạch nối không đúng định dạng/);
+});
 
-  // Consecutive hyphens
+test("validateInviteCode: limits to at most 1 hyphen (max 13 characters raw string)", () => {
+  // Multiple hyphens
+  const resultMultiple = validateInviteCode("DL-3N2D-TRIP99");
+  assert.equal(resultMultiple.isValid, false);
+  assert.match(resultMultiple.error, /tối đa 1 dấu gạch nối/);
+
+  // Consecutive hyphens (also > 1 hyphen)
   const resultConsecutive = validateInviteCode("DL3N2D--TRIP99");
   assert.equal(resultConsecutive.isValid, false);
-  assert.match(resultConsecutive.error, /Dấu gạch nối không đúng định dạng/);
+  assert.match(resultConsecutive.error, /tối đa 1 dấu gạch nối/);
+
+  // Max 13 characters valid code
+  const resultExact13 = validateInviteCode("DL3N2D-TRIP99"); // 12 alnum + 1 hyphen = 13 chars
+  assert.equal(resultExact13.isValid, true);
+  assert.equal(resultExact13.normalizedCode?.length, 13);
 });
 
 test("validateInviteCode: rejects empty, null or undefined input", () => {
