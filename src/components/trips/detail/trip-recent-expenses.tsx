@@ -20,9 +20,14 @@ import { Button } from "@/components/ui/button";
 interface TripRecentExpensesProps {
   trip: TripDetailData;
   onOpenExpensesTab?: () => void;
+  onOpenAddExpenseModal?: () => void;
 }
 
-export function TripRecentExpenses({ trip, onOpenExpensesTab }: TripRecentExpensesProps) {
+export function TripRecentExpenses({
+  trip,
+  onOpenExpensesTab,
+  onOpenAddExpenseModal,
+}: TripRecentExpensesProps) {
   const [expenseNoticeOpen, setExpenseNoticeOpen] = React.useState(false);
   const [aiScanNoticeOpen, setAiScanNoticeOpen] = React.useState(false);
 
@@ -148,7 +153,13 @@ export function TripRecentExpenses({ trip, onOpenExpensesTab }: TripRecentExpens
 
         <button
           type="button"
-          onClick={() => setExpenseNoticeOpen(true)}
+          onClick={() => {
+            if (onOpenAddExpenseModal) {
+              onOpenAddExpenseModal();
+            } else {
+              setExpenseNoticeOpen(true);
+            }
+          }}
           className="w-full sm:w-auto h-11 px-5 rounded-xl bg-cerulean hover:bg-baltic-blue text-white font-semibold text-sm inline-flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(26,117,159,0.25)] transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />

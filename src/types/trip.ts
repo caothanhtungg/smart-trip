@@ -8,6 +8,7 @@ export interface TripMember {
   role: TripMemberRole;
   avatarUrl?: string | null;
   isNoAccount?: boolean;
+  isHost?: boolean;
 }
 
 export type BalanceType = "RECEIVE" | "PAY" | "SETTLED";
@@ -99,10 +100,89 @@ export interface TripMemberDetail extends TripMember {
   isCurrentUser?: boolean;
 }
 
+export type ExpenseCategory = "FOOD" | "TRANSPORT" | "LODGING" | "TICKET" | "SHOPPING" | "OTHER";
+
+export type SplitMethod = "EQUAL" | "ITEMIZED";
+
+export interface ExpenseShare {
+  id: string;
+  expenseId: string;
+  memberId: string;
+  amount: number; // Integer VND
+  hasRemainderExtra?: boolean; // True if this member received +1 VND remainder due to R4
+}
+
+export interface TripExpense {
+  id: string;
+  tripId: string;
+  title: string;
+  amount: number; // Integer VND
+  totalAmount?: number; // Integer VND alias
+  category: ExpenseCategory;
+  categoryLabel: string;
+  paidByMemberId: string;
+  paidByName: string;
+  splitMethod: SplitMethod;
+  splitMethodText: string;
+  spentAt?: string; // ISO datetime string YYYY-MM-DDTHH:mm:ss
+  spentAtFormatted: string; // e.g. "20/11 - 12:45"
+  spentDate?: string; // ISO date string YYYY-MM-DD
+  spentAtDate?: string; // Formatted date string
+  receiptImageUrl?: string;
+  receiptUrl?: string; // Alias for receiptImageUrl
+  note?: string;
+  notes?: string; // Alias for note
+  locationName?: string;
+  location?: string; // Alias for locationName
+  shares: ExpenseShare[];
+  participants?: ExpenseShare[]; // Alias for shares
+  isNewInSession?: boolean;
+  createdAt?: string;
+}
+
+export type ExpenseFilterCategory = "ALL" | ExpenseCategory;
+
+export interface CreateExpenseFormData {
+  title: string;
+  amount: number | null; // Integer VND
+  category: ExpenseCategory;
+  paidByMemberId: string;
+  participantMemberIds: string[]; // member IDs in join order
+  spentAtDate: string; // YYYY-MM-DD or DD/MM/YYYY
+  spentAtTime?: string; // HH:mm
+  splitMethod?: SplitMethod;
+  note?: string;
+  notes?: string;
+  locationName?: string;
+  location?: string;
+  receiptImageUrl?: string;
+  receiptUrl?: string;
+}
+
+export interface ExpenseValidationErrors {
+  title?: string;
+  amount?: string;
+  category?: string;
+  paidByMemberId?: string;
+  participants?: string;
+  spentAtDate?: string;
+}
+
+export interface ExpenseValidationResult {
+  isValid: boolean;
+  errors: ExpenseValidationErrors;
+}
+
 export interface TripDetailData extends Omit<Trip, "members"> {
   members: TripMemberDetail[];
   plannedBudget: number; // Integer VND
+  budget?: number; // Alias for plannedBudget
+  budgetFormatted?: string;
   totalSpent: number; // Integer VND
+  remainingBudget?: number;
+  isOverBudget?: boolean;
+  overBudgetAmount?: number;
+  avgSpentPerPerson?: number;
   userSpent: number; // Integer VND paid by current user
   expenseCount: number;
   paidActivitiesCount: number;
@@ -112,6 +192,7 @@ export interface TripDetailData extends Omit<Trip, "members"> {
     imageUrl?: string;
   };
   recentExpenses: TripRecentExpense[];
+  expenses?: TripExpense[];
   categoryAllocations: TripExpenseCategoryAllocation[];
   weatherInfo?: {
     locationName: string;

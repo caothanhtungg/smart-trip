@@ -23,14 +23,13 @@ const TABS: TabItem[] = [
   {
     id: "chi-tieu",
     label: "Chi tiêu",
-    isImplemented: false,
-    phaseNotice: "Phân hệ Chi tiêu & Quản lý hóa đơn sẽ được triển khai ở Giai đoạn 2D của Release 1.",
+    isImplemented: true, // Đã triển khai ở Giai đoạn 2D.1
   },
   {
     id: "cong-no",
     label: "Công nợ",
     isImplemented: false,
-    phaseNotice: "Phân hệ Quyết toán & Rút gọn công nợ sẽ được triển khai ở Giai đoạn 2E của Release 1.",
+    phaseNotice: "Phân hệ Quyết toán & Rút gọn công nợ sẽ được triển khai ở Giai đoạn 2D.3 của Release 1.",
   },
   {
     id: "thanh-vien",
@@ -40,7 +39,15 @@ const TABS: TabItem[] = [
   },
 ];
 
-export function TripDetailTabs() {
+interface TripDetailTabsProps {
+  activeTab?: string;
+  onTabChange?: (tabId: string) => void;
+}
+
+export function TripDetailTabs({
+  activeTab = "tong-quan",
+  onTabChange,
+}: TripDetailTabsProps) {
   const [selectedNoticeTab, setSelectedNoticeTab] = React.useState<TabItem | null>(null);
 
   return (
@@ -51,13 +58,17 @@ export function TripDetailTabs() {
           className="flex items-center gap-6 sm:gap-8 overflow-x-auto scrollbar-none"
         >
           {TABS.map((tab) => {
-            const isActive = tab.id === "tong-quan";
+            const isActive = tab.id === activeTab;
             return (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => {
-                  if (!tab.isImplemented) {
+                  if (tab.isImplemented) {
+                    if (onTabChange) {
+                      onTabChange(tab.id);
+                    }
+                  } else {
                     setSelectedNoticeTab(tab);
                   }
                 }}
