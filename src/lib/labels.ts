@@ -155,7 +155,43 @@ export const ITEM_SPLIT_LABELS = {
   SAVE_DONE: "Xong",
 } as const;
 
-// 9. Đối tượng tổng hợp tiện lợi cho components
+// 9. Nhãn cho giao diện công nợ và quyết toán (Giai đoạn 2D.3)
+export const SETTLEMENT_LABELS = {
+  TITLE: "Công nợ & Quyết toán",
+  SUBTITLE: "Bảng tính toán bù trừ nợ và thanh toán thông minh.",
+  ACTIVE_PREVIEW_BADGE: "Công nợ tạm tính",
+  ACTIVE_PREVIEW_HINT: "Số liệu phản ánh các khoản chi hiện có. Bấm 'Chốt sổ công nợ' để bắt đầu quyết toán chính thức.",
+  LOCK_SETTLEMENT: "Chốt sổ công nợ",
+  REOPEN_SETTLEMENT: "Mở lại sổ công nợ",
+  CONFIRM_LOCK_TITLE: "Xác nhận chốt sổ chi tiêu",
+  CONFIRM_LOCK_DESC: "Sau khi chốt sổ, toàn bộ chức năng thêm, sửa, xóa khoản chi tiêu sẽ bị khóa lại theo quy tắc R7. Bạn có chắc chắn muốn chốt sổ?",
+  CONFIRM_REOPEN_TITLE: "Xác nhận mở lại sổ công nợ",
+  CONFIRM_REOPEN_DESC: "Toàn bộ đề xuất thanh toán chưa trả sẽ bị hủy và chuyến đi quay về trạng thái mở để tiếp tục chỉnh sửa khoản chi.",
+  GRAPH_MODAL_TITLE: "Sơ đồ bù trừ nợ thông minh",
+  GRAPH_MODAL_SUBTITLE: "Hệ thống tự động bù trừ đa chiều giúp các thành viên thanh toán dứt điểm nhanh nhất.",
+  PAYMENT_MODAL_TITLE: "Thanh toán nợ chuyến đi",
+  PAYMENT_MODAL_DEMO_HINT: "Ảnh mã QR mô phỏng cho mục đích trình diễn giao diện — Vui lòng kiểm tra lại STK khi chuyển khoản ngoài ứng dụng.",
+  NO_BANK_WARNING: "Người nhận chưa cập nhật số tài khoản. Vui lòng thanh toán bằng tiền mặt hoặc nhắc họ cập nhật hồ sơ cá nhân.",
+  MARK_PAID: "Tôi đã chuyển",
+  MARK_PAID_CASH: "Tôi đã trả tiền mặt",
+  MARK_PAID_PROXY: "Đánh dấu đã thanh toán (Trả hộ)",
+  CONFIRM_RECEIVED: "Xác nhận đã nhận",
+  CONFIRM_RECEIVED_PROXY: "Xác nhận đã nhận tiền (Nhận hộ)",
+  REMIND_DEBT: "Nhắc nợ",
+  REMINDER_MODAL_TITLE: "Nhắc nợ thân thiện",
+  ALL_SETTLED_TITLE: "Không ai nợ ai",
+  ALL_SETTLED_DESC: "Tuyệt vời! Toàn bộ chi phí chuyến đi đã được chia đều hoàn hảo, không ai còn khoản nợ nào.",
+  SETTLEMENT_COMPLETED_TITLE: "Đã quyết toán hoàn tất 100%",
+  SETTLEMENT_COMPLETED_DESC: "Mọi giao dịch thanh toán đã được xác nhận thành công. Chuyến đi đã hoàn thành quyết toán.",
+} as const;
+
+export const TRANSFER_STATUS_LABELS = {
+  UNPAID: "Chưa thanh toán",
+  PAID: "Đã thanh toán (Chờ xác nhận)",
+  COMPLETED: "Đã hoàn tất",
+} as const;
+
+// 10. Đối tượng tổng hợp tiện lợi cho components
 export const LABELS = {
   TRIP_STATUS: TRIP_STATUS_LABELS,
   BALANCE_TYPE: BALANCE_TYPE_LABELS,
@@ -176,5 +212,7 @@ export const LABELS = {
     SETTLED: "Đã xong",
   },
   ITEM_SPLIT: ITEM_SPLIT_LABELS,
+  SETTLEMENT: SETTLEMENT_LABELS,
+  TRANSFER_STATUS: TRANSFER_STATUS_LABELS,
   SPECIAL: SPECIAL_LABELS,
 } as const;

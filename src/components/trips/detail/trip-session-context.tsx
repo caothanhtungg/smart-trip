@@ -7,7 +7,9 @@ import {
   CreateExpenseFormData,
   ExpenseShare,
   TripRecentExpense,
+  TripStatus,
 } from "@/types/trip";
+import { Settlement, SettlementTransfer, PaymentMethod } from "@/types/settlement";
 import { computeEqualShares, computeItemizedShares } from "@/lib/money/split";
 import {
   calculateTotalSpent,
@@ -15,6 +17,12 @@ import {
   calculateAvgSpentPerPerson,
   calculateUserSpent,
 } from "@/lib/money/budget";
+import {
+  calculateMemberBalances,
+  generateSettlementTransfers,
+  canReopenSettlement,
+  isSettlementFullyCompleted,
+} from "@/lib/money/settlement";
 import { formatDateInputToIso, formatExpenseDate } from "@/lib/view/expense-row";
 import { getExpenseCategoryLabel, getSplitMethodLabel } from "@/lib/labels";
 import { TripExpenseFormModal } from "@/components/trips/expenses/trip-expense-form-modal";
@@ -23,12 +31,24 @@ interface TripSessionContextValue {
   trip: TripDetailData;
   sessionTrip: TripDetailData;
   sessionExpenses: TripExpense[];
+  sessionStatus: TripStatus;
+  sessionTransfers: SettlementTransfer[];
+  sessionSettlement: Settlement | null;
   currentMemberId: string;
+  setCurrentMemberId: (id: string) => void;
   isHost: boolean;
   isOverviewAddModalOpen: boolean;
   setIsOverviewAddModalOpen: (open: boolean) => void;
   handleAddExpense: (newExpense: TripExpense) => void;
   handleSaveExpenseFromModal: (formData: CreateExpenseFormData) => void;
+  handleLockSettlement: () => void;
+  handleReopenSettlement: () => { success: boolean; message?: string };
+  handleMarkTransferPaid: (
+    transferId: string,
+    paymentMethod?: PaymentMethod,
+    note?: string
+  ) => void;
+  handleConfirmTransferCompleted: (transferId: string) => void;
   sessionToast: string | null;
   setSessionToast: (toast: string | null) => void;
 }
@@ -49,7 +69,13 @@ interface TripSessionProviderProps {
 }
 
 export function TripSessionProvider({ initialTrip, children }: TripSessionProviderProps) {
-  const currentMemberId = initialTrip.currentMemberId;
+  const [currentMemberId, setCurrentMemberId] = React.useState<string>(
+    initialTrip.currentMemberId
+  );
+  const [sessionStatus, setSessionStatus] = React.useState<TripStatus>(
+    initialTrip.status
+  );
+
   const currentMember = initialTrip.members.find((m) => m.id === currentMemberId);
   const isHost = currentMember?.role === "HOST" || !!currentMember?.isHost;
 
@@ -57,6 +83,7 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
     return [...(initialTrip.expenses || [])];
   });
 
+  const [lockedTransfers, setLockedTransfers] = React.useState<SettlementTransfer[]>([]);
   const [isOverviewAddModalOpen, setIsOverviewAddModalOpen] = React.useState(false);
   const [sessionToast, setSessionToast] = React.useState<string | null>(null);
 
@@ -72,6 +99,27 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
   const sessionTotalSpent = React.useMemo(() => {
     return calculateTotalSpent(sessionExpenses);
   }, [sessionExpenses]);
+
+  // Preview transfers computed dynamically in ACTIVE state
+  const previewTransfers = React.useMemo(() => {
+    const res = calculateMemberBalances(initialTrip.members, sessionExpenses);
+    return generateSettlementTransfers(initialTrip.id, res.balances);
+  }, [initialTrip.id, sessionExpenses, initialTrip.members]);
+
+  // If in ACTIVE, use preview transfers. Otherwise use lockedTransfers
+  const effectiveTransfers = sessionStatus === "ACTIVE" ? previewTransfers : lockedTransfers;
+
+  const sessionSettlement: Settlement | null = React.useMemo(() => {
+    if (sessionStatus === "ACTIVE") return null;
+    return {
+      id: `settle-${initialTrip.id}`,
+      tripId: initialTrip.id,
+      status: "ACTIVE",
+      createdByMemberId: currentMemberId,
+      createdAt: new Date().toISOString(),
+      transfers: effectiveTransfers,
+    };
+  }, [sessionStatus, initialTrip.id, currentMemberId, effectiveTransfers]);
 
   const sessionTrip: TripDetailData = React.useMemo(() => {
     const recent: TripRecentExpense[] = sessionExpenses.slice(0, 4).map((e) => {
@@ -108,6 +156,8 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
 
     return {
       ...initialTrip,
+      status: sessionStatus,
+      currentMemberId,
       totalSpent: sessionTotalSpent,
       hasBudget,
       remainingBudget,
@@ -119,7 +169,7 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
       expenses: sessionExpenses,
       recentExpenses: recent,
     };
-  }, [initialTrip, sessionExpenses, sessionTotalSpent, currentMemberId]);
+  }, [initialTrip, sessionStatus, sessionExpenses, sessionTotalSpent, currentMemberId]);
 
   const handleAddExpense = React.useCallback((newExpense: TripExpense) => {
     setSessionExpenses((prev) => [newExpense, ...prev]);
@@ -188,18 +238,105 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
     [initialTrip, handleAddExpense]
   );
 
+  // Settlement Actions
+  const handleLockSettlement = React.useCallback(() => {
+    // Generate official transfers snapshot from current expenses
+    const res = calculateMemberBalances(initialTrip.members, sessionExpenses);
+    const transfers = generateSettlementTransfers(initialTrip.id, res.balances);
+    setLockedTransfers(transfers);
+    setSessionStatus("SETTLING");
+    setSessionToast(
+      "Đã chốt sổ công nợ! Chuyến đi chuyển sang trạng thái Quyết toán, đã khóa thêm chi tiêu mới."
+    );
+  }, [initialTrip.id, sessionExpenses, initialTrip.members]);
+
+  const handleReopenSettlement = React.useCallback((): {
+    success: boolean;
+    message?: string;
+  } => {
+    if (!canReopenSettlement(lockedTransfers)) {
+      return {
+        success: false,
+        message:
+          "Không thể mở lại sổ vì đã có giao dịch được thanh toán hoặc xác nhận hoàn tất.",
+      };
+    }
+    setSessionStatus("ACTIVE");
+    setLockedTransfers([]);
+    setSessionToast("Đã mở lại sổ công nợ! Chuyến đi trở lại trạng thái Đang diễn ra.");
+    return { success: true };
+  }, [lockedTransfers]);
+
+  const handleMarkTransferPaid = React.useCallback(
+    (transferId: string, paymentMethod: PaymentMethod = "BANK_TRANSFER", note?: string) => {
+      setLockedTransfers((prev) =>
+        prev.map((t) => {
+          if (t.id !== transferId) return t;
+          return {
+            ...t,
+            status: "PAID",
+            paymentMethod,
+            paidAt: new Date().toISOString(),
+            paidMarkedByMemberId: currentMemberId,
+            paymentProofNote: note,
+          };
+        })
+      );
+      setSessionToast(
+        "Đã đánh dấu đã thanh toán! Đang chờ người nhận xác nhận tiền về."
+      );
+    },
+    [currentMemberId]
+  );
+
+  const handleConfirmTransferCompleted = React.useCallback(
+    (transferId: string) => {
+      setLockedTransfers((prev) => {
+        const next = prev.map((t) => {
+          if (t.id !== transferId) return t;
+          return {
+            ...t,
+            status: "COMPLETED" as const,
+            completedAt: new Date().toISOString(),
+            completedByMemberId: currentMemberId,
+          };
+        });
+
+        if (isSettlementFullyCompleted(next)) {
+          setSessionStatus("COMPLETED");
+          setSessionToast(
+            "Tất cả công nợ đã được thanh toán hoàn tất! Chuyến đi được đánh dấu Hoàn thành."
+          );
+        } else {
+          setSessionToast("Đã xác nhận nhận tiền thành công!");
+        }
+
+        return next;
+      });
+    },
+    [currentMemberId]
+  );
+
   return (
     <TripSessionContext.Provider
       value={{
         trip: initialTrip,
         sessionTrip,
         sessionExpenses,
+        sessionStatus,
+        sessionTransfers: effectiveTransfers,
+        sessionSettlement,
         currentMemberId,
+        setCurrentMemberId,
         isHost,
         isOverviewAddModalOpen,
         setIsOverviewAddModalOpen,
         handleAddExpense,
         handleSaveExpenseFromModal,
+        handleLockSettlement,
+        handleReopenSettlement,
+        handleMarkTransferPaid,
+        handleConfirmTransferCompleted,
         sessionToast,
         setSessionToast,
       }}

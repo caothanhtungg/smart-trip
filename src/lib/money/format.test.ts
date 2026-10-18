@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatMoney, formatSignedMoney } from "@/lib/money/format";
+import { formatMoney, formatSignedMoney, formatVnd } from "@/lib/money/format";
 
 describe("formatMoney", () => {
   it("formats integer VND with dot separators and non-breaking space (U+00A0) before ₫", () => {
@@ -31,6 +31,10 @@ describe("formatMoney", () => {
 
   it("throws TypeError if amount exceeds Number.MAX_SAFE_INTEGER", () => {
     expect(() => formatMoney(Number.MAX_SAFE_INTEGER + 1)).toThrowError(/số nguyên an toàn/);
+  });
+
+  it("formatVnd behaves identically as formatMoney alias", () => {
+    expect(formatVnd(500000)).toBe("500.000\u00A0₫");
   });
 });
 

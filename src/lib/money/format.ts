@@ -21,6 +21,8 @@ export function formatMoney(amount: number): string {
   return `${formatted}\u00A0₫`;
 }
 
+export const formatVnd = formatMoney;
+
 /**
  * Định dạng số dư có dấu (+ cho số dương, - cho số âm, không dấu cho 0)
  * kèm theo class màu token tương ứng.
