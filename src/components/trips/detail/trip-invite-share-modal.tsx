@@ -78,7 +78,7 @@ export function TripInviteShareModal({
       isOpen={isOpen}
       onClose={handleClose}
       title="Mời bạn bè tham gia chuyến đi"
-      description={`Chia sẻ mã mời chuyến đi "${tripTitle}" cho các thành viên (UC05)`}
+      description={`Chia sẻ mã mời chuyến đi "${tripTitle}" cho các thành viên`}
     >
       <div className="space-y-4 py-2">
         {/* Invite Code Display Box */}
@@ -145,7 +145,7 @@ export function TripInviteShareModal({
 
         {/* Boundary Notice */}
         <div className="p-3.5 rounded-xl bg-surface-container border border-border-hairline/80 text-[11px] text-text-muted leading-relaxed">
-          <strong>Ranh giới kỹ thuật Giai đoạn 2C.3 (Frontend-only):</strong> Tính năng chia sẻ liên kết trực tiếp, tạo mã QR động tự động và gửi thông báo qua email sẽ được kết nối chính thức khi triển khai API backend. Hệ thống không tự động gửi dữ liệu ra bên ngoài.
+          <strong>Lưu ý:</strong> Tính năng chia sẻ liên kết trực tiếp, tạo mã QR và gửi thông báo tự động sẽ được kết nối khi hoàn thiện hệ thống.
         </div>
 
         {/* Footer actions */}

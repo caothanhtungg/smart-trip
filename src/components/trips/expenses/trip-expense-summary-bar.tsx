@@ -1,30 +1,33 @@
 "use client";
 
 import * as React from "react";
-import { Plus, ScanLine, PieChart, Wallet, CreditCard, Lock } from "lucide-react";
+import { Plus, PieChart, Wallet, CreditCard, Lock } from "lucide-react";
 import { TripDetailData } from "@/types/trip";
 import { formatMoney } from "@/lib/utils";
 
 interface TripExpenseSummaryBarProps {
   trip: TripDetailData;
   totalExpensesAmount: number;
-  expenseCount: number;
+  expenseCount?: number;
+  totalExpensesCount?: number;
   onOpenAddExpenseModal: () => void;
-  onOpenAiScanModal: () => void;
+  isLocked?: boolean;
 }
 
 export function TripExpenseSummaryBar({
   trip,
   totalExpensesAmount,
   expenseCount,
+  totalExpensesCount,
   onOpenAddExpenseModal,
-  onOpenAiScanModal,
+  isLocked: propIsLocked,
 }: TripExpenseSummaryBarProps) {
   const memberCount = Math.max(1, trip.members.length);
   const avgPerPerson = Math.floor(totalExpensesAmount / memberCount);
-  const budget = trip.budget || trip.plannedBudget || 0;
+  const budget = trip.budgetAmount || trip.plannedBudget || 0;
   const budgetRatio = budget > 0 ? (totalExpensesAmount / budget) * 100 : 0;
-  const isLocked = trip.status === "SETTLING" || trip.status === "COMPLETED";
+  const isLocked = propIsLocked ?? (trip.status === "SETTLING" || trip.status === "COMPLETED");
+  const count = expenseCount ?? totalExpensesCount ?? trip.expenseCount ?? 0;
 
   return (
     <section className="bg-white rounded-[20px] p-5 sm:p-6 shadow-[0_4px_16px_rgba(24,78,119,0.06)] border border-border-hairline mb-6">
@@ -44,7 +47,7 @@ export function TripExpenseSummaryBar({
                 {formatMoney(totalExpensesAmount)}
               </span>
               <span className="text-xs text-text-muted font-medium">
-                ({expenseCount} khoản chi)
+                ({count} khoản chi)
               </span>
             </div>
           </div>
@@ -52,16 +55,6 @@ export function TripExpenseSummaryBar({
 
         {/* Right: Action Buttons */}
         <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-          <button
-            type="button"
-            onClick={onOpenAiScanModal}
-            className="h-11 px-4 rounded-xl bg-white hover:bg-hover-row text-cerulean border border-border-hairline font-semibold text-sm inline-flex items-center gap-2 shadow-[0_2px_6px_rgba(24,78,119,0.06)] transition-all cursor-pointer"
-          >
-            <ScanLine className="w-4 h-4 text-cerulean" />
-            <span className="hidden sm:inline">Quét hóa đơn AI</span>
-            <span className="sm:hidden">Quét AI</span>
-          </button>
-
           {isLocked ? (
             <button
               type="button"

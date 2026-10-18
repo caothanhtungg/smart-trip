@@ -5,7 +5,7 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Ticket, ShieldAlert, CheckCircle2, Info } from "lucide-react";
-import { validateInviteCode } from "@/lib/mock-trips";
+import { validateInviteCode } from "@/lib/trips/invite-code";
 
 interface InviteCodeModalProps {
   isOpen: boolean;
@@ -47,7 +47,7 @@ export function InviteCodeModal({ isOpen, onClose }: InviteCodeModalProps) {
       isOpen={isOpen}
       onClose={handleClose}
       title="Nhập mã mời tham gia chuyến đi"
-      description="Kiểm tra định dạng mã mời do Trưởng nhóm cung cấp (UC05)"
+      description="Kiểm tra định dạng mã mời do Trưởng nhóm cung cấp"
     >
       {!validFormatCode ? (
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
@@ -75,7 +75,7 @@ export function InviteCodeModal({ isOpen, onClose }: InviteCodeModalProps) {
               <Ticket className="absolute left-3.5 top-3.5 w-5 h-5 text-text-muted pointer-events-none" />
             </div>
             {error && (
-              <div className="p-2.5 rounded-lg bg-[#FFF1E6] border border-[#C2410C]/30 text-xs text-functional-negative font-medium flex items-center gap-2 mt-2">
+              <div className="p-2.5 rounded-lg bg-functional-warning-bg border border-functional-warning/30 text-xs text-functional-negative font-medium flex items-center gap-2 mt-2">
                 <ShieldAlert className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -88,10 +88,10 @@ export function InviteCodeModal({ isOpen, onClose }: InviteCodeModalProps) {
           <div className="p-3.5 rounded-xl bg-bg-canvas border border-border-hairline text-xs text-text-muted space-y-1">
             <div className="flex items-center gap-1.5 font-semibold text-yale-blue">
               <Info className="w-4 h-4 text-cerulean shrink-0" />
-              <span>Quy tắc ranh giới giao diện Release 1:</span>
+              <span>Lưu ý:</span>
             </div>
             <p>
-              Hệ thống chỉ xác thực định dạng cú pháp mã mời ở tầng frontend. Quy trình tra cứu cơ sở dữ liệu thật và gửi yêu cầu tham gia (UC05/UC30) sẽ được kết nối chính thức khi triển khai API backend.
+              Hệ thống chỉ xác thực định dạng cú pháp mã mời ở tầng frontend. Quy trình tra cứu cơ sở dữ liệu và gửi yêu cầu tham gia sẽ được kết nối chính thức khi triển khai máy chủ hệ thống.
             </p>
           </div>
 
@@ -116,7 +116,7 @@ export function InviteCodeModal({ isOpen, onClose }: InviteCodeModalProps) {
                 </span>
               </p>
               <p className="text-xs text-text-muted leading-relaxed">
-                Cú pháp mã mời đáp ứng tiêu chuẩn 10–12 ký tự chữ/số (không tính tối đa một dấu gạch nối). Theo quy chuẩn kỹ thuật Release 1, giao diện không giả lập dữ liệu tồn tại của chuyến đi hay trạng thái tham gia thành công.
+                Mã mời đáp ứng định dạng hợp lệ (10–12 ký tự chữ/số, không tính tối đa một dấu gạch nối). Giao diện chỉ kiểm tra định dạng, chưa tra cứu dữ liệu thật.
               </p>
             </div>
           </div>

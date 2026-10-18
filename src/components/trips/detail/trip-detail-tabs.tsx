@@ -1,54 +1,38 @@
 "use client";
 
 import * as React from "react";
-import { Modal } from "@/components/ui/modal";
-import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface TabItem {
   id: string;
+  segment: string;
   label: string;
   isImplemented: boolean;
-  phaseNotice?: string;
 }
 
 const TABS: TabItem[] = [
-  { id: "tong-quan", label: "Tổng quan", isImplemented: true },
-  {
-    id: "lich-trinh",
-    label: "Lịch trình",
-    isImplemented: false,
-    phaseNotice: "Phân hệ Lịch trình (Itinerary) sẽ được triển khai ở các giai đoạn tiếp theo của Release 1.",
-  },
-  {
-    id: "chi-tieu",
-    label: "Chi tiêu",
-    isImplemented: true, // Đã triển khai ở Giai đoạn 2D.1
-  },
-  {
-    id: "cong-no",
-    label: "Công nợ",
-    isImplemented: false,
-    phaseNotice: "Phân hệ Quyết toán & Rút gọn công nợ sẽ được triển khai ở Giai đoạn 2D.3 của Release 1.",
-  },
-  {
-    id: "thanh-vien",
-    label: "Thành viên",
-    isImplemented: false,
-    phaseNotice: "Phân hệ Quản lý thành viên chi tiết sẽ được phát triển tiếp nối ở các giai đoạn sau của Release 1.",
-  },
+  { id: "tong-quan", segment: "", label: "Tổng quan", isImplemented: true },
+  { id: "lich-trinh", segment: "itinerary", label: "Lịch trình", isImplemented: false },
+  { id: "chi-tieu", segment: "expenses", label: "Chi tiêu", isImplemented: true },
+  { id: "cong-no", segment: "settlement", label: "Công nợ", isImplemented: false },
+  { id: "thanh-vien", segment: "members", label: "Thành viên", isImplemented: false },
 ];
 
 interface TripDetailTabsProps {
-  activeTab?: string;
-  onTabChange?: (tabId: string) => void;
+  tripId: string;
 }
 
-export function TripDetailTabs({
-  activeTab = "tong-quan",
-  onTabChange,
-}: TripDetailTabsProps) {
-  const [selectedNoticeTab, setSelectedNoticeTab] = React.useState<TabItem | null>(null);
+export function TripDetailTabs({ tripId }: TripDetailTabsProps) {
+  const pathname = usePathname();
+
+  // Xác định active segment dựa trên pathname hiện tại
+  const activeSegment = React.useMemo(() => {
+    const basePath = `/trips/${tripId}`;
+    if (pathname === basePath || pathname === `${basePath}/`) return "";
+    const sub = pathname.replace(`${basePath}/`, "");
+    return sub.split("/")[0] || "";
+  }, [pathname, tripId]);
 
   return (
     <div className="w-full bg-white border-b border-border-hairline">
@@ -58,66 +42,31 @@ export function TripDetailTabs({
           className="flex items-center gap-6 sm:gap-8 overflow-x-auto scrollbar-none"
         >
           {TABS.map((tab) => {
-            const isActive = tab.id === activeTab;
+            const isActive = tab.segment === activeSegment;
+            const tabHref = tab.segment ? `/trips/${tripId}/${tab.segment}` : `/trips/${tripId}`;
+
             return (
-              <button
+              <Link
                 key={tab.id}
-                type="button"
-                onClick={() => {
-                  if (tab.isImplemented) {
-                    if (onTabChange) {
-                      onTabChange(tab.id);
-                    }
-                  } else {
-                    setSelectedNoticeTab(tab);
-                  }
-                }}
-                className={`py-3 sm:py-3.5 text-sm whitespace-nowrap transition-all duration-150 cursor-pointer border-b-[3px] font-medium ${
+                href={tabHref}
+                className={`py-3 sm:py-3.5 text-sm whitespace-nowrap transition-all duration-150 border-b-[3px] font-medium flex items-center ${
                   isActive
                     ? "text-cerulean font-bold border-cerulean"
                     : "text-text-muted hover:text-yale-blue border-transparent hover:border-border-hairline"
                 }`}
                 aria-current={isActive ? "page" : undefined}
               >
-                {tab.label}
-              </button>
+                <span>{tab.label}</span>
+                {!tab.isImplemented && (
+                  <span className="ml-1.5 text-[10px] font-semibold text-text-muted/60 bg-surface-container px-1.5 py-0.5 rounded-full align-middle">
+                    Sắp có
+                  </span>
+                )}
+              </Link>
             );
           })}
         </nav>
       </div>
-
-      {/* Tab Notice Modal */}
-      <Modal
-        isOpen={selectedNoticeTab !== null}
-        onClose={() => setSelectedNoticeTab(null)}
-        title={`Phân hệ ${selectedNoticeTab?.label || ""}`}
-        description="Thông tin phạm vi phát triển Release 1"
-      >
-        <div className="space-y-4 py-2">
-          <div className="p-4 rounded-xl bg-bg-canvas border border-border-hairline flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-cerulean shrink-0 mt-0.5" />
-            <div className="text-sm text-text-body space-y-1">
-              <p className="font-bold text-yale-blue">
-                Chức năng đang phát triển
-              </p>
-              <p className="text-xs text-text-muted leading-relaxed">
-                {selectedNoticeTab?.phaseNotice ||
-                  "Phân hệ này sẽ được phát triển ở các giai đoạn tiếp theo của Release 1."}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-3 border-t border-border-hairline">
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => setSelectedNoticeTab(null)}
-            >
-              Đã hiểu
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

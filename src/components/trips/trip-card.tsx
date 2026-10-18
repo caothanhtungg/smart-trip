@@ -7,21 +7,26 @@ import {
   MoreVertical,
   CheckCircle2,
 } from "lucide-react";
-import { Trip } from "@/types/trip";
+import { TripCardView } from "@/types/trip";
 import { formatMoney, formatDate, getInitials } from "@/lib/utils";
+import {
+  getTripStatusLabel,
+  getBalanceTypeLabel,
+  SPECIAL_LABELS,
+} from "@/lib/labels";
 
 interface TripCardProps {
-  trip: Trip;
-  onSelectTrip?: (trip: Trip) => void;
-  onMoreActions?: (trip: Trip, e: React.MouseEvent) => void;
+  trip: TripCardView;
+  onSelectTrip?: (trip: TripCardView) => void;
+  onMoreActions?: (trip: TripCardView, e: React.MouseEvent) => void;
 }
 
 export function TripCard({ trip, onSelectTrip, onMoreActions }: TripCardProps) {
-  // Determine gradient styling
+  // Determine gradient styling from cover tokens
   const gradientStyle = {
-    background: trip.coverGradient.via
-      ? `linear-gradient(135deg, ${trip.coverGradient.from} 0%, ${trip.coverGradient.via} 50%, ${trip.coverGradient.to} 100%)`
-      : `linear-gradient(135deg, ${trip.coverGradient.from} 0%, ${trip.coverGradient.to} 100%)`,
+    background: trip.cover.via
+      ? `linear-gradient(135deg, ${trip.cover.from} 0%, ${trip.cover.via} 50%, ${trip.cover.to} 100%)`
+      : `linear-gradient(135deg, ${trip.cover.from} 0%, ${trip.cover.to} 100%)`,
   };
 
   // Color mapping for member avatar stacks
@@ -44,7 +49,7 @@ export function TripCard({ trip, onSelectTrip, onMoreActions }: TripCardProps) {
           onSelectTrip?.(trip);
         }
       }}
-      aria-label={`Chuyến đi ${trip.title}`}
+      aria-label={`Chuyến đi ${trip.name}`}
     >
       <div>
         {/* Gradient Cover Strip */}
@@ -81,28 +86,28 @@ export function TripCard({ trip, onSelectTrip, onMoreActions }: TripCardProps) {
           {/* Status Chip */}
           <div className="flex items-center">
             {trip.status === "ACTIVE" && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] font-semibold bg-[#76C893]/15 text-yale-blue border border-[#52B69A]/30">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] font-semibold bg-emerald-fill/15 text-yale-blue border border-ocean-mist/30">
                 <span className="w-2 h-2 rounded-full bg-ocean-mist" />
-                <span>Đang lên kế hoạch</span>
+                <span>{getTripStatusLabel("ACTIVE")}</span>
               </span>
             )}
             {trip.status === "SETTLING" && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] font-semibold bg-[#FFF1E6] text-functional-warning border border-[#C2410C]/20">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] font-semibold bg-functional-warning-bg text-functional-warning border border-functional-warning/20">
                 <span className="w-2 h-2 rounded-full bg-functional-warning animate-pulse" />
-                <span>Đang thanh toán</span>
+                <span>{getTripStatusLabel("SETTLING")}</span>
               </span>
             )}
             {trip.status === "COMPLETED" && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] font-semibold bg-lime-cream text-yale-blue border border-light-green">
                 <CheckCircle2 className="w-4 h-4 text-functional-positive stroke-[2.5]" />
-                <span>Đã hoàn tất</span>
+                <span>{getTripStatusLabel("COMPLETED")}</span>
               </span>
             )}
           </div>
 
-          {/* Trip Title */}
+          {/* Trip Name */}
           <h2 className="text-xl font-bold text-yale-blue mt-3 group-hover:text-cerulean transition-colors truncate">
-            {trip.title}
+            {trip.name}
           </h2>
 
           {/* Destination & Dates */}
@@ -127,7 +132,7 @@ export function TripCard({ trip, onSelectTrip, onMoreActions }: TripCardProps) {
               {trip.members.slice(0, 4).map((member, idx) => (
                 <div
                   key={member.id}
-                  title={member.isNoAccount ? `${member.name} (Chưa có tài khoản)` : member.name}
+                  title={member.isNoAccount ? `${member.name} (${SPECIAL_LABELS.NO_ACCOUNT})` : member.name}
                   className={`w-8 h-8 rounded-full ${
                     avatarColors[idx % avatarColors.length]
                   } flex items-center justify-center text-[12px] font-bold ring-2 ring-white overflow-hidden shrink-0 select-none ${
@@ -137,17 +142,17 @@ export function TripCard({ trip, onSelectTrip, onMoreActions }: TripCardProps) {
                   {getInitials(member.name)}
                 </div>
               ))}
-              {trip.totalMembers > 4 && (
+              {trip.memberCount > 4 && (
                 <div
-                  title={`Và thêm ${trip.totalMembers - 4} thành viên khác`}
+                  title={`Và thêm ${trip.memberCount - 4} thành viên khác`}
                   className="w-8 h-8 rounded-full bg-ocean-mist text-white flex items-center justify-center text-[11px] font-bold ring-2 ring-white overflow-hidden shrink-0 select-none"
                 >
-                  +{trip.totalMembers - 3}
+                  +{trip.memberCount - 3}
                 </div>
               )}
             </div>
             <span className="text-xs text-text-muted font-medium">
-              {trip.totalMembers} thành viên
+              {trip.memberCount} thành viên
             </span>
           </div>
         </div>
@@ -163,8 +168,8 @@ export function TripCard({ trip, onSelectTrip, onMoreActions }: TripCardProps) {
           <div className="flex flex-col items-end">
             {trip.userBalance.type === "RECEIVE" && (
               <div className="flex items-center gap-1.5">
-                <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-[#76C893]/20 text-functional-positive uppercase tracking-wide">
-                  Được nhận
+                <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-emerald-fill/20 text-functional-positive uppercase tracking-wide">
+                  {getBalanceTypeLabel("RECEIVE")}
                 </span>
                 <span className="text-lg font-bold tabular-nums text-functional-positive">
                   +{formatMoney(trip.userBalance.amount)}
@@ -173,8 +178,8 @@ export function TripCard({ trip, onSelectTrip, onMoreActions }: TripCardProps) {
             )}
             {trip.userBalance.type === "PAY" && (
               <div className="flex items-center gap-1.5">
-                <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-[#FFF1E6] text-functional-negative uppercase tracking-wide">
-                  Cần trả
+                <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-functional-warning-bg text-functional-negative uppercase tracking-wide">
+                  {getBalanceTypeLabel("PAY")}
                 </span>
                 <span className="text-lg font-bold tabular-nums text-functional-negative">
                   -{formatMoney(trip.userBalance.amount)}
@@ -184,7 +189,7 @@ export function TripCard({ trip, onSelectTrip, onMoreActions }: TripCardProps) {
             {trip.userBalance.type === "SETTLED" && (
               <div className="flex items-center gap-1.5">
                 <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-hover-row text-text-muted uppercase tracking-wide">
-                  Đã xong
+                  {getBalanceTypeLabel("SETTLED")}
                 </span>
                 <span className="text-lg font-bold tabular-nums text-text-muted">
                   0 ₫

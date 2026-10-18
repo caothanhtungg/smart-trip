@@ -31,12 +31,12 @@ export function Badge({
   };
 
   const variants = {
-    default: "bg-[#EEF6E4] text-yale-blue border border-border-hairline",
-    planning: "bg-[#52B69A]/15 text-cerulean", // Đang lên kế hoạch
-    settling: "bg-[#FFF1E6] text-functional-warning", // Đang thanh toán
+    default: "bg-hover-row text-yale-blue border border-border-hairline",
+    planning: "bg-ocean-mist/15 text-cerulean", // Đang lên kế hoạch
+    settling: "bg-functional-warning-bg text-functional-warning", // Đang thanh toán
     completed: "bg-lime-cream text-yale-blue font-bold", // Đã hoàn tất
-    unpaid: "bg-[#FFF1E6] text-functional-warning", // Chưa thanh toán
-    paid: "bg-[#52B69A]/15 text-ocean-mist font-bold", // Đã thanh toán
+    unpaid: "bg-functional-warning-bg text-functional-warning", // Chưa thanh toán
+    paid: "bg-ocean-mist/15 text-ocean-mist font-bold", // Đã thanh toán
     host: "bg-yale-blue text-white", // Trưởng nhóm
     "no-account": "border-[1.5px] border-dashed border-ocean-mist bg-ocean-mist/10 text-cerulean font-medium", // Chưa có tài khoản
   };

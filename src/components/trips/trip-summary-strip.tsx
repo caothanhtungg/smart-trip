@@ -4,6 +4,7 @@ import * as React from "react";
 import { Wallet, ArrowUpRight, ArrowDownLeft, ArrowRight } from "lucide-react";
 import { formatMoney } from "@/lib/utils";
 import { OverallBalanceSummary } from "@/types/trip";
+import { LABELS } from "@/lib/labels";
 
 interface TripSummaryStripProps {
   summary: OverallBalanceSummary;
@@ -29,9 +30,9 @@ export function TripSummaryStrip({
 
         <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
           {/* Positive Balance (To receive) */}
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D9ED92]/50 border border-[#76C893]/50 text-functional-positive text-xs sm:text-sm">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-lime-cream/50 border border-emerald-fill/50 text-functional-positive text-xs sm:text-sm">
             <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
-            <span className="font-medium text-text-body/80">Bạn đang được nhận:</span>
+            <span className="font-medium text-text-body/80">{LABELS.BALANCE.YOU_RECEIVE}</span>
             <span className="font-bold tabular-nums">
               +{formatMoney(summary.toReceive)}
             </span>
@@ -43,9 +44,9 @@ export function TripSummaryStrip({
           />
 
           {/* Negative Balance (To pay) */}
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF1E6] border border-[#C2410C]/30 text-functional-negative text-xs sm:text-sm">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-functional-warning-bg border border-functional-warning/30 text-functional-negative text-xs sm:text-sm">
             <ArrowDownLeft className="w-4 h-4 stroke-[2.5]" />
-            <span className="font-medium text-text-body/80">Bạn cần trả:</span>
+            <span className="font-medium text-text-body/80">{LABELS.BALANCE.YOU_PAY}</span>
             <span className="font-bold tabular-nums">
               -{formatMoney(summary.toPay)}
             </span>

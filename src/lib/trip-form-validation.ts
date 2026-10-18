@@ -2,7 +2,11 @@ import type {
   CreateTripFormData,
   CreateTripValidationErrors,
   CreateTripValidationResult,
-} from "../types/trip.ts";
+} from "../types/trip";
+import { parseMoneyInput, formatMoneyInputValue } from "@/lib/money/parse";
+import { MAX_TRIP_BUDGET } from "@/lib/money/constants";
+
+export { parseMoneyInput, formatMoneyInputValue };
 
 /**
  * Parses an ISO date string (YYYY-MM-DD) or DD/MM/YYYY into a calendar Date object
@@ -74,38 +78,6 @@ export function calculateDurationText(
 }
 
 /**
- * Parses raw input string into integer VND amount.
- * Strips non-digit characters and returns integer or null if empty.
- */
-export function parseMoneyInput(
-  raw: string | number | null | undefined
-): number | null {
-  if (raw === null || raw === undefined) return null;
-  if (typeof raw === "number") {
-    if (isNaN(raw) || raw < 0) return null;
-    return Math.round(raw);
-  }
-
-  const digits = raw.replace(/\D/g, "");
-  if (!digits) return null;
-
-  const parsed = parseInt(digits, 10);
-  if (isNaN(parsed) || parsed < 0) return null;
-  return parsed;
-}
-
-/**
- * Formats integer VND amount with dot separator for text inputs (e.g. 10000000 -> "10.000.000").
- */
-export function formatMoneyInputValue(
-  amount: number | null | undefined
-): string {
-  if (amount === null || amount === undefined) return "";
-  if (isNaN(amount) || amount < 0) return "";
-  return new Intl.NumberFormat("vi-VN").format(Math.round(amount));
-}
-
-/**
  * Pure validation function for Create Trip form.
  *
  * Rules:
@@ -113,7 +85,7 @@ export function formatMoneyInputValue(
  * - destination: optional (compatible with ERD trips.destination nullable), max 150 characters if provided.
  * - startDate: required, valid calendar date.
  * - endDate: required, valid calendar date, endDate >= startDate.
- * - budgetAmount: optional, integer >= 0 and <= 10,000,000,000 VND.
+ * - budgetAmount: optional, integer >= 0 and <= MAX_TRIP_BUDGET (2,000,000,000 VND).
  */
 export function validateCreateTripForm(
   data: Partial<CreateTripFormData>
@@ -156,10 +128,10 @@ export function validateCreateTripForm(
 
   // 5. Validate Budget (Optional)
   if (data.budgetAmount !== null && data.budgetAmount !== undefined) {
-    if (isNaN(data.budgetAmount) || data.budgetAmount < 0) {
+    if (isNaN(data.budgetAmount) || data.budgetAmount < 0 || !Number.isSafeInteger(data.budgetAmount)) {
       errors.budgetAmount = "Ngân sách dự kiến phải là số tiền hợp lệ.";
-    } else if (data.budgetAmount > 10_000_000_000) {
-      errors.budgetAmount = "Ngân sách dự kiến không được vượt quá 10 tỷ đồng.";
+    } else if (data.budgetAmount > MAX_TRIP_BUDGET) {
+      errors.budgetAmount = `Ngân sách dự kiến không được vượt quá ${MAX_TRIP_BUDGET.toLocaleString("vi-VN")} ₫.`;
     }
   }
 

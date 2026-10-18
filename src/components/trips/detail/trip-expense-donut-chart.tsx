@@ -34,7 +34,7 @@ export function TripExpenseDonutChart({ trip }: TripExpenseDonutChartProps) {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           style={{
             background:
-              "linear-gradient(135deg, #184E77 0%, #1E6091 40%, #168AAD 70%, #52B69A 100%)",
+              "linear-gradient(135deg, var(--color-yale-blue) 0%, var(--color-baltic-blue) 40%, var(--color-bondi-blue) 70%, var(--color-ocean-mist) 100%)",
           }}
         />
 
@@ -77,7 +77,7 @@ export function TripExpenseDonutChart({ trip }: TripExpenseDonutChartProps) {
                 cy="18"
                 fill="transparent"
                 r="15.9155"
-                stroke="#E9EFE6"
+                stroke="var(--color-hover-row)"
                 strokeWidth="3.8"
               />
 

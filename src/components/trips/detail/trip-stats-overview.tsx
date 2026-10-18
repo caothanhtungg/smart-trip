@@ -5,13 +5,15 @@ import { Receipt, Wallet, CheckCircle2, AlertCircle } from "lucide-react";
 import { TripDetailData } from "@/types/trip";
 import { formatMoney } from "@/lib/utils";
 
+import { getBalanceTypeLabel } from "@/lib/labels";
+
 interface TripStatsOverviewProps {
   trip: TripDetailData;
 }
 
 export function TripStatsOverview({ trip }: TripStatsOverviewProps) {
-  const isReceive = trip.userBalance.type === "RECEIVE";
-  const isPay = trip.userBalance.type === "PAY";
+  const isReceive = trip.userBalance?.type === "RECEIVE";
+  const isPay = trip.userBalance?.type === "PAY";
 
   return (
     <section aria-label="Thống kê tài chính chuyến đi" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -57,10 +59,10 @@ export function TripStatsOverview({ trip }: TripStatsOverviewProps) {
       <div
         className={`rounded-[20px] p-5 shadow-[0_4px_16px_rgba(24,78,119,0.06)] border flex flex-col justify-between relative overflow-hidden ${
           isReceive
-            ? "bg-gradient-to-br from-[#EEF8E8] to-[#E3F2D9] border-[#2E7D5B]/20"
+            ? "bg-gradient-to-br from-hover-row to-mint-green/30 border-functional-positive/20"
             : isPay
-            ? "bg-gradient-to-br from-[#FFF8F5] to-[#FFEFE6] border-[#C2410C]/20"
-            : "bg-gradient-to-br from-[#F4F9EC] to-[#EAF4DC] border-light-green"
+            ? "bg-gradient-to-br from-functional-warning-bg/60 to-functional-warning-bg border-functional-warning/20"
+            : "bg-gradient-to-br from-bg-canvas to-lime-cream/30 border-light-green"
         }`}
       >
         <div className="flex items-center justify-between mb-3 relative z-10">
@@ -73,10 +75,14 @@ export function TripStatsOverview({ trip }: TripStatsOverviewProps) {
                 : "text-yale-blue"
             }`}
           >
-            {isReceive ? "Bạn được nhận" : isPay ? "Bạn cần trả" : "Số dư của bạn"}
+            {isReceive
+              ? `Bạn ${getBalanceTypeLabel("RECEIVE").toLowerCase()}`
+              : isPay
+              ? `Bạn ${getBalanceTypeLabel("PAY").toLowerCase()}`
+              : "Số dư của bạn"}
           </span>
           <span className="px-2 py-0.5 rounded-full bg-white/90 text-xs font-bold shadow-xs">
-            {isReceive ? "Đang dương" : isPay ? "Đang nợ" : "Đã xong"}
+            {isReceive ? "Đang dương" : isPay ? "Đang nợ" : getBalanceTypeLabel("SETTLED")}
           </span>
         </div>
 
@@ -91,9 +97,9 @@ export function TripStatsOverview({ trip }: TripStatsOverviewProps) {
             }`}
           >
             {isReceive
-              ? `+${formatMoney(trip.userBalance.amount)}`
+              ? `+${formatMoney(trip.userBalance?.amount || 0)}`
               : isPay
-              ? `-${formatMoney(trip.userBalance.amount)}`
+              ? `-${formatMoney(trip.userBalance?.amount || 0)}`
               : "0 ₫"}
           </div>
           <div

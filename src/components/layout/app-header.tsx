@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Compass, Bell, ChevronDown, LogOut, User as UserIcon } from "lucide-react";
-import { MOCK_CURRENT_USER } from "@/lib/mock-trips";
+import { getCurrentUser, CurrentUser } from "@/lib/data/trips";
 import { Avatar } from "@/components/ui/avatar";
 
 interface AppHeaderProps {
@@ -12,7 +12,12 @@ interface AppHeaderProps {
 
 export function AppHeader({ onOpenNotifications }: AppHeaderProps) {
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
+  const [currentUser, setCurrentUser] = React.useState<CurrentUser | null>(null);
   const menuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    getCurrentUser().then(setCurrentUser);
+  }, []);
 
   // Close dropdown on outside click
   React.useEffect(() => {
@@ -59,27 +64,32 @@ export function AppHeader({ onOpenNotifications }: AppHeaderProps) {
             type="button"
             aria-label="Thông báo hệ thống"
             onClick={onOpenNotifications}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
           >
-            <Bell className="w-5 h-5 stroke-[1.8]" />
+            <Bell className="w-5 h-5" />
             <span
-              className="absolute top-2 right-2 w-2 h-2 rounded-full bg-functional-warning ring-2 ring-white"
+              className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-functional-warning ring-2 ring-white"
               aria-hidden="true"
             />
           </button>
 
-          {/* User Menu Dropdown */}
+          {/* User Profile Dropdown Trigger */}
           <div className="relative" ref={menuRef}>
             <button
               type="button"
               onClick={() => setUserMenuOpen((prev) => !prev)}
               aria-expanded={userMenuOpen}
               aria-haspopup="true"
-              className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl hover:bg-hover-row transition-colors cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
+              aria-label="Menu tài khoản người dùng"
+              className="flex items-center gap-2.5 p-1.5 pl-2 rounded-xl hover:bg-hover-row border border-transparent hover:border-border-hairline transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
             >
-              <Avatar name={MOCK_CURRENT_USER.fullName} size="sm" />
-              <span className="text-sm font-semibold text-yale-blue hidden sm:inline-block">
-                {MOCK_CURRENT_USER.name}
+              <Avatar
+                name={currentUser?.name || "Lan"}
+                size="sm"
+                className="bg-lime-cream text-yale-blue font-bold shadow-xs"
+              />
+              <span className="hidden sm:inline-block text-sm font-semibold text-yale-blue max-w-[120px] truncate">
+                {currentUser?.name || "Lan"}
               </span>
               <ChevronDown
                 className={`w-4 h-4 text-text-muted transition-transform duration-200 ${
@@ -94,17 +104,17 @@ export function AppHeader({ onOpenNotifications }: AppHeaderProps) {
                 <div className="px-4 py-2.5 border-b border-border-hairline/70">
                   <p className="text-xs text-text-muted">Đăng nhập với</p>
                   <p className="text-sm font-bold text-yale-blue truncate">
-                    {MOCK_CURRENT_USER.fullName}
+                    {currentUser?.fullName || "Lan Nguyễn"}
                   </p>
                   <p className="text-xs text-text-muted truncate">
-                    {MOCK_CURRENT_USER.email}
+                    {currentUser?.email || "lan.nguyen@gmail.com"}
                   </p>
                 </div>
 
                 <div className="py-1">
                   <div className="px-4 py-2 flex items-center gap-2.5 text-xs text-text-muted">
                     <UserIcon className="w-4 h-4 text-ocean-mist" />
-                    <span>Hồ sơ cá nhân (Release 1)</span>
+                    <span>Hồ sơ cá nhân</span>
                   </div>
                 </div>
 
@@ -112,7 +122,7 @@ export function AppHeader({ onOpenNotifications }: AppHeaderProps) {
                   <Link
                     href="/login"
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2 text-sm text-functional-negative hover:bg-[#FFF1E6] transition-colors"
+                    className="flex items-center gap-2.5 px-4 py-2 text-sm text-functional-negative hover:bg-functional-warning-bg transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Đăng xuất</span>

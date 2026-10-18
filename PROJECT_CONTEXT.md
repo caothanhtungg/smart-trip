@@ -18,25 +18,28 @@ Release 1 tập trung vào:
 
 ### Ngoài phạm vi Release 1
 Không tự thêm các tính năng sau nếu chưa được người dùng duyệt:
-- “Ví chuyến đi”.
-- OCR hóa đơn tự động (Release 1 chỉ lưu ảnh hóa đơn).
-- Dự báo thời tiết.
-- Xuất Excel.
 - Đăng nhập bằng email/mật khẩu.
-- Trang "Khám phá", "Cẩm nang du lịch", "Bảng giá".
+- Trang "Khám phá", "Cẩm nang", "Bảng giá".
 - SMS, xác thực hai yếu tố, số điện thoại.
 - Chọn ngôn ngữ (UI cố định tiếng Việt).
 - Đa tiền tệ (chỉ VND).
 - Chế độ tối (dark mode).
 - Tối ưu lộ trình, bản đồ lộ trình.
-- Biểu đồ thống kê, đếm số người dùng hiển thị trên landing page.
+- Dự báo thời tiết.
+- Biểu đồ thống kê.
+- Mọi câu quảng cáo về số lượng người dùng.
+- “Ví chuyến đi” (Trip Wallet).
+- OCR hóa đơn tự động (Release 1 chỉ lưu ảnh hóa đơn).
+- Xuất Excel.
 
-### Quy ước chuyển thiết kế Stitch sang React
-Các thiết kế HTML/CSS từ Google Stitch là tham chiếu trực quan; khi triển khai sang React, KHÔNG yêu cầu:
-- Giữ nguyên hệ thống grid Simplex CSS của Stitch.
-- Khớp tuyệt đối 100% vị trí pixel.
-- Tích hợp VietQR PRO hoặc Google Places thật.
-- Tính năng "Ví chuyến đi" (Trip Wallet) hoặc xác thực bằng PIN.
+### Dành cho Release sau (Tạm ẩn khỏi giao diện Release 1)
+Các khối giao diện sau thuộc Release 2 và 3, đã có component mẫu nhưng được gỡ/tạm ẩn khỏi trang Tổng quan chuyến đi (`/trips/[id]`), giữ file component nhưng không render:
+- **Dự báo thời tiết** (thẻ thời tiết trong thông tin phụ chuyến đi — thuộc Release 2).
+- **Điểm đến tiếp theo & Bản đồ lộ trình** (widget bản đồ trong thông tin phụ — thuộc Release 2).
+- **Biểu đồ tròn phân bổ chi tiêu** (`TripExpenseDonutChart` — đã lưu component, không render ở Release 1 — thuộc Release 3).
+
+### Lưu ý khi chuyển Stitch sang React
+Các màn hình trong thiết kế Google Stitch chứa một số chi tiết nằm ngoài phạm vi Release 1 (các mục ngoài phạm vi ở trên, cùng các nhãn/tính năng như "Thuật toán Simplex", "Chính xác tuyệt đối 100%", "VietQR PRO", "Google Places", "Ví chuyến đi", "Mã PIN"). Khi chuyển đổi thiết kế sang component React, **bắt buộc phải loại bỏ** các chi tiết này để giữ giao diện chuẩn xác với phạm vi Release 1.
 
 ## 2. Tài liệu nguồn hiện có
 
@@ -70,7 +73,9 @@ Không sửa/xóa/ghi đè các tài liệu nguồn này khi chưa có sự đ�
 - **Xác thực:** Auth.js với Google OAuth.
 - **Kiểm thử:** Vitest.
 - **Icon:** Lucide React (đã dùng thống nhất).
-- **Validation API:** zod.
+- **Validation API:** zod cho kiểm tra dữ liệu API.
+
+*(Lưu ý: Không cài thêm bất kỳ gói nào tại thời điểm này; chỉ cài khi chuyển sang giai đoạn triển khai tương ứng).*
 
 ### Ranh giới giai đoạn hiện tại
 Hiện tại ưu tiên **UI/UX và frontend**:
@@ -260,12 +265,11 @@ Trước khi thêm trạng thái hoặc modal, đối chiếu bảng UI trong b�
 
 ## 11. Các quyết định đã chốt và mục chờ xác nhận
 
-1. **R18 — Quyền ghi khoản chi:** ✅ **ĐÃ DUYỆT** (người dùng, Giai đoạn 2D, 10/2026). Member chỉ được ghi khoản chi do chính mình thanh toán. Trưởng nhóm được ghi hộ cho **bất kỳ thành viên nào** (bao gồm thành viên chưa có tài khoản). Nguồn: quyết định nghiệp vụ, không phải ERD.
-2. **VietQR và dữ liệu bên thứ ba:** ✅ **ĐÃ DUYỆT UI** (người dùng, Giai đoạn 2D, 10/2026). Giai đoạn frontend: minh họa SVG nội bộ + mock data, không gọi `img.vietqr.io`, không dùng số tài khoản thật. Backend (khi triển khai): phương thức sinh QR server-side theo chuẩn EMVCo còn mở.
-3. **Phí dịch vụ/VAT khi chia theo món:** ✅ **ĐÃ DUYỆT** (người dùng, Giai đoạn 2D, 10/2026). VAT và phí dịch vụ là khoản phụ phí riêng, chia đều cho những người tham gia hóa đơn.
-4. **Các partial unique index và CHECK constraints:** ERD ghi một số điều kiện cần tạo bằng SQL thô. Khi triển khai migration phải đảm bảo các constraint quan trọng được thực thi thật, không chỉ ghi chú trong ERD.
-5. **Mã mời — Độ dài và định dạng:** ⏳ **CHỜ NGƯỜI DÙNG QUYẾT ĐỊNH.** ERD ghi `invite_code varchar(12)`. Commit `b15c467` đã sửa thành `varchar(13)`. Chưa có quyết định cuối cùng; giữ nguyên code hiện tại, sẽ revert hoặc xác nhận khi người dùng chốt.
-6. **Điểm đến (destination):** ✅ **ĐÃ DUYỆT** (người dùng, Giai đoạn 2C.2). Điểm đến là tùy chọn; form tạo chuyến đi KHÔNG đánh dấu sao (*) cho trường này.
+1. **R18 — Quyền ghi khoản chi:** ✅ **ĐÃ DUYỆT** (Nguồn: Người dùng duyệt ngày 18/10/2026). Thành viên chỉ được ghi khoản chi do chính mình thanh toán. Trưởng nhóm được ghi hộ cho **BẤT KỲ thành viên nào** (bao gồm thành viên chưa có tài khoản). Đã thống nhất đồng bộ trong toàn bộ tài liệu, mã nguồn và unit test.
+2. **Phí dịch vụ / VAT:** ✅ **ĐÃ DUYỆT** (Nguồn: Người dùng duyệt ngày 18/10/2026). VAT và phí dịch vụ là một dòng phụ phí riêng, chia đều cho những người cùng tham gia hóa đơn. Giao diện phải minh bạch cách phân bổ.
+3. **VietQR:** ✅ **ĐÃ DUYỆT CHO GIAI ĐOẠN GIAO DIỆN** (Nguồn: Người dùng duyệt ngày 18/10/2026). CHỈ áp dụng minh họa UI nội bộ bằng SVG và dữ liệu giả định, kèm chú thích "Minh họa — chưa hỗ trợ thanh toán thật". Không gọi dịch vụ bên ngoài, không dùng STK thật. Quyết định kỹ thuật cho giai đoạn backend vẫn **MỞ**.
+4. **Điểm đến (destination):** ✅ **ĐÃ DUYỆT** (Nguồn: Người dùng duyệt ngày 18/10/2026). Điểm đến không bắt buộc; ô nhập trên giao diện tạo chuyến đi KHÔNG được có dấu hoa thị (*).
+5. **Mã mời (invite_code):** ⏳ **CHỜ NGƯỜI DÙNG QUYẾT ĐỊNH.** Đang ở trạng thái chờ người dùng chốt phương án. Việc hoàn tác commit `b15c467` bằng một commit mới đưa `invite_code` về `varchar(12)` được đưa vào danh sách chờ và chỉ thực hiện sau khi có xác nhận chính thức từ người dùng.
 
 ## 12. Cách AI phải làm việc với dự án
 
@@ -280,15 +284,15 @@ Trước khi thêm trạng thái hoặc modal, đối chiếu bảng UI trong b�
 
 ## 13. Quy tắc bảo vệ tài liệu nguồn
 
-- Không sửa, xóa, ghi đè hoặc reformat các file trong `sodothietke/` nếu người dùng không yêu cầu.
+- Không sửa các tài liệu nguồn trong `sodothietke/` (ERD, use case, sequence) khi chưa có yêu cầu rõ của người dùng. Nếu thấy cần đổi, hãy đề xuất và chờ duyệt.
 - Các file trong `stitch_smart_trip_dashboard_design/` là tài nguyên tham chiếu; không xóa hoặc ghi đè.
 
-## 14. Quy tắc mã nguồn (Source Code Rules)
+## 14. Quy tắc mã nguồn
 
-a. Không dùng mã màu hex trực tiếp trong component/TS; sử dụng design token (CSS variable).
-b. Mọi thuật ngữ UI phải tập trung trong `src/lib/labels.ts` (tạo khi cần).
-c. Page/component không import mock data trực tiếp; chỉ qua `src/lib/data/*` hoặc `src/lib/mock-trips.ts`.
-d. Phép tính tài chính đặt trong `src/lib/money/` (tạo khi cần) kèm unit test; VND là số nguyên.
-e. Không hardcode role hoặc user ID trong component.
-f. Không hiển thị tên file, mã giai đoạn, hoặc số release trong UI người dùng.
-g. Vitest cho test, đặt cạnh file nguồn hoặc trong `tests/`.
+(a) Không viết mã hex trong component hay file TS, chỉ dùng token màu (Tailwind utility / semantic CSS variable).
+(b) Mọi thuật ngữ giao diện nằm trong `src/lib/labels.ts`.
+(c) Trang và component không import dữ liệu mẫu trực tiếp, chỉ gọi `src/lib/data/*`.
+(d) Phép tính tiền nằm trong `src/lib/money/` và có test, tiền luôn là số nguyên.
+(e) Không hard-code vai trò hay id người dùng trong component.
+(f) Không để chữ trên giao diện nhắc tới tên file tài liệu, mã giai đoạn hay số Release.
+(g) Test dùng Vitest, đặt cạnh mã nguồn (`*.test.ts`).

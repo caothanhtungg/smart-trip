@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { TripDetailData } from "@/types/trip";
 import { formatDate } from "@/lib/utils";
+import { calculateDurationText } from "@/lib/trip-form-validation";
+import { getTripCoverGradient } from "@/lib/view/trip-card";
+import { getTripStatusLabel } from "@/lib/labels";
 import { TripInviteShareModal } from "./trip-invite-share-modal";
 
 interface TripDetailHeaderProps {
@@ -19,11 +22,15 @@ interface TripDetailHeaderProps {
 export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
   const [inviteModalOpen, setInviteModalOpen] = React.useState(false);
 
+  const cover = getTripCoverGradient(trip.id);
   const gradientStyle = {
-    background: trip.coverGradient.via
-      ? `linear-gradient(135deg, ${trip.coverGradient.from} 0%, ${trip.coverGradient.via} 50%, ${trip.coverGradient.to} 100%)`
-      : `linear-gradient(135deg, ${trip.coverGradient.from} 0%, ${trip.coverGradient.to} 100%)`,
+    background: cover.via
+      ? `linear-gradient(135deg, ${cover.from} 0%, ${cover.via} 50%, ${cover.to} 100%)`
+      : `linear-gradient(135deg, ${cover.from} 0%, ${cover.to} 100%)`,
   };
+
+  const durationText =
+    calculateDurationText(trip.startDate, trip.endDate) || "1 ngày";
 
   return (
     <div className="w-full bg-white shadow-[0_4px_16px_rgba(24,78,119,0.06)] border-b border-border-hairline">
@@ -52,7 +59,7 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
           </Link>
           <span className="text-border-hairline" aria-hidden="true">/</span>
           <span className="text-yale-blue font-semibold truncate max-w-[280px] sm:max-w-none">
-            {trip.title}
+            {trip.name}
           </span>
         </nav>
 
@@ -62,26 +69,26 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
             {/* Title & Status Badge */}
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl sm:text-3xl font-bold text-yale-blue tracking-tight">
-                {trip.title}
+                {trip.name}
               </h1>
 
               {/* Status Badge */}
               {trip.status === "ACTIVE" && (
-                <span className="h-7 px-3 rounded-full bg-functional-warning-bg text-functional-warning font-semibold text-xs inline-flex items-center gap-1.5 border border-[#C2410C]/15">
+                <span className="h-7 px-3 rounded-full bg-functional-warning-bg text-functional-warning font-semibold text-xs inline-flex items-center gap-1.5 border border-functional-warning/15">
                   <span className="w-2 h-2 rounded-full bg-functional-warning" />
-                  <span>Đang lên kế hoạch</span>
+                  <span>{getTripStatusLabel("ACTIVE")}</span>
                 </span>
               )}
               {trip.status === "SETTLING" && (
-                <span className="h-7 px-3 rounded-full bg-[#FFF1E6] text-functional-warning font-semibold text-xs inline-flex items-center gap-1.5 border border-[#C2410C]/20">
+                <span className="h-7 px-3 rounded-full bg-functional-warning-bg text-functional-warning font-semibold text-xs inline-flex items-center gap-1.5 border border-functional-warning/20">
                   <span className="w-2 h-2 rounded-full bg-functional-warning animate-pulse" />
-                  <span>Đang thanh toán</span>
+                  <span>{getTripStatusLabel("SETTLING")}</span>
                 </span>
               )}
               {trip.status === "COMPLETED" && (
                 <span className="h-7 px-3 rounded-full bg-lime-cream text-yale-blue font-semibold text-xs inline-flex items-center gap-1.5 border border-light-green">
                   <CheckCircle2 className="w-3.5 h-3.5 text-functional-positive stroke-[2.5]" />
-                  <span>Đã hoàn tất</span>
+                  <span>{getTripStatusLabel("COMPLETED")}</span>
                 </span>
               )}
             </div>
@@ -95,7 +102,7 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
               <span className="inline-flex items-center gap-1.5 font-medium">
                 <Calendar className="w-4 h-4 text-cerulean shrink-0" />
                 <span>
-                  {formatDate(trip.startDate)} – {formatDate(trip.endDate)} ({trip.durationText})
+                  {formatDate(trip.startDate)} – {formatDate(trip.endDate)} ({durationText})
                 </span>
               </span>
             </div>
@@ -120,7 +127,7 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
       <TripInviteShareModal
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
-        tripTitle={trip.title}
+        tripTitle={trip.name}
         inviteCode={trip.inviteCode}
       />
     </div>

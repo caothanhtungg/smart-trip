@@ -77,7 +77,7 @@ export function AppFooter() {
               <span>Ghi chú dữ liệu mẫu (Mockup Notice)</span>
             </div>
             <p>
-              Đây là nội dung bản mẫu được thiết kế để mô phỏng tương tác giao diện người dùng trong giai đoạn hoàn thiện Frontend Release 1. Nội dung này không phải là văn bản pháp lý hay chính sách chính thức của Smart Trip.
+              Đây là nội dung bản mẫu được thiết kế để mô phỏng tương tác giao diện demo. Nội dung này không phải là văn bản pháp lý hay chính sách chính thức của Smart Trip.
             </p>
           </div>
 
@@ -112,7 +112,7 @@ export function AppFooter() {
           {legalModal === "contact" && (
             <div className="space-y-3">
               <p>
-                <strong>Kênh hỗ trợ phát triển:</strong> Đội ngũ phát triển dự án Smart Trip &amp; Expense Planner (Release 1).
+                <strong>Kênh hỗ trợ phát triển:</strong> Đội ngũ phát triển dự án Smart Trip &amp; Expense Planner.
               </p>
               <p className="text-xs text-text-muted">
                 Email demo: support@smarttrip.local · Đường dây nóng mô phỏng: 1900-xxxx

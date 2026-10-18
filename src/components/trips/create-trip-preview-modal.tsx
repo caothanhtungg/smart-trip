@@ -27,7 +27,7 @@ export function CreateTripPreviewModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Xem trước thông tin chuyến đi"
-      description="Biểu mẫu đã kiểm tra cú pháp và logic hợp lệ (UC03)"
+      description="Biểu mẫu đã kiểm tra cú pháp và logic hợp lệ"
     >
       <div className="space-y-4 py-1 text-sm text-text-body">
         {/* Success header badge */}
@@ -105,10 +105,10 @@ export function CreateTripPreviewModal({
         <div className="p-3.5 rounded-xl bg-bg-canvas border border-border-hairline text-xs text-text-muted space-y-1">
           <div className="flex items-center gap-1.5 font-semibold text-yale-blue">
             <Info className="w-4 h-4 text-cerulean shrink-0" />
-            <span>Ranh giới kỹ thuật Giai đoạn 2C.2 (Frontend-only):</span>
+            <span>Lưu ý:</span>
           </div>
           <p className="leading-relaxed">
-            Hệ thống đang hoạt động ở chế độ giao diện frontend-only. Quy trình lưu chuyến đi vào cơ sở dữ liệu PostgreSQL và phân quyền Trưởng nhóm sẽ được kết nối chính thức khi triển khai API backend (UC03). Dữ liệu chuyến đi vừa nhập chưa được ghi vào hệ thống.
+            Dữ liệu chuyến đi chưa được lưu vào hệ thống (chế độ demo).
           </p>
         </div>
 

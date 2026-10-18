@@ -12,20 +12,32 @@ import {
   MapPin,
   Users,
 } from "lucide-react";
-import { TripExpense, ExpenseCategory } from "@/types/trip";
-import { formatMoney } from "@/lib/utils";
+import { TripExpense, ExpenseCategory, TripMember } from "@/types/trip";
+import { formatMoney } from "@/lib/money/format";
+import { ExpenseRowView, toExpenseRowView } from "@/lib/view/expense-row";
+import { getExpenseCategoryColorClasses } from "@/lib/labels";
 
 interface TripExpenseRowProps {
-  expense: TripExpense;
+  expense: ExpenseRowView | TripExpense;
+  members?: readonly TripMember[];
   currentUserId?: string;
   onViewReceipt: (expense: TripExpense) => void;
 }
 
 export function TripExpenseRow({
   expense,
-  currentUserId = "mem-1", // Minh is current user
+  members = [],
+  currentUserId,
   onViewReceipt,
 }: TripExpenseRowProps) {
+  // Chuẩn hóa sang ExpenseRowView nếu đầu vào là TripExpense
+  const rowView: ExpenseRowView = React.useMemo(() => {
+    if ("categoryLabel" in expense && "paidByName" in expense && "splitMethodText" in expense) {
+      return expense as ExpenseRowView;
+    }
+    return toExpenseRowView(expense as TripExpense, members, currentUserId);
+  }, [expense, members, currentUserId]);
+
   const renderCategoryIcon = (cat: ExpenseCategory) => {
     switch (cat) {
       case "FOOD":
@@ -37,7 +49,7 @@ export function TripExpenseRow({
       case "TICKET":
         return <Ticket className="w-4 h-4 text-tropical-teal" />;
       case "SHOPPING":
-        return <ShoppingBag className="w-4 h-4 text-[#D97706]" />;
+        return <ShoppingBag className="w-4 h-4 text-amber-600" />;
       case "OTHER":
       default:
         return <Sparkles className="w-4 h-4 text-ocean-mist" />;
@@ -45,29 +57,14 @@ export function TripExpenseRow({
   };
 
   const renderCategoryBg = (cat: ExpenseCategory) => {
-    switch (cat) {
-      case "FOOD":
-        return "bg-functional-warning-bg";
-      case "TRANSPORT":
-        return "bg-cerulean/15";
-      case "LODGING":
-        return "bg-yale-blue/10";
-      case "TICKET":
-        return "bg-tropical-teal/15";
-      case "SHOPPING":
-        return "bg-amber-100";
-      case "OTHER":
-      default:
-        return "bg-surface-container";
-    }
+    return getExpenseCategoryColorClasses(cat).bg;
   };
 
-  // Find user's own share if participant
-  const sharesList = expense.participants || expense.shares || [];
-  const userShare = sharesList.find((p) => p.memberId === currentUserId);
-  const receipt = expense.receiptUrl || expense.receiptImageUrl;
-  const locationText = expense.location || expense.locationName;
-  const totalMoney = expense.totalAmount || expense.amount || 0;
+  const sharesList = rowView.shares || [];
+  const userShare = rowView.userShare || sharesList.find((s) => s.memberId === currentUserId);
+  const receipt = rowView.receiptImageUrl;
+  const locationText = rowView.locationName;
+  const totalMoney = rowView.amount || 0;
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 hover:bg-hover-row/70 transition-colors border-b border-border-hairline last:border-b-0 gap-3">
@@ -75,23 +72,23 @@ export function TripExpenseRow({
       <div className="flex items-start gap-3.5 min-w-0">
         <div
           className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-xs ${renderCategoryBg(
-            expense.category
+            rowView.category
           )}`}
         >
-          {renderCategoryIcon(expense.category)}
+          {renderCategoryIcon(rowView.category)}
         </div>
 
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-bold text-yale-blue text-sm sm:text-base leading-snug">
-              {expense.title}
+              {rowView.title}
             </span>
 
             {/* Receipt Button if attached */}
             {receipt && (
               <button
                 type="button"
-                onClick={() => onViewReceipt(expense)}
+                onClick={() => onViewReceipt(expense as TripExpense)}
                 title="Xem hóa đơn đính kèm"
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-cerulean/10 text-cerulean hover:bg-cerulean/20 text-xs font-semibold transition-colors cursor-pointer"
               >
@@ -102,7 +99,7 @@ export function TripExpenseRow({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap text-xs text-text-muted mt-1 font-medium">
-            <span className="text-yale-blue font-semibold">{expense.categoryLabel}</span>
+            <span className="text-yale-blue font-semibold">{rowView.categoryLabel}</span>
             {locationText && (
               <>
                 <span className="text-border-hairline" aria-hidden="true">•</span>
@@ -114,12 +111,12 @@ export function TripExpenseRow({
             )}
             <span className="text-border-hairline" aria-hidden="true">•</span>
             <span>
-              Người trả: <strong className="text-yale-blue">{expense.paidByName}</strong>
+              Người trả: <strong className="text-yale-blue">{rowView.paidByName}</strong>
             </span>
             <span className="text-border-hairline" aria-hidden="true">•</span>
             <span className="inline-flex items-center gap-1 text-cerulean">
               <Users className="w-3 h-3" />
-              <span>{sharesList.length} người chia</span>
+              <span>{rowView.splitMethodText}</span>
             </span>
           </div>
         </div>

@@ -3,6 +3,7 @@
 @theme {
   --color-bg-canvas: #F4F9EC;
   --color-surface-card: #FFFFFF;
+  --color-surface-container: #EEF6E4;
   --color-border-hairline: #DDEBD0;
   --color-hover-row: #EEF6E4;
   --color-text-body: #2B3A46;
@@ -35,50 +36,20 @@
   --shadow-modal: 0 20px 48px rgba(24, 78, 119, 0.22);
 }
 
-:root {
-  --bg-canvas: #F4F9EC;
-  --surface-card: #FFFFFF;
-  --border-hairline: #DDEBD0;
-  --hover-row: #EEF6E4;
-  --text-body: #2B3A46;
-  --text-muted: #5B6B78;
-
-  --cerulean: #1A759F;
-  --baltic-blue: #1E6091;
-  --yale-blue: #184E77;
-  --ocean-mist: #52B69A;
-  --lime-cream: #D9ED92;
-  --light-green: #B5E48C;
-  --mint-green: #99D98C;
-  --emerald-fill: #76C893;
-  --tropical-teal: #34A0A4;
-  --bondi-blue: #168AAD;
-
-  --functional-negative: #B42318;
-  --functional-positive: #2E7D5B;
-  --functional-warning: #C2410C;
-  --functional-warning-bg: #FFF1E6;
-}
-
 html,
 body {
   margin: 0;
   padding: 0;
-  background-color: #F4F9EC;
-  color: #2B3A46;
+  background-color: var(--color-bg-canvas);
+  color: var(--color-text-body);
   font-family: var(--font-be-vietnam-pro), -apple-system, BlinkMacSystemFont, sans-serif;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Ensure tabular figures for financial amounts */
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
-}
-
 /* Trip decorative cover gradient */
 .trip-cover-gradient {
-  background: linear-gradient(135deg, #D9ED92 0%, #52B69A 35%, #1A759F 70%, #184E77 100%);
+  background: linear-gradient(135deg, var(--color-lime-cream) 0%, var(--color-ocean-mist) 35%, var(--color-cerulean) 70%, var(--color-yale-blue) 100%);
 }
 
 /* Focus ring accessibility */
@@ -86,6 +57,7 @@ body {
   outline: none;
 }
 .focus-ring:focus-visible {
-  outline: 3px solid #52B69A;
+  outline: 3px solid var(--color-ocean-mist);
   outline-offset: 2px;
 }
+

@@ -20,7 +20,7 @@ export function TripExpenseDayGroup({
   currentUserId,
   onViewReceipt,
 }: TripExpenseDayGroupProps) {
-  const dailyTotal = expenses.reduce((sum, e) => sum + (e.totalAmount || e.amount || 0), 0);
+  const dailyTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   return (
     <section className="bg-white rounded-[20px] shadow-[0_4px_16px_rgba(24,78,119,0.06)] overflow-hidden border border-border-hairline mb-6">

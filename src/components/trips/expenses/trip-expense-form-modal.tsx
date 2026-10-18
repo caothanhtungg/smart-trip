@@ -27,23 +27,18 @@ import {
   CreateExpenseFormData,
   ExpenseValidationErrors,
 } from "@/types/trip";
-import {
-  validateExpenseForm,
-  parseExpenseMoneyInput,
-  formatExpenseMoneyInput,
-} from "@/lib/expense-validation";
-import {
-  computeEqualShares,
-  getCategoryLabel,
-} from "@/lib/split-service";
-import { formatMoney } from "@/lib/utils";
+import { validateExpenseForm } from "@/lib/validation/expense";
+import { parseMoneyInput, formatMoneyInputValue } from "@/lib/money/parse";
+import { computeEqualShares } from "@/lib/money/split";
+import { LABELS, getExpenseCategoryLabel } from "@/lib/labels";
+import { formatMoney } from "@/lib/money/format";
 
 interface TripExpenseFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   trip: TripDetailData;
-  currentUserMemberId?: string;
-  isHost?: boolean;
+  currentUserMemberId: string;
+  isHost: boolean;
   onSaveExpense: (formData: CreateExpenseFormData) => void;
 }
 
@@ -55,8 +50,8 @@ export function TripExpenseFormModal(props: TripExpenseFormModalProps) {
 function TripExpenseFormModalInner({
   onClose,
   trip,
-  currentUserMemberId = "mem-1", // Minh is default
-  isHost = true,
+  currentUserMemberId,
+  isHost,
   onSaveExpense,
 }: TripExpenseFormModalProps) {
   // Form State
@@ -68,9 +63,16 @@ function TripExpenseFormModalInner({
   const [participantMemberIds, setParticipantMemberIds] = React.useState<string[]>(
     trip.members.map((m) => m.id)
   );
-  const [spentAtDate, setSpentAtDate] = React.useState(
-    trip.startDate ? trip.startDate.split("/").join("/") : "15/10/2026"
-  );
+  const [spentAtDate, setSpentAtDate] = React.useState(() => {
+    if (trip.startDate) {
+      if (trip.startDate.includes("-")) return trip.startDate;
+      if (trip.startDate.includes("/")) {
+        const p = trip.startDate.split("/");
+        if (p.length === 3) return `${p[2]}-${p[1]}-${p[0]}`;
+      }
+    }
+    return "2026-10-15";
+  });
   const [notes, setNotes] = React.useState("");
   const [receiptUrl, setReceiptUrl] = React.useState<string | null>(null);
 
@@ -79,7 +81,7 @@ function TripExpenseFormModalInner({
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Parse amount integer safely
-  const numericAmount = parseExpenseMoneyInput(rawAmount) || 0;
+  const numericAmount = parseMoneyInput(rawAmount) || 0;
 
   // Live shares computation using domain service (Rule R4)
   const computedShares = React.useMemo(() => {
@@ -103,12 +105,12 @@ function TripExpenseFormModalInner({
 
   // Category list
   const CATEGORIES: { id: ExpenseCategory; label: string; icon: React.ReactNode }[] = [
-    { id: "FOOD", label: "Ăn uống", icon: <Utensils className="w-4 h-4" /> },
-    { id: "TRANSPORT", label: "Di chuyển", icon: <Bike className="w-4 h-4" /> },
-    { id: "LODGING", label: "Lưu trú", icon: <Hotel className="w-4 h-4" /> },
-    { id: "TICKET", label: "Vé tham quan", icon: <Ticket className="w-4 h-4" /> },
-    { id: "SHOPPING", label: "Mua sắm", icon: <ShoppingBag className="w-4 h-4" /> },
-    { id: "OTHER", label: "Khác", icon: <Sparkles className="w-4 h-4" /> },
+    { id: "FOOD", label: LABELS.EXPENSE_CATEGORY.FOOD, icon: <Utensils className="w-4 h-4" /> },
+    { id: "TRANSPORT", label: LABELS.EXPENSE_CATEGORY.TRANSPORT, icon: <Bike className="w-4 h-4" /> },
+    { id: "LODGING", label: LABELS.EXPENSE_CATEGORY.LODGING, icon: <Hotel className="w-4 h-4" /> },
+    { id: "TICKET", label: LABELS.EXPENSE_CATEGORY.TICKET, icon: <Ticket className="w-4 h-4" /> },
+    { id: "SHOPPING", label: LABELS.EXPENSE_CATEGORY.SHOPPING, icon: <ShoppingBag className="w-4 h-4" /> },
+    { id: "OTHER", label: LABELS.EXPENSE_CATEGORY.OTHER, icon: <Sparkles className="w-4 h-4" /> },
   ];
 
   // Toggle single participant
@@ -130,7 +132,7 @@ function TripExpenseFormModalInner({
   // Handle amount change
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    const parsed = parseExpenseMoneyInput(raw);
+    const parsed = parseMoneyInput(raw);
     if (parsed === null) {
       setRawAmount("");
     } else {
@@ -152,18 +154,21 @@ function TripExpenseFormModalInner({
       amount: numericAmount,
       category,
       paidByMemberId,
-      location: loc,
       locationName: loc,
       splitMethod: "EQUAL",
       participantMemberIds,
       spentAtDate,
-      notes: n,
       note: n,
-      receiptUrl: rc,
       receiptImageUrl: rc,
     };
 
-    const validation = validateExpenseForm(formData, currentUserMemberId, isHost, trip.members);
+    const validation = validateExpenseForm(
+      formData,
+      currentUserMemberId,
+      isHost,
+      trip.members,
+      trip.totalSpent
+    );
 
     if (!validation.isValid) {
       setErrors(validation.errors);
@@ -197,7 +202,7 @@ function TripExpenseFormModalInner({
                 Thêm khoản chi mới
               </h2>
               <p className="text-xs text-text-muted">
-                {trip.title} · Quy tắc chia đều an toàn số nguyên (R4)
+                {trip.name} · Quy tắc chia đều an toàn số nguyên (R4)
               </p>
             </div>
           </div>
@@ -235,7 +240,7 @@ function TripExpenseFormModalInner({
                     id="expense-amount"
                     type="text"
                     inputMode="numeric"
-                    value={formatExpenseMoneyInput(numericAmount)}
+                    value={formatMoneyInputValue(numericAmount)}
                     onChange={handleAmountChange}
                     placeholder="0"
                     className="w-full h-16 sm:h-18 bg-white border-2 border-cerulean rounded-xl pl-4 pr-12 text-2xl sm:text-3xl font-extrabold text-yale-blue tracking-tight focus:outline-none focus:ring-4 focus:ring-cerulean/20 transition-all shadow-inner tabular-nums"
@@ -304,7 +309,7 @@ function TripExpenseFormModalInner({
                 <label className="text-xs sm:text-sm font-bold text-yale-blue flex items-center justify-between">
                   <span>Danh mục chi tiêu</span>
                   <span className="text-xs text-text-muted font-normal">
-                    {getCategoryLabel(category)}
+                    {getExpenseCategoryLabel(category)}
                   </span>
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -347,8 +352,8 @@ function TripExpenseFormModalInner({
                     {trip.members.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.name} {m.id === currentUserMemberId ? "(Bạn)" : ""}{" "}
-                        {(m.role === "HOST" || m.isHost) ? "— Trưởng nhóm" : ""}{" "}
-                        {m.isNoAccount ? "— Chưa có tài khoản" : ""}
+                        {(m.role === "HOST" || m.isHost) ? `— ${LABELS.ROLE.HOST}` : ""}{" "}
+                        {m.isNoAccount ? `— ${LABELS.MEMBER.NO_ACCOUNT}` : ""}
                       </option>
                     ))}
                   </select>
@@ -408,9 +413,9 @@ function TripExpenseFormModalInner({
                       </span>
                       <span
                         className="px-2 py-1 text-text-muted text-xs cursor-not-allowed opacity-60"
-                        title="Chia theo món sẽ được triển khai ở Giai đoạn 2D.2"
+                        title="Sắp có"
                       >
-                        Theo món (2D.2)
+                        Theo món
                       </span>
                     </div>
                   </div>
@@ -462,7 +467,7 @@ function TripExpenseFormModalInner({
                         </span>
                         {member.isNoAccount && (
                           <span className="text-[10px] text-functional-warning font-semibold">
-                            Chưa có TK
+                            {LABELS.MEMBER.NO_ACCOUNT_SHORT}
                           </span>
                         )}
                         <span className="text-[11px] text-text-muted font-medium mt-0.5">
@@ -493,10 +498,9 @@ function TripExpenseFormModalInner({
                     <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ocean-mist" />
                     <input
                       id="expense-spent-date"
-                      type="text"
+                      type="date"
                       value={spentAtDate}
                       onChange={(e) => setSpentAtDate(e.target.value)}
-                      placeholder="DD/MM/YYYY"
                       className="w-full h-11 pl-9 pr-3 bg-white border border-border-hairline rounded-xl text-xs sm:text-sm text-yale-blue focus:border-cerulean focus:ring-2 focus:ring-cerulean/20 transition-all"
                     />
                   </div>

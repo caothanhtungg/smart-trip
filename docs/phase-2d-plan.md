@@ -170,7 +170,7 @@ Tạo file kiểm thử `tests/expense-logic.test.mjs` với các ca kiểm th�
    - Lỗi khi tên khoản chi rỗng hoặc vượt quá 200 ký tự.
    - Lỗi khi không chọn danh mục.
    - Lỗi khi không chọn thành viên nào tham gia chia tiền.
-   - Kiểm tra quyền người trả tiền: Thành viên thường không được chọn người khác; Trưởng nhóm được chọn thành viên chưa có tài khoản.
+   - Kiểm tra quyền người trả tiền: Thành viên thường chỉ được chọn chính mình (R18); Trưởng nhóm được quyền ghi hộ cho bất kỳ thành viên nào (bao gồm thành viên chưa có tài khoản).
 
 ### 5.2 Kế hoạch Visual QA
 - Chạy ứng dụng trên trình duyệt qua Browser Subagent.

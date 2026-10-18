@@ -8,43 +8,24 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/**
- * Standard Vietnamese currency formatter with dot separator and currency symbol.
- * Example: 1250000 -> "1.250.000 ₫"
- */
-export function formatMoney(amount: number): string {
-  const formatted = new Intl.NumberFormat("vi-VN").format(Math.round(amount));
-  return `${formatted} ₫`;
-}
+import { formatMoney, formatSignedMoney } from "@/lib/money/format";
 
-/**
- * Formats a signed balance amount (+ for positive, - for debt).
- * Positive uses #2E7D5B, negative uses #B42318.
- */
-export function formatSignedMoney(amount: number): {
-  text: string;
-  className: string;
-} {
-  const isPositive = amount > 0;
-  const isNegative = amount < 0;
-  const sign = isPositive ? "+" : isNegative ? "-" : "";
-  const absAmount = Math.abs(amount);
-  const formatted = new Intl.NumberFormat("vi-VN").format(Math.round(absAmount));
-  
-  return {
-    text: `${sign}${formatted} ₫`,
-    className: isPositive
-      ? "text-functional-positive font-semibold"
-      : isNegative
-      ? "text-functional-negative font-semibold"
-      : "text-text-muted font-normal",
-  };
-}
+export { formatMoney, formatSignedMoney };
+
+const VN_TIMEZONE = "Asia/Ho_Chi_Minh";
+
+const vnDateFormatter = new Intl.DateTimeFormat("vi-VN", {
+  timeZone: VN_TIMEZONE,
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
 
 /**
  * Standard Vietnamese date formatter. Format: dd/MM/yyyy.
  * Handles Date objects, ISO strings (YYYY-MM-DD), full ISO timestamps, and DD/MM/YYYY inputs.
  * Prevents timezone shifting on date-only strings and validates calendar ranges.
+ * For timestamps with time/timezone, fixes timezone to Asia/Ho_Chi_Minh.
  */
 export function formatDate(date: string | Date | null | undefined): string {
   if (!date) return "";
@@ -87,22 +68,16 @@ export function formatDate(date: string | Date | null | undefined): string {
       return "";
     }
 
-    // 3. Full ISO timestamp (e.g. "2026-11-20T14:30:00Z")
+    // 3. Full ISO timestamp (e.g. "2026-11-20T20:30:00Z")
     const parsed = new Date(trimmed);
     if (isNaN(parsed.getTime())) return "";
-    const day = String(parsed.getDate()).padStart(2, "0");
-    const month = String(parsed.getMonth() + 1).padStart(2, "0");
-    const year = parsed.getFullYear();
-    return `${day}/${month}/${year}`;
+    return vnDateFormatter.format(parsed);
   }
 
   // 4. Date object
   if (date instanceof Date) {
     if (isNaN(date.getTime())) return "";
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return vnDateFormatter.format(date);
   }
 
   return "";
@@ -139,11 +114,11 @@ export function getInitials(name: string): string {
  */
 export function getAvatarBgColor(name: string): string {
   const palette = [
-    "bg-[#D9ED92]", // Lime Cream
-    "bg-[#B5E48C]", // Light Green
-    "bg-[#99D98C]", // Mint Green
-    "bg-[#52B69A]", // Ocean Mist
-    "bg-[#76C893]", // Emerald
+    "bg-lime-cream", // Lime Cream
+    "bg-light-green", // Light Green
+    "bg-mint-green", // Mint Green
+    "bg-ocean-mist", // Ocean Mist
+    "bg-emerald-fill", // Emerald
   ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {

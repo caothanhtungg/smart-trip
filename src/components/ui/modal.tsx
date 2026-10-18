@@ -57,7 +57,7 @@ export function Modal({
     >
       {/* Scrim Overlay */}
       <div
-        className="fixed inset-0 bg-[#184E77]/40 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-yale-blue/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
