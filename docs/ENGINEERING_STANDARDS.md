@@ -66,7 +66,7 @@ Do not create every folder pre-emptively. Add structure when a concrete feature 
 - Once settlement is locked, UI controls must reflect the locked state, but the future API/database must enforce it too.
 - Keep invite preview free of itinerary, expense, and bank-account details. A person cannot claim an existing unregistered member identity without the documented leader approval flow.
 - Do not label the product as having a “trip wallet”, automatic receipt OCR, weather forecasting, or Excel export; these are out of scope for Release 1.
-- R18 payer-permission policy and the final VietQR provider approach are unresolved in the source sequence file; do not represent them as final decisions without user confirmation.
+- R18 payer-permission policy: **approved by user** — Member records only own expenses; Host may record for any member. VietQR UI approach: approved as internal SVG mock; server-side generation method remains open for backend phase.
 
 ## 7. Dependencies, errors, and security
 - Before adding dependencies, inspect what is already available and state why the new package is needed.

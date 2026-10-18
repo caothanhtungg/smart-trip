@@ -57,7 +57,7 @@ Giai đoạn 2D hiện thực hóa hai phân hệ cốt lõi tạo nên giá tr�
 Các quyết định sau đây đã được người dùng chính thức phê duyệt cho Giai đoạn 2D:
 
 1. **Quyền người ứng tiền (Quy tắc R18):**
-   * *Nội dung đã duyệt:* Thành viên bình thường (`MEMBER`) chỉ được ghi khoản chi do chính mình thanh toán. Trưởng nhóm (`HOST`) được quyền ghi hộ cho thành viên chưa có tài khoản (`isNoAccount = true`).
+   * *Nội dung đã duyệt:* Thành viên bình thường (`MEMBER`) chỉ được ghi khoản chi do chính mình thanh toán. Trưởng nhóm (`HOST`) được quyền ghi hộ cho **bất kỳ thành viên nào** (bao gồm thành viên chưa có tài khoản).
    * *Phân định nguồn gốc:* Đây là **quyết định nghiệp vụ đã được người dùng phê duyệt** dựa trên đề xuất tại sơ đồ tuần tự `sodothietke/release1-sequence.md` (SD1). Không gán quy tắc phân quyền này cho mô hình ERD vì ERD không quy định logic phân quyền giao diện.
 2. **VAT và phí dịch vụ trong chia theo món (Áp dụng cho 2D.2):**
    * *Nội dung đã duyệt:* VAT và phí dịch vụ là khoản phụ phí riêng, chia đều cho những người tham gia hóa đơn. Giao diện phải minh bạch về cách phân bổ chi phí này (theo thiết kế `chia_theo_m_n_l_t_3n2`).
@@ -195,7 +195,7 @@ Tạo file kiểm thử `tests/expense-logic.test.mjs` với các ca kiểm th�
 - [ ] Giao diện tab Chi tiêu render hoàn chỉnh, khớp 100% phong cách thiết kế Stitch `chi_ti_u_l_t_3n2`.
 - [ ] Modal thêm khoản chi 2 cột render chính xác theo `th_m_kho_n_chi_l_t_3n2`.
 - [ ] Logic chia đều R4 và phân bổ phần dư 1 ₫ theo `join_order` hoạt động chính xác tới từng 1 đồng.
-- [ ] Quy tắc quyền người trả tiền R18 được thực thi đúng (Member chỉ chọn mình, Host chọn được thành viên chưa có tài khoản).
+- [ ] Quy tắc quyền người trả tiền R18 được thực thi đúng (Member chỉ chọn mình, Host chọn được bất kỳ thành viên nào).
 - [ ] Tính năng xem ảnh hóa đơn Lightbox hoạt động mượt mà.
 - [ ] Dữ liệu phiên thử nghiệm thêm mới không làm biến đổi mock data gốc.
 - [ ] Trạng thái khóa sổ chi tiêu được thể hiện rõ ràng trên các chuyến `SETTLING`/`COMPLETED`.

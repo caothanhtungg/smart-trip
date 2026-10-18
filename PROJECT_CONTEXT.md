@@ -22,6 +22,21 @@ Không tự thêm các tính năng sau nếu chưa được người dùng duy�
 - OCR hóa đơn tự động (Release 1 chỉ lưu ảnh hóa đơn).
 - Dự báo thời tiết.
 - Xuất Excel.
+- Đăng nhập bằng email/mật khẩu.
+- Trang "Khám phá", "Cẩm nang du lịch", "Bảng giá".
+- SMS, xác thực hai yếu tố, số điện thoại.
+- Chọn ngôn ngữ (UI cố định tiếng Việt).
+- Đa tiền tệ (chỉ VND).
+- Chế độ tối (dark mode).
+- Tối ưu lộ trình, bản đồ lộ trình.
+- Biểu đồ thống kê, đếm số người dùng hiển thị trên landing page.
+
+### Quy ước chuyển thiết kế Stitch sang React
+Các thiết kế HTML/CSS từ Google Stitch là tham chiếu trực quan; khi triển khai sang React, KHÔNG yêu cầu:
+- Giữ nguyên hệ thống grid Simplex CSS của Stitch.
+- Khớp tuyệt đối 100% vị trí pixel.
+- Tích hợp VietQR PRO hoặc Google Places thật.
+- Tính năng "Ví chuyến đi" (Trip Wallet) hoặc xác thực bằng PIN.
 
 ## 2. Tài liệu nguồn hiện có
 
@@ -37,7 +52,7 @@ Không sửa/xóa/ghi đè các tài liệu nguồn này khi chưa có sự đ�
 ## 3. Stack kỹ thuật
 
 ### Stack được đề xuất trong tài liệu
-- Next.js 15, App Router.
+- Next.js 16.4.2, App Router.
 - TypeScript.
 - Tailwind CSS.
 - PostgreSQL.
@@ -48,6 +63,14 @@ Không sửa/xóa/ghi đè các tài liệu nguồn này khi chưa có sự đ�
 - Có thể dùng thư viện `qrcode` để tạo QR mời phía trình duyệt.
 
 Đây là stack được đề xuất theo các tài liệu kiến trúc; trước khi thay đổi công nghệ cần giải thích lý do và xin người dùng duyệt.
+
+### Quyết định công nghệ đã chốt (chưa cài — sẽ cài khi sang giai đoạn tương ứng)
+- **Database:** PostgreSQL trên Supabase.
+- **ORM:** Prisma.
+- **Xác thực:** Auth.js với Google OAuth.
+- **Kiểm thử:** Vitest.
+- **Icon:** Lucide React (đã dùng thống nhất).
+- **Validation API:** zod.
 
 ### Ranh giới giai đoạn hiện tại
 Hiện tại ưu tiên **UI/UX và frontend**:
@@ -235,12 +258,14 @@ Ngoài trạng thái mặc định của màn hình, cần có các trạng thá
 
 Trước khi thêm trạng thái hoặc modal, đối chiếu bảng UI trong báo cáo Stitch để tránh dựng trùng.
 
-## 11. Các mục còn cần xác nhận — không tự ý coi là đã chốt
+## 11. Các quyết định đã chốt và mục chờ xác nhận
 
-1. **R18 — Quyền ghi khoản chi:** tài liệu sequence ghi đây là đề xuất: Member chỉ có thể ghi khoản chi với chính mình là người trả; Trưởng nhóm được chọn bất kỳ thành viên nào (bao gồm nhập hộ thành viên chưa có tài khoản). Cần xác nhận với người dùng trước khi triển khai nghiệp vụ backend; UI hiện tại nên phản ánh đây là quy tắc dự kiến, hoặc hỏi lại trước khi khóa thiết kế.
-2. **VietQR và dữ liệu bên thứ ba:** luồng hiện dự kiến sử dụng Quick Link/ảnh QR từ `img.vietqr.io`; số tài khoản và số tiền được gửi cho dịch vụ bên ngoài. Cần ghi rõ trong chính sách quyền riêng tư nếu giữ cách này. Tài liệu nêu lựa chọn tương lai là sinh QR ở server bằng thư viện theo chuẩn VietQR/EMVCo để không gửi dữ liệu cho bên thứ ba.
-3. **Phí dịch vụ/VAT khi chia theo món:** ERD ghi chưa chốt cách nhập như món riêng hay phân bổ theo tỷ lệ. Cần quyết định trước khi triển khai thuật toán chia theo món.
+1. **R18 — Quyền ghi khoản chi:** ✅ **ĐÃ DUYỆT** (người dùng, Giai đoạn 2D, 10/2026). Member chỉ được ghi khoản chi do chính mình thanh toán. Trưởng nhóm được ghi hộ cho **bất kỳ thành viên nào** (bao gồm thành viên chưa có tài khoản). Nguồn: quyết định nghiệp vụ, không phải ERD.
+2. **VietQR và dữ liệu bên thứ ba:** ✅ **ĐÃ DUYỆT UI** (người dùng, Giai đoạn 2D, 10/2026). Giai đoạn frontend: minh họa SVG nội bộ + mock data, không gọi `img.vietqr.io`, không dùng số tài khoản thật. Backend (khi triển khai): phương thức sinh QR server-side theo chuẩn EMVCo còn mở.
+3. **Phí dịch vụ/VAT khi chia theo món:** ✅ **ĐÃ DUYỆT** (người dùng, Giai đoạn 2D, 10/2026). VAT và phí dịch vụ là khoản phụ phí riêng, chia đều cho những người tham gia hóa đơn.
 4. **Các partial unique index và CHECK constraints:** ERD ghi một số điều kiện cần tạo bằng SQL thô. Khi triển khai migration phải đảm bảo các constraint quan trọng được thực thi thật, không chỉ ghi chú trong ERD.
+5. **Mã mời — Độ dài và định dạng:** ⏳ **CHỜ NGƯỜI DÙNG QUYẾT ĐỊNH.** ERD ghi `invite_code varchar(12)`. Commit `b15c467` đã sửa thành `varchar(13)`. Chưa có quyết định cuối cùng; giữ nguyên code hiện tại, sẽ revert hoặc xác nhận khi người dùng chốt.
+6. **Điểm đến (destination):** ✅ **ĐÃ DUYỆT** (người dùng, Giai đoạn 2C.2). Điểm đến là tùy chọn; form tạo chuyến đi KHÔNG đánh dấu sao (*) cho trường này.
 
 ## 12. Cách AI phải làm việc với dự án
 
@@ -252,3 +277,18 @@ Trước khi thêm trạng thái hoặc modal, đối chiếu bảng UI trong b�
 - Chỉ thực hiện phạm vi task được giao. Với thay đổi lớn, chia nhỏ theo giai đoạn, báo cáo file tạo/sửa và kết quả kiểm thử rồi chờ duyệt.
 - Không để bí mật trong mã nguồn phía client hoặc commit lên Git.
 - Không xóa/ghi đè `sodothietke/`, `stitch_smart_trip_dashboard_design/`, `.agents/` hoặc `.cline/`.
+
+## 13. Quy tắc bảo vệ tài liệu nguồn
+
+- Không sửa, xóa, ghi đè hoặc reformat các file trong `sodothietke/` nếu người dùng không yêu cầu.
+- Các file trong `stitch_smart_trip_dashboard_design/` là tài nguyên tham chiếu; không xóa hoặc ghi đè.
+
+## 14. Quy tắc mã nguồn (Source Code Rules)
+
+a. Không dùng mã màu hex trực tiếp trong component/TS; sử dụng design token (CSS variable).
+b. Mọi thuật ngữ UI phải tập trung trong `src/lib/labels.ts` (tạo khi cần).
+c. Page/component không import mock data trực tiếp; chỉ qua `src/lib/data/*` hoặc `src/lib/mock-trips.ts`.
+d. Phép tính tài chính đặt trong `src/lib/money/` (tạo khi cần) kèm unit test; VND là số nguyên.
+e. Không hardcode role hoặc user ID trong component.
+f. Không hiển thị tên file, mã giai đoạn, hoặc số release trong UI người dùng.
+g. Vitest cho test, đặt cạnh file nguồn hoặc trong `tests/`.
