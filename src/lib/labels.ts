@@ -132,7 +132,30 @@ export const SPECIAL_LABELS = {
   UPCOMING: "Sắp có",
 } as const;
 
-// 8. Đối tượng tổng hợp tiện lợi cho components
+// 8. Nhãn cho giao diện chia theo món (Giai đoạn 2D.2)
+export const ITEM_SPLIT_LABELS = {
+  TITLE: "Chia tiền theo từng món (Itemized Split)",
+  SUBTITLE: "Đánh dấu ai dùng món nào để hệ thống tự động tính toán chính xác tới từng đồng.",
+  RECEIPT_CARD_TITLE: "Ảnh hóa đơn đính kèm",
+  ZOOM_RECEIPT: "Phóng to hóa đơn",
+  TOTAL_BILL: "Tổng hóa đơn",
+  ITEMS_MATCHED: "Khớp toàn bộ mục chi tiêu",
+  CHANGE_IMAGE: "Đổi ảnh",
+  ORIGINAL_RECEIPT: "Hóa đơn gốc",
+  MATRIX_TITLE: "Danh sách món & Người dùng",
+  MATRIX_SUBTITLE: "Tích chọn người tham gia ăn từng món để chia đều",
+  ADD_ITEM: "+ Thêm món",
+  ADD_SURCHARGE: "+ Thêm thuế & phí dịch vụ",
+  SURCHARGE_DEFAULT_NAME: "Thuế & phí dịch vụ",
+  SURCHARGE_HINT: "VAT & phục vụ (chia đều người tham gia hóa đơn)",
+  SURCHARGE_LIMITATION_HINT: "Người ăn ít vẫn chịu phụ phí bằng người ăn nhiều do phân bổ chia đều của hóa đơn.",
+  SUMMARY_TITLE: "Tạm tính mỗi người cần trả",
+  FORMULA_HINT: "• Công thức: Giá món chia số người tick + Thuế/Phí chia đều những người tham gia hóa đơn.",
+  CANCEL_BACK: "Hủy & Quay lại",
+  SAVE_DONE: "Xong",
+} as const;
+
+// 9. Đối tượng tổng hợp tiện lợi cho components
 export const LABELS = {
   TRIP_STATUS: TRIP_STATUS_LABELS,
   BALANCE_TYPE: BALANCE_TYPE_LABELS,
@@ -152,5 +175,6 @@ export const LABELS = {
     YOU_PAY: "Bạn cần trả: ",
     SETTLED: "Đã xong",
   },
+  ITEM_SPLIT: ITEM_SPLIT_LABELS,
   SPECIAL: SPECIAL_LABELS,
 } as const;

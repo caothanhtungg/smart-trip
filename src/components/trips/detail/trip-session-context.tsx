@@ -8,7 +8,7 @@ import {
   ExpenseShare,
   TripRecentExpense,
 } from "@/types/trip";
-import { computeEqualShares } from "@/lib/money/split";
+import { computeEqualShares, computeItemizedShares } from "@/lib/money/split";
 import {
   calculateTotalSpent,
   calculateBudgetStatus,
@@ -135,15 +135,32 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
         return { id, joinOrder: m ? m.joinOrder : 0 };
       });
 
-      const shares: ExpenseShare[] = computeEqualShares(safeAmount, participantsWithOrder).map(
-        (s, idx) => ({
+      let shares: ExpenseShare[] = [];
+
+      if (formData.splitMethod === "ITEMIZED" && formData.items && formData.items.length > 0) {
+        const itemizedShares = computeItemizedShares(
+          safeAmount,
+          formData.items,
+          formData.surcharge || null,
+          participantsWithOrder
+        );
+        shares = itemizedShares.map((s, idx) => ({
           id: `share-${expenseId}-${idx + 1}`,
           expenseId,
           memberId: s.memberId,
-          amount: s.amount,
-          hasRemainderExtra: s.hasRemainderExtra,
-        })
-      );
+          amount: s.totalAmount,
+        }));
+      } else {
+        shares = computeEqualShares(safeAmount, participantsWithOrder).map(
+          (s, idx) => ({
+            id: `share-${expenseId}-${idx + 1}`,
+            expenseId,
+            memberId: s.memberId,
+            amount: s.amount,
+            hasRemainderExtra: s.hasRemainderExtra,
+          })
+        );
+      }
 
       const spentAtIso = formatDateInputToIso(formData.spentAtDate, formData.spentAtTime);
 
@@ -156,6 +173,8 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
         paidByMemberId: formData.paidByMemberId,
         spentAt: spentAtIso,
         splitMethod: formData.splitMethod || "EQUAL",
+        items: formData.items,
+        surcharge: formData.surcharge,
         locationName: formData.locationName,
         note: formData.note,
         receiptImageUrl: formData.receiptImageUrl,

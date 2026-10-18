@@ -140,11 +140,42 @@ export interface TripExpense {
   note?: string; // Bỏ notes
   locationName?: string; // Bỏ location
   shares: ExpenseShare[]; // Bỏ participants
+  items?: ExpenseItemData[]; // Món ăn khi splitMethod = ITEMIZED
+  surcharge?: ExpenseSurchargeData | null; // Phụ phí VAT/dịch vụ khi splitMethod = ITEMIZED
   createdAt?: string;
   updatedAt?: string;
 }
 
 export type ExpenseFilterCategory = "ALL" | ExpenseCategory;
+
+/**
+ * Chi tiết một món ăn trong khoản chi chia theo món (khớp ERD expense_items & expense_item_members)
+ */
+export interface ExpenseItemData {
+  id: string;
+  name: string;
+  amount: number; // Integer VND > 0
+  assignedMemberIds: string[]; // Danh sách trip_members.id được gán món này
+}
+
+/**
+ * Dòng phụ phí VAT / Phí dịch vụ đi kèm hóa đơn chia theo món
+ */
+export interface ExpenseSurchargeData {
+  name: string;
+  amount: number; // Integer VND >= 0
+}
+
+/**
+ * Kết quả phân bổ tiền cho từng thành viên trong chia theo món
+ */
+export interface ItemizedMemberShareDetail {
+  memberId: string;
+  itemsAmount: number; // Tổng tiền các món thành viên tham gia
+  surchargeAmount: number; // Phần phụ phí VAT/dịch vụ phải chịu
+  totalAmount: number; // itemsAmount + surchargeAmount
+  assignedItemCount: number; // Số món thành viên tham gia
+}
 
 /**
  * Biểu mẫu tạo khoản chi
@@ -159,9 +190,26 @@ export interface CreateExpenseFormData {
   spentAtDate: string; // "YYYY-MM-DD"
   spentAtTime?: string; // "HH:mm"
   splitMethod: SplitMethod;
+  items?: ExpenseItemData[]; // Danh sách món khi splitMethod = ITEMIZED
+  surcharge?: ExpenseSurchargeData | null; // Phụ phí khi splitMethod = ITEMIZED
   note?: string;
   locationName?: string;
   receiptImageUrl?: string;
+}
+
+export interface ItemizedExpenseValidationErrors {
+  title?: string;
+  amount?: string;
+  items?: string;
+  itemsList?: Record<string, { name?: string; amount?: string; members?: string }>;
+  surcharge?: string;
+  reconciliation?: string;
+}
+
+export interface ItemizedExpenseValidationResult {
+  isValid: boolean;
+  errors: ItemizedExpenseValidationErrors;
+  difference: number; // Số tiền chênh lệch giữa tổng các món + surcharge và totalAmount
 }
 
 export interface ExpenseValidationErrors {

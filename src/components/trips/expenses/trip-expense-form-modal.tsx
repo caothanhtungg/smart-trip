@@ -26,12 +26,15 @@ import {
   ExpenseCategory,
   CreateExpenseFormData,
   ExpenseValidationErrors,
+  ExpenseItemData,
+  ExpenseSurchargeData,
 } from "@/types/trip";
 import { validateExpenseForm } from "@/lib/validation/expense";
 import { parseMoneyInput, formatMoneyInputValue } from "@/lib/money/parse";
 import { computeEqualShares } from "@/lib/money/split";
 import { LABELS, getExpenseCategoryLabel } from "@/lib/labels";
 import { formatMoney } from "@/lib/money/format";
+import { TripItemizedSplitModal } from "./trip-itemized-split-modal";
 
 interface TripExpenseFormModalProps {
   isOpen: boolean;
@@ -60,6 +63,10 @@ function TripExpenseFormModalInner({
   const [category, setCategory] = React.useState<ExpenseCategory>("FOOD");
   const [paidByMemberId, setPaidByMemberId] = React.useState(currentUserMemberId);
   const [location, setLocation] = React.useState("");
+  const [splitMethod, setSplitMethod] = React.useState<"EQUAL" | "ITEMIZED">("EQUAL");
+  const [isItemizedModalOpen, setIsItemizedModalOpen] = React.useState(false);
+  const [itemizedItems, setItemizedItems] = React.useState<ExpenseItemData[] | undefined>(undefined);
+  const [itemizedSurcharge, setItemizedSurcharge] = React.useState<ExpenseSurchargeData | null | undefined>(undefined);
   const [participantMemberIds, setParticipantMemberIds] = React.useState<string[]>(
     trip.members.map((m) => m.id)
   );
@@ -149,14 +156,43 @@ function TripExpenseFormModalInner({
     const n = notes.trim() ? notes.trim() : undefined;
     const rc = receiptUrl || undefined;
 
+    let effectiveParticipants = participantMemberIds;
+
+    if (splitMethod === "ITEMIZED") {
+      if (!itemizedItems || itemizedItems.length === 0) {
+        setErrors((prev) => ({
+          ...prev,
+          participants: "Vui lòng mở bảng và hoàn tất thiết lập món trước khi lưu.",
+        }));
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Thu thập tất cả thành viên có ít nhất 1 món
+      const participantSet = new Set<string>();
+      itemizedItems.forEach((it) => it.assignedMemberIds.forEach((id) => participantSet.add(id)));
+      effectiveParticipants = Array.from(participantSet);
+
+      if (effectiveParticipants.length === 0) {
+        setErrors((prev) => ({
+          ...prev,
+          participants: "Cần ít nhất một thành viên tham gia món ăn.",
+        }));
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     const formData: CreateExpenseFormData = {
       title,
       amount: numericAmount,
       category,
       paidByMemberId,
       locationName: loc,
-      splitMethod: "EQUAL",
-      participantMemberIds,
+      splitMethod,
+      items: splitMethod === "ITEMIZED" ? itemizedItems : undefined,
+      surcharge: splitMethod === "ITEMIZED" ? itemizedSurcharge : undefined,
+      participantMemberIds: effectiveParticipants,
       spentAtDate,
       note: n,
       receiptImageUrl: rc,
@@ -399,85 +435,165 @@ function TripExpenseFormModalInner({
                   </div>
 
                   <div className="flex items-center gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={selectAllParticipants}
-                      className="text-cerulean hover:underline font-semibold cursor-pointer"
-                    >
-                      Chọn tất cả
-                    </button>
+                    {splitMethod === "EQUAL" && (
+                      <button
+                        type="button"
+                        onClick={selectAllParticipants}
+                        className="text-cerulean hover:underline font-semibold cursor-pointer"
+                      >
+                        Chọn tất cả
+                      </button>
+                    )}
                     {/* Method toggle: Chia đều vs Theo món */}
                     <div className="inline-flex p-0.5 bg-surface-container rounded-lg border border-border-hairline ml-2">
-                      <span className="px-2.5 py-1 rounded bg-white text-cerulean font-bold text-xs shadow-xs">
+                      <button
+                        type="button"
+                        onClick={() => setSplitMethod("EQUAL")}
+                        className={`px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer ${
+                          splitMethod === "EQUAL"
+                            ? "bg-white text-cerulean shadow-xs"
+                            : "text-text-muted hover:text-yale-blue"
+                        }`}
+                      >
                         Chia đều
-                      </span>
-                      <span
-                        className="px-2 py-1 text-text-muted text-xs cursor-not-allowed opacity-60"
-                        title="Sắp có"
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (numericAmount <= 0) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              amount: "Vui lòng nhập số tiền chi tiêu trước khi chia theo món.",
+                            }));
+                            return;
+                          }
+                          setSplitMethod("ITEMIZED");
+                          setIsItemizedModalOpen(true);
+                        }}
+                        className={`px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer ${
+                          splitMethod === "ITEMIZED"
+                            ? "bg-white text-cerulean shadow-xs"
+                            : "text-text-muted hover:text-yale-blue"
+                        }`}
                       >
                         Theo món
-                      </span>
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Avatar Toggle Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {trip.members.map((member) => {
-                    const isSelected = participantMemberIds.includes(member.id);
-                    const sharePercent =
-                      participantMemberIds.length > 0 && isSelected
-                        ? (100 / participantMemberIds.length).toFixed(1)
-                        : "0";
-
-                    return (
-                      <button
-                        key={member.id}
-                        type="button"
-                        onClick={() => toggleParticipant(member.id)}
-                        className={`flex flex-col items-center p-3 rounded-xl border transition-all text-center cursor-pointer relative ${
-                          isSelected
-                            ? "bg-hover-row border-cerulean shadow-xs"
-                            : "bg-white border-border-hairline opacity-65 hover:opacity-100"
-                        }`}
-                      >
-                        <div className="relative">
-                          <div className="w-10 h-10 rounded-full bg-surface-container text-yale-blue font-bold text-sm flex items-center justify-center border border-border-hairline">
-                            {member.avatarUrl ? (
-                              <Image
-                                src={member.avatarUrl}
-                                alt={member.name}
-                                width={40}
-                                height={40}
-                                className="rounded-full object-cover"
-                              />
-                            ) : (
-                              member.name.slice(0, 1)
+                {splitMethod === "ITEMIZED" ? (
+                  /* Giao diện trạng thái Chia theo từng món */
+                  <div className="flex flex-col gap-2">
+                    {itemizedItems && itemizedItems.length > 0 ? (
+                      <div className="p-4 rounded-xl bg-hover-row border border-cerulean/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-yale-blue">
+                              Đã cấu hình {itemizedItems.length} món
+                            </span>
+                            {itemizedSurcharge && itemizedSurcharge.amount > 0 && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-cerulean/15 text-cerulean font-semibold">
+                                + {itemizedSurcharge.name} ({formatMoney(itemizedSurcharge.amount)})
+                              </span>
                             )}
                           </div>
-                          {isSelected && (
-                            <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-functional-positive text-white flex items-center justify-center shadow-xs">
-                              <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          <p className="text-xs text-functional-positive font-medium mt-0.5">
+                            ✓ Đã phân bổ khớp 100% hóa đơn ({formatMoney(numericAmount)})
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsItemizedModalOpen(true)}
+                          className="h-9 px-3.5 rounded-xl bg-white text-cerulean border border-cerulean hover:bg-hover-row text-xs font-semibold shadow-xs cursor-pointer transition-colors"
+                        >
+                          Chỉnh sửa món
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-xl bg-functional-warning-bg border border-functional-warning/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <span className="text-xs font-bold text-functional-warning">
+                            Chưa cấu hình danh sách món ăn
+                          </span>
+                          <p className="text-xs text-text-muted mt-0.5">
+                            Bấm nút bên cạnh để mở bảng ma trận chia từng món.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsItemizedModalOpen(true)}
+                          className="h-9 px-4 rounded-xl bg-cerulean text-white hover:bg-baltic-blue text-xs font-semibold shadow-xs cursor-pointer transition-colors"
+                        >
+                          Thiết lập món
+                        </button>
+                      </div>
+                    )}
+                    {errors.participants && (
+                      <p className="text-xs font-semibold text-functional-negative">
+                        {errors.participants}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  /* Avatar Toggle Grid cho Chia đều */
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {trip.members.map((member) => {
+                      const isSelected = participantMemberIds.includes(member.id);
+                      const sharePercent =
+                        participantMemberIds.length > 0 && isSelected
+                          ? (100 / participantMemberIds.length).toFixed(1)
+                          : "0";
+
+                      return (
+                        <button
+                          key={member.id}
+                          type="button"
+                          onClick={() => toggleParticipant(member.id)}
+                          className={`flex flex-col items-center p-3 rounded-xl border transition-all text-center cursor-pointer relative ${
+                            isSelected
+                              ? "bg-hover-row border-cerulean shadow-xs"
+                              : "bg-white border-border-hairline opacity-65 hover:opacity-100"
+                          }`}
+                        >
+                          <div className="relative">
+                            <div className="w-10 h-10 rounded-full bg-surface-container text-yale-blue font-bold text-sm flex items-center justify-center border border-border-hairline">
+                              {member.avatarUrl ? (
+                                <Image
+                                  src={member.avatarUrl}
+                                  alt={member.name}
+                                  width={40}
+                                  height={40}
+                                  className="rounded-full object-cover"
+                                />
+                              ) : (
+                                member.name.slice(0, 1)
+                              )}
+                            </div>
+                            {isSelected && (
+                              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-functional-positive text-white flex items-center justify-center shadow-xs">
+                                <Check className="w-2.5 h-2.5 stroke-[3]" />
+                              </span>
+                            )}
+                          </div>
+
+                          <span className="mt-1.5 text-xs font-bold text-yale-blue truncate w-full">
+                            {member.name}
+                          </span>
+                          {member.isNoAccount && (
+                            <span className="text-[10px] text-functional-warning font-semibold">
+                              {LABELS.MEMBER.NO_ACCOUNT_SHORT}
                             </span>
                           )}
-                        </div>
-
-                        <span className="mt-1.5 text-xs font-bold text-yale-blue truncate w-full">
-                          {member.name}
-                        </span>
-                        {member.isNoAccount && (
-                          <span className="text-[10px] text-functional-warning font-semibold">
-                            {LABELS.MEMBER.NO_ACCOUNT_SHORT}
+                          <span className="text-[11px] text-text-muted font-medium mt-0.5">
+                            {sharePercent}%
                           </span>
-                        )}
-                        <span className="text-[11px] text-text-muted font-medium mt-0.5">
-                          {sharePercent}%
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {errors.participants && (
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {splitMethod === "EQUAL" && errors.participants && (
                   <p className="text-xs font-semibold text-functional-negative">
                     {errors.participants}
                   </p>
@@ -685,6 +801,27 @@ function TripExpenseFormModalInner({
           </div>
         </form>
       </div>
+
+      {/* Modal Ma trận chia theo từng món (Giai đoạn 2D.2) */}
+      <TripItemizedSplitModal
+        isOpen={isItemizedModalOpen}
+        onClose={() => setIsItemizedModalOpen(false)}
+        onSaveItemizedSplit={(data) => {
+          setItemizedItems(data.items);
+          setItemizedSurcharge(data.surcharge);
+          const pSet = new Set<string>();
+          data.items.forEach((it) => it.assignedMemberIds.forEach((id) => pSet.add(id)));
+          setParticipantMemberIds(Array.from(pSet));
+          setIsItemizedModalOpen(false);
+        }}
+        expenseTitle={title || "Khoản chi mới"}
+        totalAmount={numericAmount}
+        locationName={location}
+        receiptImageUrl={receiptUrl || undefined}
+        tripMembers={trip.members}
+        initialItems={itemizedItems}
+        initialSurcharge={itemizedSurcharge}
+      />
     </div>
   );
 }

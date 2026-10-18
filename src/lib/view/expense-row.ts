@@ -70,6 +70,9 @@ export function toExpenseRowView(
   let splitMethodText = getSplitMethodLabel(expense.splitMethod);
   if (expense.splitMethod === "EQUAL") {
     splitMethodText = `Chia đều (${expense.shares.length} người)`;
+  } else if (expense.splitMethod === "ITEMIZED") {
+    const itemCount = expense.items?.length || 0;
+    splitMethodText = itemCount > 0 ? `Theo món (${itemCount} món)` : "Theo món";
   }
 
   return {
