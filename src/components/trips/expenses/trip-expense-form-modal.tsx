@@ -47,7 +47,7 @@ interface TripExpenseFormModalProps {
 
 export function TripExpenseFormModal(props: TripExpenseFormModalProps) {
   if (!props.isOpen) return null;
-  return <TripExpenseFormModalInner {...props} />;
+  return <TripExpenseFormModalInner {...props} key={props.trip.id} />;
 }
 
 function TripExpenseFormModalInner({
@@ -61,15 +61,48 @@ function TripExpenseFormModalInner({
   const [title, setTitle] = React.useState("");
   const [rawAmount, setRawAmount] = React.useState("150000"); // 150,000 VND initial
   const [category, setCategory] = React.useState<ExpenseCategory>("FOOD");
-  const [paidByMemberId, setPaidByMemberId] = React.useState(currentUserMemberId);
+
+  // Danh sách thành viên đang hoạt động (chỉ active members mới xuất hiện trong form)
+  const activeMembers = React.useMemo(
+    () => trip.members.filter((m) => m.status === "ACTIVE"),
+    [trip.members]
+  );
+
+  // Xác định người trả tiền mặc định: ưu tiên currentUser nếu active, fallback là activeMember đầu tiên
+  const defaultPayerId = React.useMemo(() => {
+    const isCurrentActive = activeMembers.some((m) => m.id === currentUserMemberId);
+    if (isCurrentActive) return currentUserMemberId;
+    return activeMembers[0]?.id || "";
+  }, [activeMembers, currentUserMemberId]);
+
+  const [paidByMemberId, setPaidByMemberId] = React.useState(defaultPayerId);
+
+  // Đảm bảo người trả tiền luôn là active member hợp lệ (fallback về defaultPayerId nếu ID không còn active)
+  const safePaidByMemberId = activeMembers.some((m) => m.id === paidByMemberId)
+    ? paidByMemberId
+    : defaultPayerId;
+
   const [location, setLocation] = React.useState("");
   const [splitMethod, setSplitMethod] = React.useState<"EQUAL" | "ITEMIZED">("EQUAL");
   const [isItemizedModalOpen, setIsItemizedModalOpen] = React.useState(false);
   const [itemizedItems, setItemizedItems] = React.useState<ExpenseItemData[] | undefined>(undefined);
   const [itemizedSurcharge, setItemizedSurcharge] = React.useState<ExpenseSurchargeData | null | undefined>(undefined);
+
+  // Khởi tạo người tham gia chia tiền chỉ gồm các thành viên active
   const [participantMemberIds, setParticipantMemberIds] = React.useState<string[]>(
-    trip.members.map((m) => m.id)
+    () => activeMembers.map((m) => m.id)
   );
+
+  // Lọc an toàn: loại bỏ bất kỳ ID nào không thuộc activeMembers (chặn thành viên LEFT)
+  const activeMemberIdsSet = React.useMemo(
+    () => new Set(activeMembers.map((m) => m.id)),
+    [activeMembers]
+  );
+  const safeParticipantMemberIds = React.useMemo(() => {
+    const valid = participantMemberIds.filter((id) => activeMemberIdsSet.has(id));
+    return valid.length > 0 ? valid : activeMembers.map((m) => m.id);
+  }, [participantMemberIds, activeMemberIdsSet, activeMembers]);
+
   const [spentAtDate, setSpentAtDate] = React.useState(() => {
     if (trip.startDate) {
       if (trip.startDate.includes("-")) return trip.startDate;
@@ -92,13 +125,27 @@ function TripExpenseFormModalInner({
 
   // Live shares computation using domain service (Rule R4)
   const computedShares = React.useMemo(() => {
-    // Preserve trip.members join order for participants
-    const orderedParticipants = trip.members
-      .filter((m) => participantMemberIds.includes(m.id))
+    // Guard clause: Không gọi computeEqualShares khi số tiền <= 0, không an toàn hoặc chưa có người chia
+    if (
+      typeof numericAmount !== "number" ||
+      !Number.isSafeInteger(numericAmount) ||
+      numericAmount <= 0 ||
+      safeParticipantMemberIds.length === 0
+    ) {
+      return [];
+    }
+
+    // Preserve activeMembers join order for participants
+    const orderedParticipants = activeMembers
+      .filter((m) => safeParticipantMemberIds.includes(m.id))
       .map((m) => m.id);
 
+    if (orderedParticipants.length === 0) {
+      return [];
+    }
+
     return computeEqualShares(numericAmount, orderedParticipants);
-  }, [numericAmount, participantMemberIds, trip.members]);
+  }, [numericAmount, safeParticipantMemberIds, activeMembers]);
 
   // Quick amount suggestions
   const SUGGESTIONS = [
@@ -122,18 +169,18 @@ function TripExpenseFormModalInner({
 
   // Toggle single participant
   const toggleParticipant = (memberId: string) => {
-    if (participantMemberIds.includes(memberId)) {
-      if (participantMemberIds.length > 1) {
-        setParticipantMemberIds(participantMemberIds.filter((id) => id !== memberId));
+    if (safeParticipantMemberIds.includes(memberId)) {
+      if (safeParticipantMemberIds.length > 1) {
+        setParticipantMemberIds(safeParticipantMemberIds.filter((id) => id !== memberId));
       }
     } else {
-      setParticipantMemberIds([...participantMemberIds, memberId]);
+      setParticipantMemberIds([...safeParticipantMemberIds, memberId]);
     }
   };
 
-  // Select all / deselect all
+  // Select all / deselect all (chỉ chọn các thành viên đang hoạt động)
   const selectAllParticipants = () => {
-    setParticipantMemberIds(trip.members.map((m) => m.id));
+    setParticipantMemberIds(activeMembers.map((m) => m.id));
   };
 
   // Handle amount change
@@ -156,7 +203,7 @@ function TripExpenseFormModalInner({
     const n = notes.trim() ? notes.trim() : undefined;
     const rc = receiptUrl || undefined;
 
-    let effectiveParticipants = participantMemberIds;
+    let effectiveParticipants = safeParticipantMemberIds;
 
     if (splitMethod === "ITEMIZED") {
       if (!itemizedItems || itemizedItems.length === 0) {
@@ -187,7 +234,7 @@ function TripExpenseFormModalInner({
       title,
       amount: numericAmount,
       category,
-      paidByMemberId,
+      paidByMemberId: safePaidByMemberId,
       locationName: loc,
       splitMethod,
       items: splitMethod === "ITEMIZED" ? itemizedItems : undefined,
@@ -380,12 +427,12 @@ function TripExpenseFormModalInner({
                     <span className="text-functional-negative">*</span>
                   </label>
                   <select
-                    value={paidByMemberId}
+                    value={safePaidByMemberId}
                     onChange={(e) => setPaidByMemberId(e.target.value)}
                     disabled={!isHost} // Member regular cannot change payer (R18)
                     className="w-full h-11 bg-white border border-border-hairline rounded-xl px-3 text-xs sm:text-sm text-yale-blue font-medium focus:border-cerulean focus:ring-2 focus:ring-cerulean/20 transition-all disabled:bg-surface-container disabled:cursor-not-allowed"
                   >
-                    {trip.members.map((m) => (
+                    {activeMembers.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.name} {m.id === currentUserMemberId ? "(Bạn)" : ""}{" "}
                         {(m.role === "HOST" || m.isHost) ? `— ${LABELS.ROLE.HOST}` : ""}{" "}
@@ -430,7 +477,7 @@ function TripExpenseFormModalInner({
                     <Users className="w-4 h-4 text-cerulean" />
                     <span className="text-xs sm:text-sm font-bold text-yale-blue">Chia cho ai</span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-cerulean/10 text-cerulean font-semibold">
-                      {participantMemberIds.length}/{trip.members.length} người chọn
+                      {safeParticipantMemberIds.length}/{activeMembers.length} người chọn
                     </span>
                   </div>
 
@@ -538,11 +585,11 @@ function TripExpenseFormModalInner({
                 ) : (
                   /* Avatar Toggle Grid cho Chia đều */
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {trip.members.map((member) => {
-                      const isSelected = participantMemberIds.includes(member.id);
+                    {activeMembers.map((member) => {
+                      const isSelected = safeParticipantMemberIds.includes(member.id);
                       const sharePercent =
-                        participantMemberIds.length > 0 && isSelected
-                          ? (100 / participantMemberIds.length).toFixed(1)
+                        safeParticipantMemberIds.length > 0 && isSelected
+                          ? (100 / safeParticipantMemberIds.length).toFixed(1)
                           : "0";
 
                       return (
@@ -660,51 +707,61 @@ function TripExpenseFormModalInner({
                     </span>
                   </div>
                   <span className="text-xs px-2.5 py-0.5 rounded-full bg-lime-cream font-bold text-yale-blue">
-                    Chia đều {participantMemberIds.length} người
+                    Chia đều {safeParticipantMemberIds.length} người
                   </span>
                 </div>
 
                 {/* Per Member Breakdown List */}
                 <div className="flex flex-col divide-y divide-border-hairline/60 max-h-[220px] overflow-y-auto">
-                  {computedShares.map((share) => {
-                    const member = trip.members.find((m) => m.id === share.memberId);
-                    if (!member) return null;
+                  {computedShares.length > 0 ? (
+                    computedShares.map((share) => {
+                      const member = activeMembers.find((m) => m.id === share.memberId);
+                      if (!member) return null;
 
-                    return (
-                      <div
-                        key={share.memberId}
-                        className="py-2.5 flex items-center justify-between px-1"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-surface-container text-yale-blue font-bold text-xs flex items-center justify-center shrink-0">
-                            {member.name.slice(0, 1)}
+                      return (
+                        <div
+                          key={share.memberId}
+                          className="py-2.5 flex items-center justify-between px-1"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-surface-container text-yale-blue font-bold text-xs flex items-center justify-center shrink-0">
+                              {member.name.slice(0, 1)}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-yale-blue truncate max-w-[120px]">
+                                {member.name}
+                              </span>
+                              <span className="text-[10px] text-text-muted">
+                                {member.id === safePaidByMemberId ? "Người trả" : "Thành viên"}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-yale-blue truncate max-w-[120px]">
-                              {member.name}
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs sm:text-sm font-bold text-yale-blue tabular-nums">
+                              {formatMoney(share.amount)}
                             </span>
-                            <span className="text-[10px] text-text-muted">
-                              {member.id === paidByMemberId ? "Người trả" : "Thành viên"}
-                            </span>
+                            {share.hasRemainderExtra && (
+                              <span
+                                className="w-4 h-4 rounded-full bg-cerulean/15 text-cerulean flex items-center justify-center text-[10px] font-bold cursor-help"
+                                title="Nhận +1 ₫ lẻ do phép chia nguyên có phần dư (Quy tắc R4)"
+                              >
+                                i
+                              </span>
+                            )}
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs sm:text-sm font-bold text-yale-blue tabular-nums">
-                            {formatMoney(share.amount)}
-                          </span>
-                          {share.hasRemainderExtra && (
-                            <span
-                              className="w-4 h-4 rounded-full bg-cerulean/15 text-cerulean flex items-center justify-center text-[10px] font-bold cursor-help"
-                              title="Nhận +1 ₫ lẻ do phép chia nguyên có phần dư (Quy tắc R4)"
-                            >
-                              i
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  ) : (
+                    <div className="py-6 px-3 text-center flex flex-col items-center justify-center gap-1">
+                      <p className="text-xs text-text-muted">
+                        {safeParticipantMemberIds.length === 0
+                          ? "Chưa chọn người tham gia chia tiền."
+                          : "Nhập số tiền để xem tạm tính phần chia mỗi người."}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Invariant check verification box */}
@@ -712,7 +769,9 @@ function TripExpenseFormModalInner({
                   <div className="flex items-center justify-between font-bold text-yale-blue">
                     <span>Tổng phân bổ:</span>
                     <span className="text-cerulean tabular-nums">
-                      {formatMoney(numericAmount)}
+                      {numericAmount > 0 && Number.isSafeInteger(numericAmount)
+                        ? formatMoney(numericAmount)
+                        : "0 ₫"}
                     </span>
                   </div>
                   <p className="text-[11px] text-text-muted leading-relaxed flex items-start gap-1 mt-0.5">
@@ -818,7 +877,7 @@ function TripExpenseFormModalInner({
         totalAmount={numericAmount}
         locationName={location}
         receiptImageUrl={receiptUrl || undefined}
-        tripMembers={trip.members}
+        tripMembers={activeMembers}
         initialItems={itemizedItems}
         initialSurcharge={itemizedSurcharge}
       />
