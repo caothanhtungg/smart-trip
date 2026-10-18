@@ -31,10 +31,10 @@ import {
 } from "@/types/trip";
 import { validateExpenseForm } from "@/lib/validation/expense";
 import { parseMoneyInput, formatMoneyInputValue } from "@/lib/money/parse";
-import { computeEqualShares } from "@/lib/money/split";
+import { computeEqualShares, computeItemizedShares } from "@/lib/money/split";
 import { LABELS, getExpenseCategoryLabel } from "@/lib/labels";
 import { formatMoney } from "@/lib/money/format";
-import { TripItemizedSplitModal } from "./trip-itemized-split-modal";
+import { TripItemizedSplitView } from "./trip-itemized-split-modal";
 
 interface TripExpenseFormModalProps {
   isOpen: boolean;
@@ -84,7 +84,7 @@ function TripExpenseFormModalInner({
 
   const [location, setLocation] = React.useState("");
   const [splitMethod, setSplitMethod] = React.useState<"EQUAL" | "ITEMIZED">("EQUAL");
-  const [isItemizedModalOpen, setIsItemizedModalOpen] = React.useState(false);
+  const [currentStep, setCurrentStep] = React.useState<1 | 2>(1);
   const [itemizedItems, setItemizedItems] = React.useState<ExpenseItemData[] | undefined>(undefined);
   const [itemizedSurcharge, setItemizedSurcharge] = React.useState<ExpenseSurchargeData | null | undefined>(undefined);
 
@@ -124,14 +124,45 @@ function TripExpenseFormModalInner({
   const numericAmount = parseMoneyInput(rawAmount) || 0;
 
   // Live shares computation using domain service (Rule R4)
-  const computedShares = React.useMemo(() => {
-    // Guard clause: Không gọi computeEqualShares khi số tiền <= 0, không an toàn hoặc chưa có người chia
+  const computedShares = React.useMemo<
+    Array<{
+      memberId: string;
+      amount: number;
+      hasRemainderExtra?: boolean;
+      itemCount?: number;
+    }>
+  >(() => {
+    // Guard clause: Không gọi compute khi số tiền <= 0, không an toàn
     if (
       typeof numericAmount !== "number" ||
       !Number.isSafeInteger(numericAmount) ||
-      numericAmount <= 0 ||
-      safeParticipantMemberIds.length === 0
+      numericAmount <= 0
     ) {
+      return [];
+    }
+
+    if (splitMethod === "ITEMIZED") {
+      if (!itemizedItems || itemizedItems.length === 0) {
+        return [];
+      }
+      try {
+        const itemizedResults = computeItemizedShares(
+          numericAmount,
+          itemizedItems,
+          itemizedSurcharge ?? null,
+          activeMembers
+        );
+        return itemizedResults.map((it) => ({
+          memberId: it.memberId,
+          amount: it.totalAmount,
+          itemCount: it.assignedItemCount,
+        }));
+      } catch {
+        return [];
+      }
+    }
+
+    if (safeParticipantMemberIds.length === 0) {
       return [];
     }
 
@@ -144,8 +175,13 @@ function TripExpenseFormModalInner({
       return [];
     }
 
-    return computeEqualShares(numericAmount, orderedParticipants);
-  }, [numericAmount, safeParticipantMemberIds, activeMembers]);
+    const equalResults = computeEqualShares(numericAmount, orderedParticipants);
+    return equalResults.map((eq) => ({
+      memberId: eq.memberId,
+      amount: eq.amount,
+      hasRemainderExtra: eq.hasRemainderExtra,
+    }));
+  }, [numericAmount, splitMethod, itemizedItems, itemizedSurcharge, safeParticipantMemberIds, activeMembers]);
 
   // Quick amount suggestions
   const SUGGESTIONS = [
@@ -215,6 +251,17 @@ function TripExpenseFormModalInner({
         return;
       }
 
+      const sumItems = itemizedItems.reduce((acc, it) => acc + (it.amount || 0), 0);
+      const surchargeAmt = itemizedSurcharge?.amount || 0;
+      if (sumItems + surchargeAmt !== numericAmount) {
+        setErrors((prev) => ({
+          ...prev,
+          amount: `Tổng các món (${formatMoney(sumItems + surchargeAmt)}) chưa khớp với tổng hóa đơn (${formatMoney(numericAmount)}). Vui lòng điều chỉnh lại món.`,
+        }));
+        setIsSubmitting(false);
+        return;
+      }
+
       // Thu thập tất cả thành viên có ít nhất 1 món
       const participantSet = new Set<string>();
       itemizedItems.forEach((it) => it.assignedMemberIds.forEach((id) => participantSet.add(id)));
@@ -265,40 +312,51 @@ function TripExpenseFormModalInner({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-2 sm:p-6"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="modal-add-expense-title"
+      aria-labelledby={currentStep === 1 ? "modal-add-expense-title" : "itemized-split-title"}
     >
-      <div className="relative w-full max-w-4xl bg-white rounded-[24px] shadow-2xl border border-border-hairline overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Modal Top Bar */}
-        <div className="px-5 sm:px-6 py-4 border-b border-border-hairline flex items-center justify-between bg-surface-card shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-cerulean/10 text-cerulean flex items-center justify-center">
-              <Plus className="w-5 h-5 stroke-[2.5]" />
-            </div>
-            <div>
-              <h2
-                id="modal-add-expense-title"
-                className="text-base sm:text-lg font-bold text-yale-blue"
-              >
-                Thêm khoản chi mới
-              </h2>
-              <p className="text-xs text-text-muted">
-                {trip.name} · Quy tắc chia đều an toàn số nguyên (R4)
-              </p>
-            </div>
-          </div>
+      <div
+        className={`relative w-full ${
+          currentStep === 2 ? "max-w-[1240px] my-3 sm:my-6" : "max-w-4xl my-auto"
+        } bg-white rounded-[24px] shadow-2xl border border-border-hairline overflow-hidden flex flex-col max-h-[94vh] transition-all`}
+      >
+        {currentStep === 1 ? (
+          <>
+            {/* Modal Top Bar */}
+            <div className="px-5 sm:px-6 py-4 border-b border-border-hairline flex items-center justify-between bg-surface-card shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-cerulean/10 text-cerulean flex items-center justify-center">
+                  <Plus className="w-5 h-5 stroke-[2.5]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2
+                      id="modal-add-expense-title"
+                      className="text-base sm:text-lg font-bold text-yale-blue"
+                    >
+                      Thêm khoản chi mới
+                    </h2>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-cerulean/15 text-cerulean font-bold">
+                      Bước 1 / 2
+                    </span>
+                  </div>
+                  <p className="text-xs text-text-muted">
+                    {trip.name} · {splitMethod === "ITEMIZED" ? "Chia theo từng món" : "Quy tắc chia đều an toàn số nguyên (R4)"}
+                  </p>
+                </div>
+              </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-text-muted hover:text-yale-blue transition-colors cursor-pointer"
-            aria-label="Đóng modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-text-muted hover:text-yale-blue transition-colors cursor-pointer"
+                aria-label="Đóng modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
         {/* Modal Body: Scrollable 2-Column Workspace */}
         <form onSubmit={handleSubmit} className="overflow-y-auto p-5 sm:p-6 flex-1">
@@ -515,7 +573,7 @@ function TripExpenseFormModalInner({
                             return;
                           }
                           setSplitMethod("ITEMIZED");
-                          setIsItemizedModalOpen(true);
+                          setCurrentStep(2);
                         }}
                         className={`px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer ${
                           splitMethod === "ITEMIZED"
@@ -551,7 +609,7 @@ function TripExpenseFormModalInner({
                         </div>
                         <button
                           type="button"
-                          onClick={() => setIsItemizedModalOpen(true)}
+                          onClick={() => setCurrentStep(2)}
                           className="h-9 px-3.5 rounded-xl bg-white text-cerulean border border-cerulean hover:bg-hover-row text-xs font-semibold shadow-xs cursor-pointer transition-colors"
                         >
                           Chỉnh sửa món
@@ -569,7 +627,16 @@ function TripExpenseFormModalInner({
                         </div>
                         <button
                           type="button"
-                          onClick={() => setIsItemizedModalOpen(true)}
+                          onClick={() => {
+                            if (numericAmount <= 0) {
+                              setErrors((prev) => ({
+                                ...prev,
+                                amount: "Vui lòng nhập số tiền chi tiêu trước khi chia theo món.",
+                              }));
+                              return;
+                            }
+                            setCurrentStep(2);
+                          }}
                           className="h-9 px-4 rounded-xl bg-cerulean text-white hover:bg-baltic-blue text-xs font-semibold shadow-xs cursor-pointer transition-colors"
                         >
                           Thiết lập món
@@ -707,7 +774,9 @@ function TripExpenseFormModalInner({
                     </span>
                   </div>
                   <span className="text-xs px-2.5 py-0.5 rounded-full bg-lime-cream font-bold text-yale-blue">
-                    Chia đều {safeParticipantMemberIds.length} người
+                    {splitMethod === "ITEMIZED"
+                      ? `Theo món ${computedShares.length} người`
+                      : `Chia đều ${safeParticipantMemberIds.length} người`}
                   </span>
                 </div>
 
@@ -756,7 +825,9 @@ function TripExpenseFormModalInner({
                   ) : (
                     <div className="py-6 px-3 text-center flex flex-col items-center justify-center gap-1">
                       <p className="text-xs text-text-muted">
-                        {safeParticipantMemberIds.length === 0
+                        {splitMethod === "ITEMIZED"
+                          ? "Chưa hoàn tất thiết lập món. Bấm 'Thiết lập món' để phân bổ."
+                          : safeParticipantMemberIds.length === 0
                           ? "Chưa chọn người tham gia chia tiền."
                           : "Nhập số tiền để xem tạm tính phần chia mỗi người."}
                       </p>
@@ -859,28 +930,30 @@ function TripExpenseFormModalInner({
             </div>
           </div>
         </form>
+      </>
+    ) : (
+      <div className="overflow-y-auto flex-1">
+        <TripItemizedSplitView
+          onBackToStep1={() => setCurrentStep(1)}
+          onSaveItemizedSplit={(data) => {
+            setItemizedItems(data.items);
+            setItemizedSurcharge(data.surcharge);
+            const pSet = new Set<string>();
+            data.items.forEach((it) => it.assignedMemberIds.forEach((id) => pSet.add(id)));
+            setParticipantMemberIds(Array.from(pSet));
+            setCurrentStep(1);
+          }}
+          expenseTitle={title || "Khoản chi mới"}
+          totalAmount={numericAmount}
+          locationName={location}
+          receiptImageUrl={receiptUrl || undefined}
+          tripMembers={activeMembers}
+          initialItems={itemizedItems}
+          initialSurcharge={itemizedSurcharge}
+        />
       </div>
-
-      {/* Modal Ma trận chia theo từng món (Giai đoạn 2D.2) */}
-      <TripItemizedSplitModal
-        isOpen={isItemizedModalOpen}
-        onClose={() => setIsItemizedModalOpen(false)}
-        onSaveItemizedSplit={(data) => {
-          setItemizedItems(data.items);
-          setItemizedSurcharge(data.surcharge);
-          const pSet = new Set<string>();
-          data.items.forEach((it) => it.assignedMemberIds.forEach((id) => pSet.add(id)));
-          setParticipantMemberIds(Array.from(pSet));
-          setIsItemizedModalOpen(false);
-        }}
-        expenseTitle={title || "Khoản chi mới"}
-        totalAmount={numericAmount}
-        locationName={location}
-        receiptImageUrl={receiptUrl || undefined}
-        tripMembers={activeMembers}
-        initialItems={itemizedItems}
-        initialSurcharge={itemizedSurcharge}
-      />
-    </div>
+    )}
+  </div>
+</div>
   );
 }

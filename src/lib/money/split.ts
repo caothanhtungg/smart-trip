@@ -1,3 +1,5 @@
+import { MAX_MONEY_VND } from "./constants";
+
 export interface EqualShareResult {
   memberId: string;
   amount: number;
@@ -34,6 +36,12 @@ export function computeEqualShares(
     );
   }
 
+  if (totalAmount > MAX_MONEY_VND) {
+    throw new Error(
+      `[computeEqualShares] Số tiền chia vượt quá giới hạn an toàn ${MAX_MONEY_VND.toLocaleString("vi-VN")} ₫.`
+    );
+  }
+
   // 2. Kiểm tra danh sách người chia
   if (!participants || participants.length === 0) {
     throw new Error("[computeEqualShares] Danh sách người tham gia chia tiền không được để trống.");
@@ -52,11 +60,14 @@ export function computeEqualShares(
     seenIds.add(id);
   }
 
-  // 4. Sắp xếp ổn định theo joinOrder tăng dần
+  // 4. Sắp xếp ổn định theo joinOrder tăng dần (áp dụng tie-break theo id tăng dần nếu trùng joinOrder)
   const sortedParticipants = [...participants].sort((a, b) => {
     const orderA = typeof a === "object" && typeof a.joinOrder === "number" ? a.joinOrder : 0;
     const orderB = typeof b === "object" && typeof b.joinOrder === "number" ? b.joinOrder : 0;
-    return orderA - orderB;
+    if (orderA !== orderB) return orderA - orderB;
+    const idA = typeof a === "string" ? a : a.id;
+    const idB = typeof b === "string" ? b : b.id;
+    return idA < idB ? -1 : idA > idB ? 1 : 0;
   });
 
   const n = sortedParticipants.length;
@@ -141,6 +152,12 @@ export function computeItemizedShares(
     );
   }
 
+  if (totalAmount > MAX_MONEY_VND) {
+    throw new Error(
+      `[computeItemizedShares] Tổng số tiền hóa đơn vượt quá giới hạn an toàn ${MAX_MONEY_VND.toLocaleString("vi-VN")} ₫.`
+    );
+  }
+
   // 2. Kiểm tra danh sách món
   if (!items || items.length === 0) {
     throw new Error("[computeItemizedShares] Danh sách món ăn không được để trống khi chia theo món.");
@@ -160,8 +177,17 @@ export function computeItemizedShares(
   }
 
   // 4. Kiểm tra từng món và đối soát tổng
+  const seenItemIds = new Set<string>();
   let sumItems = 0;
   for (const item of items) {
+    if (!item.id || typeof item.id !== "string") {
+      throw new Error("[computeItemizedShares] Mã định danh món (id) không hợp lệ.");
+    }
+    if (seenItemIds.has(item.id)) {
+      throw new Error(`[computeItemizedShares] Món có id trùng lặp: '${item.id}'`);
+    }
+    seenItemIds.add(item.id);
+
     if (
       typeof item.amount !== "number" ||
       !Number.isSafeInteger(item.amount) ||
@@ -264,8 +290,11 @@ export function computeItemizedShares(
   const results: ItemizedMemberShareResult[] = [];
   let runningTotal = 0;
 
-  // Giữ thứ tự hiển thị theo joinOrder của các thành viên tham gia
-  const sortedParticipants = [...participants].sort((a, b) => a.joinOrder - b.joinOrder);
+  // Giữ thứ tự hiển thị theo joinOrder của các thành viên tham gia (áp dụng tie-break theo id nếu trùng joinOrder)
+  const sortedParticipants = [...participants].sort((a, b) => {
+    if (a.joinOrder !== b.joinOrder) return a.joinOrder - b.joinOrder;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
 
   for (const p of sortedParticipants) {
     const itemsAmt = memberItemsTotal.get(p.id) || 0;

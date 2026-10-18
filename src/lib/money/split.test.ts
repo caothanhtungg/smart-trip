@@ -359,6 +359,96 @@ describe("computeItemizedShares (Giai đoạn 2D.2)", () => {
     );
   });
 
+  it("Ca 10: ném lỗi khi danh sách món rỗng (E1)", () => {
+    expect(() => computeItemizedShares(100_000, [], null, mockParticipants)).toThrowError(
+      /không được để trống/
+    );
+  });
+
+  it("Ca 11: ném lỗi khi tồn tại id món trùng lặp (E2)", () => {
+    const duplicateIdItems = [
+      { id: "item-dup", name: "Món A", amount: 100_000, assignedMemberIds: ["mem-1"] },
+      { id: "item-dup", name: "Món B", amount: 100_000, assignedMemberIds: ["mem-2"] },
+    ];
+    expect(() => computeItemizedShares(200_000, duplicateIdItems, null, mockParticipants)).toThrowError(
+      /trùng lặp/
+    );
+  });
+
+  it("Ca 12: phụ phí 0 ₫ và null hoạt động chính xác", () => {
+    const items = [
+      { id: "it-1", name: "Món 1", amount: 150_000, assignedMemberIds: ["mem-1", "mem-2"] },
+    ];
+    const resWithZero = computeItemizedShares(150_000, items, { amount: 0 }, mockParticipants);
+    expect(resWithZero).toHaveLength(2);
+    expect(resWithZero[0].surchargeAmount).toBe(0);
+    expect(resWithZero[1].surchargeAmount).toBe(0);
+
+    const resWithNull = computeItemizedShares(150_000, items, null, mockParticipants);
+    expect(resWithNull).toEqual(resWithZero);
+  });
+
+  it("Ca 13: xáo thứ tự mảng items và thứ tự assignedMemberIds bảo toàn tính tất định tuyệt đối", () => {
+    const itemsOrderA = [
+      { id: "item-1", name: "Món 1", amount: 100_000, assignedMemberIds: ["mem-1", "mem-2", "mem-3"] },
+      { id: "item-2", name: "Món 2", amount: 200_000, assignedMemberIds: ["mem-3", "mem-2"] },
+      { id: "item-3", name: "Món 3", amount: 50_000, assignedMemberIds: ["mem-1"] },
+    ];
+    const surcharge = { name: "VAT", amount: 35_000 };
+    const resA = computeItemizedShares(385_000, itemsOrderA, surcharge, mockParticipants);
+
+    // Đảo thứ tự items và đảo thứ tự members trong assignedMemberIds
+    const itemsOrderB = [
+      { id: "item-3", name: "Món 3", amount: 50_000, assignedMemberIds: ["mem-1"] },
+      { id: "item-1", name: "Món 1", amount: 100_000, assignedMemberIds: ["mem-3", "mem-1", "mem-2"] },
+      { id: "item-2", name: "Món 2", amount: 200_000, assignedMemberIds: ["mem-2", "mem-3"] },
+    ];
+    const resB = computeItemizedShares(385_000, itemsOrderB, surcharge, mockParticipants);
+
+    expect(resA).toEqual(resB);
+  });
+
+  it("Ca 14: các phần phụ phí chênh nhau tối đa 1 đồng", () => {
+    const items = [
+      { id: "it-1", name: "Lẩu", amount: 400_000, assignedMemberIds: ["mem-1", "mem-2", "mem-3"] },
+    ];
+    const surcharge = { name: "Phí phục vụ", amount: 50_000 }; // 50k / 3 = 16.666 dư 2 -> 16.667, 16.667, 16.666
+    const res = computeItemizedShares(450_000, items, surcharge, mockParticipants);
+
+    const surcharges = res.map((r) => r.surchargeAmount);
+    const maxSurcharge = Math.max(...surcharges);
+    const minSurcharge = Math.min(...surcharges);
+    expect(maxSurcharge - minSurcharge).toBeLessThanOrEqual(1);
+    expect(surcharges.reduce((a, b) => a + b, 0)).toBe(50_000);
+  });
+
+  it("Ca 15: ném lỗi khi tổng hóa đơn vượt quá MAX_MONEY_VND", () => {
+    const hugeAmount = 3_000_000_000;
+    const items = [
+      { id: "it-1", name: "Món VIP", amount: hugeAmount, assignedMemberIds: ["mem-1"] },
+    ];
+    expect(() => computeItemizedShares(hugeAmount, items, null, mockParticipants)).toThrowError(
+      /giới hạn an toàn/
+    );
+  });
+
+  it("Ca 16: tie-break theo id khi hai thành viên có cùng joinOrder", () => {
+    const participantsSameOrder = [
+      { id: "mem-z", joinOrder: 1 },
+      { id: "mem-a", joinOrder: 1 },
+    ];
+    // Món 101.001 ₫ chia 2 người: Base = 50.500 ₫, dư 1 ₫.
+    // mem-a < mem-z về mã ký tự -> mem-a nhận 50.501 ₫, mem-z nhận 50.500 ₫
+    const items = [
+      { id: "it-1", name: "Món", amount: 101_001, assignedMemberIds: ["mem-z", "mem-a"] },
+    ];
+    const res = computeItemizedShares(101_001, items, null, participantsSameOrder);
+    const memA = res.find((r) => r.memberId === "mem-a")!;
+    const memZ = res.find((r) => r.memberId === "mem-z")!;
+    expect(memA.totalAmount).toBe(50_501);
+    expect(memZ.totalAmount).toBe(50_500);
+  });
+
   describe("Property-based test: 1,000 random itemized bills with fixed seed", () => {
     it("preserves sum invariant and safe integer amounts across 1,000 randomized itemized cases", () => {
       const rng = createMulberry32(543216789);
