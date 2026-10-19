@@ -10,22 +10,25 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@prisma/client": "7.10.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.58.0",
     "next": "16.4.2",
+    "prisma": "7.10.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "undici-types": "~7.24.0",
     "vite": "^8.3.4",
     "vitest": "^5.0.5"
   }
