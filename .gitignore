@@ -38,7 +38,7 @@ yarn-error.log*
 .env.*.local
 
 # temporary / bundle files
-review-bundle.txt
+review-bundle*.txt
 *.bundle.txt
 *.log
 
