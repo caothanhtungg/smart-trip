@@ -43,11 +43,17 @@ interface TripExpenseFormModalProps {
   currentUserMemberId: string;
   isHost: boolean;
   onSaveExpense: (formData: CreateExpenseFormData) => void;
+  initialLocationName?: string;
 }
 
 export function TripExpenseFormModal(props: TripExpenseFormModalProps) {
   if (!props.isOpen) return null;
-  return <TripExpenseFormModalInner {...props} key={props.trip.id} />;
+  return (
+    <TripExpenseFormModalInner
+      {...props}
+      key={props.trip.id + (props.initialLocationName || "")}
+    />
+  );
 }
 
 function TripExpenseFormModalInner({
@@ -56,6 +62,7 @@ function TripExpenseFormModalInner({
   currentUserMemberId,
   isHost,
   onSaveExpense,
+  initialLocationName = "",
 }: TripExpenseFormModalProps) {
   // Form State
   const [title, setTitle] = React.useState("");
@@ -82,7 +89,7 @@ function TripExpenseFormModalInner({
     ? paidByMemberId
     : defaultPayerId;
 
-  const [location, setLocation] = React.useState("");
+  const [location, setLocation] = React.useState(initialLocationName);
   const [splitMethod, setSplitMethod] = React.useState<"EQUAL" | "ITEMIZED">("EQUAL");
   const [currentStep, setCurrentStep] = React.useState<1 | 2>(1);
   const [itemizedItems, setItemizedItems] = React.useState<ExpenseItemData[] | undefined>(undefined);

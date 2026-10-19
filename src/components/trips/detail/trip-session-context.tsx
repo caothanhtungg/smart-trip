@@ -8,6 +8,8 @@ import {
   ExpenseShare,
   TripRecentExpense,
   TripStatus,
+  ItineraryItem,
+  CreateItineraryItemFormData,
 } from "@/types/trip";
 import { Settlement, SettlementTransfer, PaymentMethod } from "@/types/settlement";
 import { computeEqualShares, computeItemizedShares } from "@/lib/money/split";
@@ -26,11 +28,20 @@ import {
 import { formatDateInputToIso, formatExpenseDate } from "@/lib/view/expense-row";
 import { getExpenseCategoryLabel, getSplitMethodLabel } from "@/lib/labels";
 import { TripExpenseFormModal } from "@/components/trips/expenses/trip-expense-form-modal";
+import { getMockItineraryForTrip } from "@/lib/mock/itinerary";
+import {
+  canAddItineraryItem,
+  canEditItineraryItem,
+  canDeleteItineraryItem,
+  sortItineraryItems,
+  validateItineraryItemForm,
+} from "@/lib/itinerary/validation";
 
 interface TripSessionContextValue {
   trip: TripDetailData;
   sessionTrip: TripDetailData;
   sessionExpenses: TripExpense[];
+  sessionItinerary: ItineraryItem[];
   sessionStatus: TripStatus;
   sessionTransfers: SettlementTransfer[];
   sessionSettlement: Settlement | null;
@@ -41,6 +52,15 @@ interface TripSessionContextValue {
   setIsOverviewAddModalOpen: (open: boolean) => void;
   handleAddExpense: (newExpense: TripExpense) => void;
   handleSaveExpenseFromModal: (formData: CreateExpenseFormData) => void;
+  handleAddItineraryItem: (
+    formData: CreateItineraryItemFormData
+  ) => { success: boolean; message?: string };
+  handleUpdateItineraryItem: (
+    id: string,
+    formData: CreateItineraryItemFormData
+  ) => { success: boolean; message?: string };
+  handleDeleteItineraryItem: (id: string) => { success: boolean; message?: string };
+  handleOpenAddExpenseForItinerary: (item: ItineraryItem) => void;
   handleLockSettlement: () => void;
   handleReopenSettlement: () => { success: boolean; message?: string };
   handleMarkTransferPaid: (
@@ -86,6 +106,15 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
   const [lockedTransfers, setLockedTransfers] = React.useState<SettlementTransfer[]>([]);
   const [isOverviewAddModalOpen, setIsOverviewAddModalOpen] = React.useState(false);
   const [sessionToast, setSessionToast] = React.useState<string | null>(null);
+
+  const [sessionItinerary, setSessionItinerary] = React.useState<ItineraryItem[]>(() => {
+    if (initialTrip.itineraryItems && initialTrip.itineraryItems.length > 0) {
+      return [...initialTrip.itineraryItems];
+    }
+    return getMockItineraryForTrip(initialTrip.id);
+  });
+  const [itineraryAddExpenseTarget, setItineraryAddExpenseTarget] =
+    React.useState<ItineraryItem | null>(null);
 
   React.useEffect(() => {
     if (sessionToast) {
@@ -168,8 +197,16 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
       userSpent,
       expenses: sessionExpenses,
       recentExpenses: recent,
+      itineraryItems: sessionItinerary,
     };
-  }, [initialTrip, sessionStatus, sessionExpenses, sessionTotalSpent, currentMemberId]);
+  }, [
+    initialTrip,
+    sessionStatus,
+    sessionExpenses,
+    sessionItinerary,
+    sessionTotalSpent,
+    currentMemberId,
+  ]);
 
   const handleAddExpense = React.useCallback((newExpense: TripExpense) => {
     setSessionExpenses((prev) => [newExpense, ...prev]);
@@ -317,12 +354,169 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
     [currentMemberId]
   );
 
+  // Itinerary Actions
+  const handleAddItineraryItem = React.useCallback(
+    (formData: CreateItineraryItemFormData) => {
+      const allowed = canAddItineraryItem(
+        sessionStatus,
+        currentMember?.status || "ACTIVE"
+      );
+      if (!allowed) {
+        return {
+          success: false,
+          message:
+            sessionStatus !== "ACTIVE"
+              ? "Không thể thêm địa điểm khi chuyến đi đã chốt sổ hoặc kết thúc."
+              : "Thành viên không còn hoạt động trong chuyến đi.",
+        };
+      }
+      const valResult = validateItineraryItemForm(
+        formData,
+        initialTrip.startDate,
+        initialTrip.endDate
+      );
+      if (!valResult.isValid) {
+        const firstErr = Object.values(valResult.errors)[0];
+        return { success: false, message: firstErr || "Dữ liệu không hợp lệ" };
+      }
+
+      const sameDayCount = sessionItinerary.filter(
+        (it) => it.dayDate === formData.dayDate
+      ).length;
+
+      const newItem: ItineraryItem = {
+        id: `itinerary-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        tripId: initialTrip.id,
+        dayDate: formData.dayDate,
+        sortOrder: sameDayCount + 1,
+        placeName: formData.placeName.trim(),
+        address: formData.address?.trim() || null,
+        startTime: formData.startTime,
+        endTime: formData.endTime?.trim() || null,
+        note: formData.note?.trim() || null,
+        createdByMemberId: currentMemberId,
+        expenseId: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      setSessionItinerary((prev) => sortItineraryItems([...prev, newItem]));
+      setSessionToast("Đã thêm địa điểm vào lịch trình!");
+      return { success: true };
+    },
+    [
+      sessionStatus,
+      currentMember?.status,
+      initialTrip.startDate,
+      initialTrip.endDate,
+      initialTrip.id,
+      sessionItinerary,
+      currentMemberId,
+    ]
+  );
+
+  const handleUpdateItineraryItem = React.useCallback(
+    (id: string, formData: CreateItineraryItemFormData) => {
+      const target = sessionItinerary.find((it) => it.id === id);
+      if (!target) {
+        return { success: false, message: "Không tìm thấy địa điểm" };
+      }
+      const allowed = canEditItineraryItem(
+        target,
+        currentMemberId,
+        isHost,
+        sessionStatus
+      );
+      if (!allowed) {
+        return {
+          success: false,
+          message:
+            sessionStatus !== "ACTIVE"
+              ? "Không thể sửa địa điểm khi chuyến đi đã chốt sổ hoặc kết thúc."
+              : "Chỉ Trưởng nhóm hoặc người tạo địa điểm mới có quyền chỉnh sửa.",
+        };
+      }
+      const valResult = validateItineraryItemForm(
+        formData,
+        initialTrip.startDate,
+        initialTrip.endDate
+      );
+      if (!valResult.isValid) {
+        const firstErr = Object.values(valResult.errors)[0];
+        return { success: false, message: firstErr || "Dữ liệu không hợp lệ" };
+      }
+
+      setSessionItinerary((prev) =>
+        sortItineraryItems(
+          prev.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  dayDate: formData.dayDate,
+                  placeName: formData.placeName.trim(),
+                  address: formData.address?.trim() || null,
+                  startTime: formData.startTime,
+                  endTime: formData.endTime?.trim() || null,
+                  note: formData.note?.trim() || null,
+                  updatedAt: new Date().toISOString(),
+                }
+              : item
+          )
+        )
+      );
+      setSessionToast("Đã cập nhật địa điểm!");
+      return { success: true };
+    },
+    [
+      sessionItinerary,
+      currentMemberId,
+      isHost,
+      sessionStatus,
+      initialTrip.startDate,
+      initialTrip.endDate,
+    ]
+  );
+
+  const handleDeleteItineraryItem = React.useCallback(
+    (id: string) => {
+      const target = sessionItinerary.find((it) => it.id === id);
+      if (!target) {
+        return { success: false, message: "Không tìm thấy địa điểm" };
+      }
+      const allowed = canDeleteItineraryItem(
+        target,
+        currentMemberId,
+        isHost,
+        sessionStatus
+      );
+      if (!allowed) {
+        return {
+          success: false,
+          message:
+            sessionStatus !== "ACTIVE"
+              ? "Không thể xóa địa điểm khi chuyến đi đã chốt sổ hoặc kết thúc."
+              : "Chỉ Trưởng nhóm hoặc người tạo địa điểm mới có quyền xóa.",
+        };
+      }
+
+      setSessionItinerary((prev) => prev.filter((it) => it.id !== id));
+      setSessionToast("Đã xóa địa điểm khỏi lịch trình.");
+      return { success: true };
+    },
+    [sessionItinerary, currentMemberId, isHost, sessionStatus]
+  );
+
+  const handleOpenAddExpenseForItinerary = React.useCallback((item: ItineraryItem) => {
+    setItineraryAddExpenseTarget(item);
+  }, []);
+
   return (
     <TripSessionContext.Provider
       value={{
         trip: initialTrip,
         sessionTrip,
         sessionExpenses,
+        sessionItinerary,
         sessionStatus,
         sessionTransfers: effectiveTransfers,
         sessionSettlement,
@@ -333,6 +527,10 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
         setIsOverviewAddModalOpen,
         handleAddExpense,
         handleSaveExpenseFromModal,
+        handleAddItineraryItem,
+        handleUpdateItineraryItem,
+        handleDeleteItineraryItem,
+        handleOpenAddExpenseForItinerary,
         handleLockSettlement,
         handleReopenSettlement,
         handleMarkTransferPaid,
@@ -352,6 +550,78 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
         isHost={isHost}
         onSaveExpense={handleSaveExpenseFromModal}
       />
+
+      {/* Add Expense Modal triggered from an Itinerary item */}
+      {itineraryAddExpenseTarget && (
+        <TripExpenseFormModal
+          isOpen={!!itineraryAddExpenseTarget}
+          onClose={() => setItineraryAddExpenseTarget(null)}
+          trip={sessionTrip}
+          currentUserMemberId={currentMemberId}
+          isHost={isHost}
+          initialLocationName={itineraryAddExpenseTarget.placeName}
+          onSaveExpense={(formData) => {
+            const safeAmount = formData.amount || 0;
+            const expenseId = `exp-${Date.now()}`;
+
+            const participantsWithOrder = formData.participantMemberIds.map((id) => {
+              const m = initialTrip.members.find((member) => member.id === id);
+              return { id, joinOrder: m ? m.joinOrder : 0 };
+            });
+
+            let shares: ExpenseShare[] = [];
+            if (formData.splitMethod === "ITEMIZED" && formData.items && formData.items.length > 0) {
+              const itemizedShares = computeItemizedShares(
+                safeAmount,
+                formData.items,
+                formData.surcharge || null,
+                participantsWithOrder
+              );
+              shares = itemizedShares.map((s, idx) => ({
+                id: `share-${expenseId}-${idx + 1}`,
+                expenseId,
+                memberId: s.memberId,
+                amount: s.totalAmount,
+              }));
+            } else {
+              shares = computeEqualShares(safeAmount, participantsWithOrder).map((s, idx) => ({
+                id: `share-${expenseId}-${idx + 1}`,
+                expenseId,
+                memberId: s.memberId,
+                amount: s.amount,
+                hasRemainderExtra: s.hasRemainderExtra,
+              }));
+            }
+
+            const spentAtIso = formatDateInputToIso(formData.spentAtDate, formData.spentAtTime);
+            const newExpense: TripExpense = {
+              id: expenseId,
+              tripId: initialTrip.id,
+              title: formData.title,
+              category: formData.category,
+              amount: safeAmount,
+              paidByMemberId: formData.paidByMemberId,
+              spentAt: spentAtIso,
+              splitMethod: formData.splitMethod || "EQUAL",
+              items: formData.items,
+              surcharge: formData.surcharge,
+              locationName: formData.locationName,
+              note: formData.note,
+              receiptImageUrl: formData.receiptImageUrl,
+              shares,
+              createdAt: new Date().toISOString(),
+            };
+
+            handleAddExpense(newExpense);
+            const targetId = itineraryAddExpenseTarget.id;
+            setSessionItinerary((prev) =>
+              prev.map((item) => (item.id === targetId ? { ...item, expenseId } : item))
+            );
+            setItineraryAddExpenseTarget(null);
+            setSessionToast("Đã tạo khoản chi liên kết với địa điểm lịch trình!");
+          }}
+        />
+      )}
     </TripSessionContext.Provider>
   );
 }

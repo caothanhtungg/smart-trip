@@ -275,6 +275,7 @@ export interface TripDetailData {
   recentExpenses: TripRecentExpense[];
   expenses?: TripExpense[];
   categoryAllocations: TripExpenseCategoryAllocation[];
+  itineraryItems?: ItineraryItem[];
   nextDestination?: {
     title: string;
     label: string;
@@ -285,3 +286,62 @@ export interface TripDetailData {
     description: string;
   };
 }
+
+/**
+ * Domain entity: ItineraryItem (khớp ERD itinerary_items)
+ */
+export interface ItineraryItem {
+  id: string;
+  tripId: string;
+  dayDate: string; // ISO date string "YYYY-MM-DD"
+  sortOrder: number; // Thứ tự sắp xếp trong ngày
+  placeName: string; // Tên địa điểm (khớp ERD itinerary_items.place_name)
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  startTime?: string | null; // Định dạng "HH:mm"
+  endTime?: string | null; // Định dạng "HH:mm"
+  note?: string | null;
+  createdByMemberId: string;
+  expenseId?: string | null; // ID khoản chi tiêu gắn kèm (nếu có)
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateItineraryItemFormData {
+  dayDate: string; // "YYYY-MM-DD"
+  placeName: string;
+  address?: string;
+  startTime: string; // "HH:mm"
+  endTime?: string; // "HH:mm"
+  note?: string;
+}
+
+export interface ItineraryValidationErrors {
+  dayDate?: string;
+  placeName?: string;
+  startTime?: string;
+  endTime?: string;
+}
+
+export interface ItineraryValidationResult {
+  isValid: boolean;
+  errors: ItineraryValidationErrors;
+}
+
+export interface TimeConflictInfo {
+  hasConflict: boolean;
+  conflictingPlaceName?: string;
+  overlapMinutes?: number;
+  message?: string;
+}
+
+export interface DayItineraryGroup {
+  dayIndex: number; // 1, 2, 3...
+  dayDate: string; // "YYYY-MM-DD"
+  dayLabel: string; // "Ngày 1"
+  dayOfWeekText: string; // "Thứ Sáu, 20/11"
+  items: ItineraryItem[];
+  totalExpensesAmount: number;
+}
+
