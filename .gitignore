@@ -48,3 +48,7 @@ review-bundle*.txt
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/
+*.bak
+.agent/
