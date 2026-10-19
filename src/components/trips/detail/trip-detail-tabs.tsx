@@ -15,7 +15,7 @@ const TABS: TabItem[] = [
   { id: "tong-quan", segment: "", label: "Tổng quan", isImplemented: true },
   { id: "lich-trinh", segment: "itinerary", label: "Lịch trình", isImplemented: false },
   { id: "chi-tieu", segment: "expenses", label: "Chi tiêu", isImplemented: true },
-  { id: "cong-no", segment: "settlement", label: "Công nợ", isImplemented: false },
+  { id: "cong-no", segment: "settlement", label: "Công nợ", isImplemented: true },
   { id: "thanh-vien", segment: "members", label: "Thành viên", isImplemented: false },
 ];
 
