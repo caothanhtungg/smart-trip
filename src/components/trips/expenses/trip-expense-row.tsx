@@ -11,6 +11,8 @@ import {
   Receipt,
   MapPin,
   Users,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { TripExpense, ExpenseCategory, TripMember } from "@/types/trip";
 import { formatMoney } from "@/lib/money/format";
@@ -22,6 +24,10 @@ interface TripExpenseRowProps {
   members?: readonly TripMember[];
   currentUserId?: string;
   onViewReceipt: (expense: TripExpense) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  onEdit?: (expense: TripExpense) => void;
+  onDelete?: (expense: TripExpense) => void;
 }
 
 export function TripExpenseRow({
@@ -29,6 +35,10 @@ export function TripExpenseRow({
   members = [],
   currentUserId,
   onViewReceipt,
+  canEdit = false,
+  canDelete = false,
+  onEdit,
+  onDelete,
 }: TripExpenseRowProps) {
   // Chuẩn hóa sang ExpenseRowView nếu đầu vào là TripExpense
   const rowView: ExpenseRowView = React.useMemo(() => {
@@ -122,28 +132,58 @@ export function TripExpenseRow({
         </div>
       </div>
 
-      {/* Right: Amounts & Shares */}
-      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center pl-13 sm:pl-0 shrink-0">
-        <div className="text-base sm:text-lg font-bold text-yale-blue tabular-nums">
-          {formatMoney(totalMoney)}
-        </div>
-        {userShare ? (
-          <div className="text-xs text-text-muted">
-            Bản thân:{" "}
-            <span className="font-semibold text-cerulean tabular-nums">
-              {formatMoney(userShare.amount)}
-            </span>
-            {userShare.hasRemainderExtra && (
-              <span
-                className="ml-1 text-[10px] text-tropical-teal font-semibold"
-                title="Được phân bổ +1 ₫ lẻ do phép chia nguyên có phần dư"
-              >
-                (+1 ₫)
+      {/* Right: Amounts, Shares & Action Buttons */}
+      <div className="flex sm:flex-row items-center justify-between sm:justify-end gap-3 sm:gap-4 pl-13 sm:pl-0 shrink-0">
+        <div className="flex flex-col items-start sm:items-end justify-center">
+          <div className="text-base sm:text-lg font-bold text-yale-blue tabular-nums">
+            {formatMoney(totalMoney)}
+          </div>
+          {userShare ? (
+            <div className="text-xs text-text-muted">
+              Bản thân:{" "}
+              <span className="font-semibold text-cerulean tabular-nums">
+                {formatMoney(userShare.amount)}
               </span>
+              {userShare.hasRemainderExtra && (
+                <span
+                  className="ml-1 text-[10px] text-tropical-teal font-semibold"
+                  title="Được phân bổ +1 ₫ lẻ do phép chia nguyên có phần dư"
+                >
+                  (+1 ₫)
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="text-xs text-text-muted italic">Không tham gia chia</div>
+          )}
+        </div>
+
+        {/* Edit / Delete Buttons */}
+        {(canEdit || canDelete) && (
+          <div className="flex items-center gap-1 border-l border-border-hairline pl-2.5">
+            {canEdit && onEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(expense as TripExpense)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-cerulean hover:bg-hover-row transition-colors cursor-pointer"
+                title="Chỉnh sửa khoản chi"
+                aria-label="Chỉnh sửa khoản chi"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {canDelete && onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(expense as TripExpense)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-functional-negative hover:bg-functional-warning-bg transition-colors cursor-pointer"
+                title="Xóa khoản chi"
+                aria-label="Xóa khoản chi"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             )}
           </div>
-        ) : (
-          <div className="text-xs text-text-muted italic">Không tham gia chia</div>
         )}
       </div>
     </div>

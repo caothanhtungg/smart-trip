@@ -1,24 +1,31 @@
-"use client";
-
 import * as React from "react";
 import { TripExpense } from "@/types/trip";
 import { formatMoney } from "@/lib/utils";
 import { TripExpenseRow } from "./trip-expense-row";
+import { canEditExpense, canDeleteExpense } from "@/lib/validation/expense";
 
 interface TripExpenseDayGroupProps {
   dayLabel: string;
   spentDateFormatted: string;
   expenses: TripExpense[];
   currentUserId?: string;
+  isHost?: boolean;
+  tripStatus?: string;
   onViewReceipt: (expense: TripExpense) => void;
+  onEditExpense?: (expense: TripExpense) => void;
+  onDeleteExpense?: (expense: TripExpense) => void;
 }
 
 export function TripExpenseDayGroup({
   dayLabel,
   spentDateFormatted,
   expenses,
-  currentUserId,
+  currentUserId = "",
+  isHost = false,
+  tripStatus = "ACTIVE",
   onViewReceipt,
+  onEditExpense,
+  onDeleteExpense,
 }: TripExpenseDayGroupProps) {
   const dailyTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
 
@@ -46,14 +53,23 @@ export function TripExpenseDayGroup({
 
       {/* Expenses Rows */}
       <div className="divide-y divide-border-hairline/60">
-        {expenses.map((expense) => (
-          <TripExpenseRow
-            key={expense.id}
-            expense={expense}
-            currentUserId={currentUserId}
-            onViewReceipt={onViewReceipt}
-          />
-        ))}
+        {expenses.map((expense) => {
+          const canEdit = canEditExpense(expense, currentUserId, isHost, tripStatus);
+          const canDelete = canDeleteExpense(expense, currentUserId, isHost, tripStatus);
+
+          return (
+            <TripExpenseRow
+              key={expense.id}
+              expense={expense}
+              currentUserId={currentUserId}
+              onViewReceipt={onViewReceipt}
+              canEdit={canEdit}
+              canDelete={canDelete}
+              onEdit={onEditExpense}
+              onDelete={onDeleteExpense}
+            />
+          );
+        })}
       </div>
     </section>
   );

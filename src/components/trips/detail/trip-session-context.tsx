@@ -42,6 +42,7 @@ import {
   sortItineraryItems,
   validateItineraryItemForm,
 } from "@/lib/itinerary/validation";
+import { canEditExpense, canDeleteExpense } from "@/lib/validation/expense";
 import {
   validateGuestMemberForm,
   canAddGuestMember,
@@ -69,6 +70,19 @@ interface TripSessionContextValue {
   setIsOverviewAddModalOpen: (open: boolean) => void;
   handleAddExpense: (newExpense: TripExpense) => void;
   handleSaveExpenseFromModal: (formData: CreateExpenseFormData) => void;
+  handleUpdateExpense: (
+    id: string,
+    formData: CreateExpenseFormData
+  ) => { success: boolean; message?: string };
+  handleDeleteExpense: (id: string) => { success: boolean; message?: string };
+  handleUpdateTripInfo: (updates: {
+    name: string;
+    destination: string;
+    startDate: string;
+    endDate: string;
+    budgetAmount: number;
+  }) => void;
+  handleArchiveTrip: () => void;
   handleAddItineraryItem: (
     formData: CreateItineraryItemFormData
   ) => { success: boolean; message?: string };
@@ -124,6 +138,14 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
   const [sessionStatus, setSessionStatus] = React.useState<TripStatus>(
     initialTrip.status
   );
+
+  const [tripInfo, setTripInfo] = React.useState({
+    name: initialTrip.name,
+    destination: initialTrip.destination || "",
+    startDate: initialTrip.startDate,
+    endDate: initialTrip.endDate,
+    budgetAmount: initialTrip.budgetAmount || 0,
+  });
 
   const [sessionMembers, setSessionMembers] = React.useState<TripMember[]>(() => {
     return [...(initialTrip.members || [])];
@@ -214,7 +236,7 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
       };
     });
 
-    const planned = initialTrip.plannedBudget ?? initialTrip.budgetAmount ?? null;
+    const planned = tripInfo.budgetAmount || initialTrip.plannedBudget || null;
     const { hasBudget, remainingBudget, isOverBudget, overBudgetAmount } = calculateBudgetStatus(
       planned,
       sessionTotalSpent
@@ -238,6 +260,11 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
 
     return {
       ...initialTrip,
+      name: tripInfo.name,
+      destination: tripInfo.destination,
+      startDate: tripInfo.startDate,
+      endDate: tripInfo.endDate,
+      budgetAmount: tripInfo.budgetAmount,
       status: sessionStatus,
       inviteCode: sessionInviteCode,
       members: detailMembers,
@@ -256,6 +283,7 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
     };
   }, [
     initialTrip,
+    tripInfo,
     sessionStatus,
     sessionInviteCode,
     sessionMembers,
@@ -330,6 +358,132 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
       setSessionToast("Đã thêm khoản chi (dữ liệu demo, chưa được lưu)");
     },
     [initialTrip, handleAddExpense, sessionMembers]
+  );
+
+  const handleUpdateTripInfo = React.useCallback(
+    (updates: {
+      name: string;
+      destination: string;
+      startDate: string;
+      endDate: string;
+      budgetAmount: number;
+    }) => {
+      if (!isHost || sessionStatus !== "ACTIVE") return;
+      setTripInfo(updates);
+      setSessionToast("Đã cập nhật thông tin chuyến đi thành công!");
+    },
+    [isHost, sessionStatus]
+  );
+
+  const handleArchiveTrip = React.useCallback(() => {
+    if (!isHost) return;
+    setSessionStatus("ARCHIVED");
+    setSessionToast("Chuyến đi đã được lưu trữ (ARCHIVED).");
+  }, [isHost]);
+
+  const handleUpdateExpense = React.useCallback(
+    (
+      expenseId: string,
+      formData: CreateExpenseFormData
+    ): { success: boolean; message?: string } => {
+      const existingExpense = sessionExpenses.find((e) => e.id === expenseId);
+      if (!existingExpense) {
+        return { success: false, message: "Không tìm thấy khoản chi cần sửa." };
+      }
+
+      if (!canEditExpense(existingExpense, currentMemberId, isHost, sessionStatus)) {
+        return {
+          success: false,
+          message: "Bạn không có quyền sửa khoản chi này hoặc chuyến đi đã chốt sổ.",
+        };
+      }
+
+      const safeAmount = formData.amount || 0;
+      const participantsWithOrder = formData.participantMemberIds.map((id) => {
+        const m = sessionMembers.find((member) => member.id === id);
+        return { id, joinOrder: m ? m.joinOrder : 0 };
+      });
+
+      let shares: ExpenseShare[] = [];
+      if (formData.splitMethod === "ITEMIZED" && formData.items && formData.items.length > 0) {
+        const itemizedShares = computeItemizedShares(
+          safeAmount,
+          formData.items,
+          formData.surcharge || null,
+          participantsWithOrder
+        );
+        shares = itemizedShares.map((s, idx) => ({
+          id: `share-${expenseId}-${idx + 1}`,
+          expenseId,
+          memberId: s.memberId,
+          amount: s.totalAmount,
+        }));
+      } else {
+        shares = computeEqualShares(safeAmount, participantsWithOrder).map((s, idx) => ({
+          id: `share-${expenseId}-${idx + 1}`,
+          expenseId,
+          memberId: s.memberId,
+          amount: s.amount,
+          hasRemainderExtra: s.hasRemainderExtra,
+        }));
+      }
+
+      const spentAtIso = formatDateInputToIso(formData.spentAtDate, formData.spentAtTime);
+
+      setSessionExpenses((prev) =>
+        prev.map((e) =>
+          e.id === expenseId
+            ? {
+                ...e,
+                title: formData.title,
+                category: formData.category,
+                amount: safeAmount,
+                paidByMemberId: formData.paidByMemberId,
+                spentAt: spentAtIso,
+                splitMethod: formData.splitMethod || "EQUAL",
+                items: formData.items,
+                surcharge: formData.surcharge,
+                locationName: formData.locationName,
+                note: formData.note,
+                receiptImageUrl: formData.receiptImageUrl,
+                shares,
+              }
+            : e
+        )
+      );
+
+      setSessionToast("Đã cập nhật khoản chi thành công (dữ liệu demo).");
+      return { success: true };
+    },
+    [sessionExpenses, currentMemberId, isHost, sessionStatus, sessionMembers]
+  );
+
+  const handleDeleteExpense = React.useCallback(
+    (expenseId: string): { success: boolean; message?: string } => {
+      const existingExpense = sessionExpenses.find((e) => e.id === expenseId);
+      if (!existingExpense) {
+        return { success: false, message: "Không tìm thấy khoản chi cần xóa." };
+      }
+
+      if (!canDeleteExpense(existingExpense, currentMemberId, isHost, sessionStatus)) {
+        return {
+          success: false,
+          message: "Bạn không có quyền xóa khoản chi này hoặc chuyến đi đã chốt sổ.",
+        };
+      }
+
+      setSessionExpenses((prev) => prev.filter((e) => e.id !== expenseId));
+
+      setSessionItinerary((prev) =>
+        prev.map((item) =>
+          item.expenseId === expenseId ? { ...item, expenseId: null } : item
+        )
+      );
+
+      setSessionToast("Đã xóa khoản chi.");
+      return { success: true };
+    },
+    [sessionExpenses, currentMemberId, isHost, sessionStatus]
   );
 
   // Settlement Actions
@@ -850,6 +1004,10 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
         setIsOverviewAddModalOpen,
         handleAddExpense,
         handleSaveExpenseFromModal,
+        handleUpdateExpense,
+        handleDeleteExpense,
+        handleUpdateTripInfo,
+        handleArchiveTrip,
         handleAddItineraryItem,
         handleUpdateItineraryItem,
         handleDeleteItineraryItem,

@@ -13,6 +13,7 @@ import { TripExpenseFilters } from "./trip-expense-filters";
 import { TripExpenseDayGroup } from "./trip-expense-day-group";
 import { TripExpenseFormModal } from "./trip-expense-form-modal";
 import { TripReceiptLightboxModal } from "./trip-receipt-lightbox-modal";
+import { TripExpenseDeleteModal } from "./trip-expense-delete-modal";
 import {
   CheckCircle2,
   Inbox,
@@ -29,6 +30,8 @@ interface TripExpensesTabProps {
   trip: TripDetailData;
   expenses: TripExpense[];
   onAddExpense: (newExpense: TripExpense) => void;
+  onUpdateExpense?: (expenseId: string, formData: CreateExpenseFormData) => void;
+  onDeleteExpense?: (expenseId: string) => void;
   currentUserId: string;
 }
 
@@ -36,10 +39,14 @@ export function TripExpensesTab({
   trip,
   expenses,
   onAddExpense,
+  onUpdateExpense,
+  onDeleteExpense,
   currentUserId,
 }: TripExpensesTabProps) {
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = React.useState(false);
+  const [editingExpense, setEditingExpense] = React.useState<TripExpense | null>(null);
+  const [deletingExpense, setDeletingExpense] = React.useState<TripExpense | null>(null);
   const [selectedReceiptExpense, setSelectedReceiptExpense] = React.useState<TripExpense | null>(null);
 
   // Filters state
@@ -273,7 +280,11 @@ export function TripExpensesTab({
               spentDateFormatted={group.dateKey !== "Chưa rõ ngày" ? formatDate(group.dateKey) : ""}
               expenses={group.expenses}
               currentUserId={currentUserId}
+              isHost={isHost}
+              tripStatus={trip.status}
               onViewReceipt={(expense) => setSelectedReceiptExpense(expense)}
+              onEditExpense={(expense) => setEditingExpense(expense)}
+              onDeleteExpense={(expense) => setDeletingExpense(expense)}
             />
           ))
         ) : (
@@ -327,6 +338,43 @@ export function TripExpensesTab({
         currentUserMemberId={currentUserId}
         isHost={isHost}
         onSaveExpense={handleSaveExpense}
+      />
+
+      {/* Edit Expense Form Modal */}
+      {editingExpense && (
+        <TripExpenseFormModal
+          isOpen={editingExpense !== null}
+          onClose={() => setEditingExpense(null)}
+          trip={trip}
+          currentUserMemberId={currentUserId}
+          isHost={isHost}
+          initialExpense={editingExpense}
+          onSaveExpense={(formData) => {
+            if (onUpdateExpense) {
+              onUpdateExpense(editingExpense.id, formData);
+            }
+            setEditingExpense(null);
+          }}
+          onDeleteExpense={(id) => {
+            const expToDelete = expenses.find((e) => e.id === id) || editingExpense;
+            setEditingExpense(null);
+            setDeletingExpense(expToDelete);
+          }}
+        />
+      )}
+
+      {/* Delete Expense Confirmation Modal */}
+      <TripExpenseDeleteModal
+        isOpen={deletingExpense !== null}
+        onClose={() => setDeletingExpense(null)}
+        onConfirmDelete={() => {
+          if (deletingExpense && onDeleteExpense) {
+            onDeleteExpense(deletingExpense.id);
+          }
+          setDeletingExpense(null);
+        }}
+        expenseTitle={deletingExpense?.title || ""}
+        expenseAmount={deletingExpense?.amount || 0}
       />
 
       {/* Lightbox Modal for Receipt Proof */}

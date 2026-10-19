@@ -7,6 +7,8 @@ import {
   Calendar,
   QrCode,
   CheckCircle2,
+  Pencil,
+  Archive,
 } from "lucide-react";
 import { TripDetailData } from "@/types/trip";
 import { formatDate } from "@/lib/utils";
@@ -14,13 +16,17 @@ import { calculateDurationText } from "@/lib/trip-form-validation";
 import { getTripCoverGradient } from "@/lib/view/trip-card";
 import { getTripStatusLabel } from "@/lib/labels";
 import { TripInviteShareModal } from "./trip-invite-share-modal";
+import { TripEditInfoModal } from "./trip-edit-info-modal";
+import { useTripSession } from "./trip-session-context";
 
 interface TripDetailHeaderProps {
   trip: TripDetailData;
 }
 
 export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
+  const { isHost, handleUpdateTripInfo, handleArchiveTrip } = useTripSession();
   const [inviteModalOpen, setInviteModalOpen] = React.useState(false);
+  const [editInfoModalOpen, setEditInfoModalOpen] = React.useState(false);
 
   const cover = getTripCoverGradient(trip.id);
   const gradientStyle = {
@@ -91,6 +97,12 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
                   <span>{getTripStatusLabel("COMPLETED")}</span>
                 </span>
               )}
+              {trip.status === "ARCHIVED" && (
+                <span className="h-7 px-3 rounded-full bg-surface-container text-text-muted font-semibold text-xs inline-flex items-center gap-1.5 border border-border-hairline">
+                  <Archive className="w-3.5 h-3.5" />
+                  <span>{getTripStatusLabel("ARCHIVED")}</span>
+                </span>
+              )}
             </div>
 
             {/* Destination & Date details */}
@@ -108,8 +120,20 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
             </div>
           </div>
 
-          {/* Action Button: Mời bạn bè */}
+          {/* Action Buttons: Chỉnh sửa chuyến đi + Mời bạn bè */}
           <div className="flex items-center gap-3 shrink-0">
+            {isHost && trip.status === "ACTIVE" && (
+              <button
+                type="button"
+                onClick={() => setEditInfoModalOpen(true)}
+                className="h-10 sm:h-11 px-3.5 sm:px-4 rounded-xl bg-white hover:bg-hover-row text-yale-blue border border-border-hairline font-semibold text-sm inline-flex items-center gap-2 shadow-[0_2px_8px_rgba(24,78,119,0.08)] transition-all cursor-pointer"
+                title="Chỉnh sửa thông tin chuyến đi"
+              >
+                <Pencil className="w-4 h-4 text-text-muted" />
+                <span className="hidden sm:inline">Chỉnh sửa</span>
+              </button>
+            )}
+
             <button
               id="header-invite-btn"
               type="button"
@@ -130,6 +154,17 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
         tripTitle={trip.name}
         inviteCode={trip.inviteCode}
       />
+
+      {/* Trip Edit Info Modal */}
+      {isHost && (
+        <TripEditInfoModal
+          isOpen={editInfoModalOpen}
+          onClose={() => setEditInfoModalOpen(false)}
+          trip={trip}
+          onSave={handleUpdateTripInfo}
+          onArchive={handleArchiveTrip}
+        />
+      )}
     </div>
   );
 }

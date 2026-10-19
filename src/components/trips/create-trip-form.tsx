@@ -18,6 +18,7 @@ import { BudgetPresetChips } from "./budget-preset-chips";
 import { CreateTripPreviewModal } from "./create-trip-preview-modal";
 import { ConfirmCancelModal } from "./confirm-cancel-modal";
 import { CreateTripFormData, CreateTripValidationErrors } from "@/types/trip";
+import { useTripsStore } from "@/lib/trips/trips-store-context";
 import {
   calculateDurationText,
   parseMoneyInput,
@@ -28,6 +29,7 @@ import {
 export function CreateTripForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const { addTrip } = useTripsStore();
 
   // Form State
   const [formData, setFormData] = React.useState<CreateTripFormData>({
@@ -416,9 +418,17 @@ export function CreateTripForm() {
       <CreateTripPreviewModal
         isOpen={previewModalOpen}
         onClose={() => setPreviewModalOpen(false)}
-        onReturnToTrips={() => {
+        onConfirmCreate={() => {
+          const newId = addTrip({
+            name: formData.name,
+            destination: formData.destination,
+            startDate: formData.startDate,
+            endDate: formData.endDate,
+            budgetAmount: formData.budgetAmount || 0,
+          });
+          toast("Tạo chuyến đi thành công!", "success");
           setPreviewModalOpen(false);
-          router.push("/trips");
+          router.push(`/trips/${newId}`);
         }}
         formData={formData}
         durationText={durationText}

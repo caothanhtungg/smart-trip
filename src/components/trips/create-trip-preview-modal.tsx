@@ -10,7 +10,7 @@ import { formatMoney, formatDate } from "@/lib/utils";
 interface CreateTripPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onReturnToTrips: () => void;
+  onConfirmCreate: () => void;
   formData: CreateTripFormData;
   durationText: string | null;
 }
@@ -18,7 +18,7 @@ interface CreateTripPreviewModalProps {
 export function CreateTripPreviewModal({
   isOpen,
   onClose,
-  onReturnToTrips,
+  onConfirmCreate,
   formData,
   durationText,
 }: CreateTripPreviewModalProps) {
@@ -105,10 +105,10 @@ export function CreateTripPreviewModal({
         <div className="p-3.5 rounded-xl bg-bg-canvas border border-border-hairline text-xs text-text-muted space-y-1">
           <div className="flex items-center gap-1.5 font-semibold text-yale-blue">
             <Info className="w-4 h-4 text-cerulean shrink-0" />
-            <span>Lưu ý:</span>
+            <span>Lưu ý phiên làm việc:</span>
           </div>
           <p className="leading-relaxed">
-            Dữ liệu chuyến đi chưa được lưu vào hệ thống (chế độ demo).
+            Chuyến đi được lưu vào bộ nhớ phiên làm việc (Session Store). Bạn có thể tiếp tục thêm lịch trình và mời bạn bè ngay sau đây.
           </p>
         </div>
 
@@ -117,8 +117,14 @@ export function CreateTripPreviewModal({
           <Button type="button" variant="outline" onClick={onClose}>
             Tiếp tục chỉnh sửa
           </Button>
-          <Button type="button" variant="primary" onClick={onReturnToTrips}>
-            Quay về danh sách chuyến đi
+          <Button
+            type="button"
+            variant="primary"
+            onClick={onConfirmCreate}
+            className="shadow-[0_4px_16px_rgba(26,117,159,0.25)] flex items-center gap-1.5"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Tạo chuyến đi & Bắt đầu</span>
           </Button>
         </div>
       </div>

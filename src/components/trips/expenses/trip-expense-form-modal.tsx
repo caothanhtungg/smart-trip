@@ -20,6 +20,8 @@ import {
   Upload,
   Bolt,
   AlertCircle,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   TripDetailData,
@@ -28,6 +30,7 @@ import {
   ExpenseValidationErrors,
   ExpenseItemData,
   ExpenseSurchargeData,
+  TripExpense,
 } from "@/types/trip";
 import { validateExpenseForm } from "@/lib/validation/expense";
 import { parseMoneyInput, formatMoneyInputValue } from "@/lib/money/parse";
@@ -44,16 +47,16 @@ interface TripExpenseFormModalProps {
   isHost: boolean;
   onSaveExpense: (formData: CreateExpenseFormData) => void;
   initialLocationName?: string;
+  initialExpense?: TripExpense | null;
+  onDeleteExpense?: (expenseId: string) => void;
 }
 
 export function TripExpenseFormModal(props: TripExpenseFormModalProps) {
   if (!props.isOpen) return null;
-  return (
-    <TripExpenseFormModalInner
-      {...props}
-      key={props.trip.id + (props.initialLocationName || "")}
-    />
-  );
+  const key = props.initialExpense
+    ? `edit-${props.initialExpense.id}`
+    : `new-${props.trip.id}-${props.initialLocationName || ""}`;
+  return <TripExpenseFormModalInner {...props} key={key} />;
 }
 
 function TripExpenseFormModalInner({
@@ -63,11 +66,17 @@ function TripExpenseFormModalInner({
   isHost,
   onSaveExpense,
   initialLocationName = "",
+  initialExpense,
+  onDeleteExpense,
 }: TripExpenseFormModalProps) {
   // Form State
-  const [title, setTitle] = React.useState("");
-  const [rawAmount, setRawAmount] = React.useState("150000"); // 150,000 VND initial
-  const [category, setCategory] = React.useState<ExpenseCategory>("FOOD");
+  const [title, setTitle] = React.useState(initialExpense?.title || "");
+  const [rawAmount, setRawAmount] = React.useState(
+    initialExpense ? String(initialExpense.amount) : "150000"
+  );
+  const [category, setCategory] = React.useState<ExpenseCategory>(
+    initialExpense?.category || "FOOD"
+  );
 
   // Danh sách thành viên đang hoạt động (chỉ active members mới xuất hiện trong form)
   const activeMembers = React.useMemo(
@@ -77,28 +86,42 @@ function TripExpenseFormModalInner({
 
   // Xác định người trả tiền mặc định: ưu tiên currentUser nếu active, fallback là activeMember đầu tiên
   const defaultPayerId = React.useMemo(() => {
+    if (initialExpense?.paidByMemberId) return initialExpense.paidByMemberId;
     const isCurrentActive = activeMembers.some((m) => m.id === currentUserMemberId);
     if (isCurrentActive) return currentUserMemberId;
     return activeMembers[0]?.id || "";
-  }, [activeMembers, currentUserMemberId]);
+  }, [initialExpense, activeMembers, currentUserMemberId]);
 
-  const [paidByMemberId, setPaidByMemberId] = React.useState(defaultPayerId);
+  const [paidByMemberId, setPaidByMemberId] = React.useState(
+    initialExpense?.paidByMemberId || defaultPayerId
+  );
 
   // Đảm bảo người trả tiền luôn là active member hợp lệ (fallback về defaultPayerId nếu ID không còn active)
   const safePaidByMemberId = activeMembers.some((m) => m.id === paidByMemberId)
     ? paidByMemberId
     : defaultPayerId;
 
-  const [location, setLocation] = React.useState(initialLocationName);
-  const [splitMethod, setSplitMethod] = React.useState<"EQUAL" | "ITEMIZED">("EQUAL");
+  const [location, setLocation] = React.useState(
+    initialExpense?.locationName || initialLocationName
+  );
+  const [splitMethod, setSplitMethod] = React.useState<"EQUAL" | "ITEMIZED">(
+    initialExpense?.splitMethod || "EQUAL"
+  );
   const [currentStep, setCurrentStep] = React.useState<1 | 2>(1);
-  const [itemizedItems, setItemizedItems] = React.useState<ExpenseItemData[] | undefined>(undefined);
-  const [itemizedSurcharge, setItemizedSurcharge] = React.useState<ExpenseSurchargeData | null | undefined>(undefined);
+  const [itemizedItems, setItemizedItems] = React.useState<ExpenseItemData[] | undefined>(
+    initialExpense?.items
+  );
+  const [itemizedSurcharge, setItemizedSurcharge] = React.useState<ExpenseSurchargeData | null | undefined>(
+    initialExpense?.surcharge
+  );
 
   // Khởi tạo người tham gia chia tiền chỉ gồm các thành viên active
-  const [participantMemberIds, setParticipantMemberIds] = React.useState<string[]>(
-    () => activeMembers.map((m) => m.id)
-  );
+  const [participantMemberIds, setParticipantMemberIds] = React.useState<string[]>(() => {
+    if (initialExpense && initialExpense.shares && initialExpense.shares.length > 0) {
+      return initialExpense.shares.map((s) => s.memberId);
+    }
+    return activeMembers.map((m) => m.id);
+  });
 
   // Lọc an toàn: loại bỏ bất kỳ ID nào không thuộc activeMembers (chặn thành viên LEFT)
   const activeMemberIdsSet = React.useMemo(
@@ -111,6 +134,9 @@ function TripExpenseFormModalInner({
   }, [participantMemberIds, activeMemberIdsSet, activeMembers]);
 
   const [spentAtDate, setSpentAtDate] = React.useState(() => {
+    if (initialExpense?.spentAt) {
+      return initialExpense.spentAt.slice(0, 10);
+    }
     if (trip.startDate) {
       if (trip.startDate.includes("-")) return trip.startDate;
       if (trip.startDate.includes("/")) {
@@ -120,8 +146,10 @@ function TripExpenseFormModalInner({
     }
     return "2026-10-15";
   });
-  const [notes, setNotes] = React.useState("");
-  const [receiptUrl, setReceiptUrl] = React.useState<string | null>(null);
+  const [notes, setNotes] = React.useState(initialExpense?.note || "");
+  const [receiptUrl, setReceiptUrl] = React.useState<string | null>(
+    initialExpense?.receiptImageUrl || null
+  );
 
   // Validation errors
   const [errors, setErrors] = React.useState<ExpenseValidationErrors>({});
@@ -335,7 +363,11 @@ function TripExpenseFormModalInner({
             <div className="px-5 sm:px-6 py-4 border-b border-border-hairline flex items-center justify-between bg-surface-card shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-cerulean/10 text-cerulean flex items-center justify-center">
-                  <Plus className="w-5 h-5 stroke-[2.5]" />
+                  {initialExpense ? (
+                    <Pencil className="w-5 h-5 stroke-[2.2]" />
+                  ) : (
+                    <Plus className="w-5 h-5 stroke-[2.5]" />
+                  )}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -343,14 +375,19 @@ function TripExpenseFormModalInner({
                       id="modal-add-expense-title"
                       className="text-base sm:text-lg font-bold text-yale-blue"
                     >
-                      Thêm khoản chi mới
+                      {initialExpense ? "Chỉnh sửa khoản chi" : "Thêm khoản chi mới"}
                     </h2>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-cerulean/15 text-cerulean font-bold">
                       Bước 1 / 2
                     </span>
                   </div>
                   <p className="text-xs text-text-muted">
-                    {trip.name} · {splitMethod === "ITEMIZED" ? "Chia theo từng món" : "Quy tắc chia đều an toàn số nguyên (R4)"}
+                    {trip.name} ·{" "}
+                    {initialExpense
+                      ? "Cập nhật chi tiết và phân chia tiền nhóm"
+                      : splitMethod === "ITEMIZED"
+                      ? "Chia theo từng món"
+                      : "Quy tắc chia đều an toàn số nguyên (R4)"}
                   </p>
                 </div>
               </div>
@@ -923,16 +960,28 @@ function TripExpenseFormModalInner({
                   className="w-full h-12 bg-cerulean hover:bg-baltic-blue text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
                 >
                   <Check className="w-4 h-4 stroke-[2.5]" />
-                  <span>Lưu khoản chi</span>
+                  <span>{initialExpense ? "Lưu thay đổi khoản chi" : "Lưu khoản chi"}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="w-full h-10 bg-transparent hover:bg-hover-row text-text-muted hover:text-yale-blue font-semibold text-xs rounded-xl transition-all flex items-center justify-center cursor-pointer"
-                >
-                  Hủy bỏ
-                </button>
+                <div className="flex items-center gap-2">
+                  {initialExpense && onDeleteExpense && (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteExpense(initialExpense.id)}
+                      className="flex-1 h-10 bg-functional-negative/10 hover:bg-functional-negative/20 text-functional-negative font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Xóa khoản chi</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 h-10 bg-transparent hover:bg-hover-row text-text-muted hover:text-yale-blue font-semibold text-xs rounded-xl transition-all flex items-center justify-center cursor-pointer"
+                  >
+                    Hủy bỏ
+                  </button>
+                </div>
               </div>
             </div>
           </div>

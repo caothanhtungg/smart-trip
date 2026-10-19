@@ -130,3 +130,36 @@ export function validateExpenseForm(
     errors,
   };
 }
+
+/**
+ * Quyền chỉnh sửa khoản chi (UC13, Quyết định Q2 đã duyệt):
+ * - Người dùng là Trưởng nhóm (isHost === true) HOẶC là Người đã trả tiền (paidByMemberId === currentMemberId).
+ * - Chuyến đi phải ở trạng thái "ACTIVE".
+ * - Khi chuyến đi ở trạng thái "SETTLING", "COMPLETED", "ARCHIVED": KHÔNG được sửa.
+ */
+export function canEditExpense(
+  expense: { paidByMemberId: string },
+  currentMemberId: string,
+  isHost: boolean,
+  tripStatus: string
+): boolean {
+  if (tripStatus !== "ACTIVE") return false;
+  return isHost || expense.paidByMemberId === currentMemberId;
+}
+
+/**
+ * Quyền xóa khoản chi (UC13, Quyết định Q2 đã duyệt):
+ * - Người dùng là Trưởng nhóm (isHost === true) HOẶC là Người đã trả tiền (paidByMemberId === currentMemberId).
+ * - Chuyến đi phải ở trạng thái "ACTIVE".
+ * - Khi chuyến đi ở trạng thái "SETTLING", "COMPLETED", "ARCHIVED": KHÔNG được xóa.
+ */
+export function canDeleteExpense(
+  expense: { paidByMemberId: string },
+  currentMemberId: string,
+  isHost: boolean,
+  tripStatus: string
+): boolean {
+  if (tripStatus !== "ACTIVE") return false;
+  return isHost || expense.paidByMemberId === currentMemberId;
+}
+

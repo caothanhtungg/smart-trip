@@ -17,29 +17,26 @@ import { InviteCodeModal } from "@/components/trips/invite-code-modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { getTrips } from "@/lib/data/trips";
 import { filterTrips, sortTrips } from "@/lib/trips/filter-sort";
 import { getOverallBalance } from "@/lib/trips/balance";
 import { toTripCardViews } from "@/lib/view/trip-card";
-import { Trip, TripCardView, TripFilterTab, TripSortOption } from "@/types/trip";
+import { TripCardView, TripFilterTab, TripSortOption } from "@/types/trip";
 import { getTripStatusLabel, getBalanceTypeLabel } from "@/lib/labels";
+import { useTripsStore } from "@/lib/trips/trips-store-context";
 
 function TripsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const simulateEmptyState = searchParams.get("empty") === "true";
+  const { trips: storeTrips } = useTripsStore();
 
-  const [rawTrips, setRawTrips] = React.useState<Trip[]>([]);
   const [activeTab, setActiveTab] = React.useState<TripFilterTab>("all");
   const [sortBy, setSortBy] = React.useState<TripSortOption>("latest");
   const [inviteModalOpen, setInviteModalOpen] = React.useState(false);
   const [selectedTripModal, setSelectedTripModal] = React.useState<TripCardView | null>(null);
   const [settlementNoticeOpen, setSettlementNoticeOpen] = React.useState(false);
 
-  // Load trips from data access layer
-  React.useEffect(() => {
-    getTrips().then(setRawTrips);
-  }, []);
+  const rawTrips = storeTrips;
 
   const cardViews: TripCardView[] = React.useMemo(() => {
     return toTripCardViews(rawTrips);

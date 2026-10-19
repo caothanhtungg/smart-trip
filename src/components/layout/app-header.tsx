@@ -2,22 +2,19 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Compass, Bell, ChevronDown, LogOut, User as UserIcon } from "lucide-react";
-import { getCurrentUser, CurrentUser } from "@/lib/data/trips";
 import { Avatar } from "@/components/ui/avatar";
+import { useUserProfile } from "@/lib/user/user-context";
+import { NotificationPopover } from "@/components/layout/notification-popover";
 
-interface AppHeaderProps {
-  onOpenNotifications?: () => void;
-}
-
-export function AppHeader({ onOpenNotifications }: AppHeaderProps) {
+export function AppHeader() {
+  const pathname = usePathname();
+  const { profile, unreadNotificationCount } = useUserProfile();
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
-  const [currentUser, setCurrentUser] = React.useState<CurrentUser | null>(null);
+  const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    getCurrentUser().then(setCurrentUser);
-  }, []);
+  const notifRef = React.useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
   React.useEffect(() => {
@@ -29,6 +26,9 @@ export function AppHeader({ onOpenNotifications }: AppHeaderProps) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const isTripsActive = pathname.startsWith("/trips");
+  const isProfileActive = pathname.startsWith("/profile");
 
   return (
     <header className="fixed top-0 left-0 w-full z-40 h-[72px] bg-white border-b border-border-hairline shadow-[0_4px_16px_rgba(24,78,119,0.06)]">
@@ -50,28 +50,52 @@ export function AppHeader({ onOpenNotifications }: AppHeaderProps) {
           <nav className="hidden md:flex items-center gap-6 h-[72px]" aria-label="Chính">
             <Link
               href="/trips"
-              className="h-full flex items-center border-b-[3px] border-cerulean text-cerulean font-semibold px-1 text-[15px] transition-colors"
+              className={`h-full flex items-center font-semibold px-1 text-[15px] transition-colors border-b-[3px] ${
+                isTripsActive
+                  ? "border-cerulean text-cerulean"
+                  : "border-transparent text-text-muted hover:text-yale-blue"
+              }`}
             >
               Chuyến đi của tôi
+            </Link>
+            <Link
+              href="/profile"
+              className={`h-full flex items-center font-semibold px-1 text-[15px] transition-colors border-b-[3px] ${
+                isProfileActive
+                  ? "border-cerulean text-cerulean"
+                  : "border-transparent text-text-muted hover:text-yale-blue"
+              }`}
+            >
+              Hồ sơ của tôi
             </Link>
           </nav>
         </div>
 
         {/* Right: Actions & User Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Notification Button */}
-          <button
-            type="button"
-            aria-label="Thông báo hệ thống"
-            onClick={onOpenNotifications}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
-          >
-            <Bell className="w-5 h-5" />
-            <span
-              className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-functional-warning ring-2 ring-white"
-              aria-hidden="true"
+          {/* Notification Button & Popover */}
+          <div className="relative" ref={notifRef}>
+            <button
+              type="button"
+              aria-label="Thông báo hệ thống"
+              onClick={() => setNotificationsOpen((prev) => !prev)}
+              aria-expanded={notificationsOpen}
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadNotificationCount > 0 && (
+                <span
+                  className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-functional-warning ring-2 ring-white"
+                  aria-hidden="true"
+                />
+              )}
+            </button>
+
+            <NotificationPopover
+              isOpen={notificationsOpen}
+              onClose={() => setNotificationsOpen(false)}
             />
-          </button>
+          </div>
 
           {/* User Profile Dropdown Trigger */}
           <div className="relative" ref={menuRef}>
@@ -84,12 +108,12 @@ export function AppHeader({ onOpenNotifications }: AppHeaderProps) {
               className="flex items-center gap-2.5 p-1.5 pl-2 rounded-xl hover:bg-hover-row border border-transparent hover:border-border-hairline transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
             >
               <Avatar
-                name={currentUser?.name || "Lan"}
+                name={profile.displayName || profile.fullName}
                 size="sm"
                 className="bg-lime-cream text-yale-blue font-bold shadow-xs"
               />
               <span className="hidden sm:inline-block text-sm font-semibold text-yale-blue max-w-[120px] truncate">
-                {currentUser?.name || "Lan"}
+                {profile.displayName}
               </span>
               <ChevronDown
                 className={`w-4 h-4 text-text-muted transition-transform duration-200 ${
@@ -104,18 +128,22 @@ export function AppHeader({ onOpenNotifications }: AppHeaderProps) {
                 <div className="px-4 py-2.5 border-b border-border-hairline/70">
                   <p className="text-xs text-text-muted">Đăng nhập với</p>
                   <p className="text-sm font-bold text-yale-blue truncate">
-                    {currentUser?.fullName || "Lan Nguyễn"}
+                    {profile.fullName}
                   </p>
                   <p className="text-xs text-text-muted truncate">
-                    {currentUser?.email || "lan.nguyen@gmail.com"}
+                    {profile.email}
                   </p>
                 </div>
 
                 <div className="py-1">
-                  <div className="px-4 py-2 flex items-center gap-2.5 text-xs text-text-muted">
+                  <Link
+                    href="/profile"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 text-sm text-text-body hover:bg-hover-row hover:text-cerulean transition-colors"
+                  >
                     <UserIcon className="w-4 h-4 text-ocean-mist" />
                     <span>Hồ sơ cá nhân</span>
-                  </div>
+                  </Link>
                 </div>
 
                 <div className="border-t border-border-hairline/70 pt-1">

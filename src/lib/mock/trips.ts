@@ -491,12 +491,21 @@ export const MOCK_TRIP_DETAILS: Record<string, TripDetailData> = Object.freeze({
   },
 });
 
+const dynamicTripDetails: Record<string, TripDetailData> = {};
+
+/**
+ * Đăng ký chi tiết chuyến đi vừa tạo trong session để các trang con /trips/[id] có thể nạp được.
+ */
+export function registerMockTripDetail(detail: TripDetailData): void {
+  dynamicTripDetails[detail.id] = detail;
+}
+
 /**
  * Hàm trợ giúp lấy dữ liệu chi tiết chuyến đi mẫu theo ID (thuần túy, an toàn immutability).
  */
 export function getTripDetailById(id: string | null | undefined): TripDetailData | null {
   if (!id) return null;
-  const detail = MOCK_TRIP_DETAILS[id];
+  const detail = dynamicTripDetails[id] || MOCK_TRIP_DETAILS[id];
   if (!detail) return null;
 
   return {
