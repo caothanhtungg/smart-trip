@@ -116,11 +116,11 @@ export const MOCK_TRIP_DETAILS: Record<string, TripDetailData> = Object.freeze({
     expenseCount: 14,
     paidActivitiesCount: 4,
     members: [
-      { id: "m1", name: "Lan Nguyễn", role: "HOST", status: "ACTIVE", joinOrder: 1, spentAmount: 2350000, isCurrentUser: true },
-      { id: "m2", name: "Tuấn Huy", role: "MEMBER", status: "ACTIVE", joinOrder: 2, spentAmount: 1800000 },
-      { id: "m3", name: "Quang Minh", role: "MEMBER", status: "ACTIVE", joinOrder: 3, spentAmount: 2100000 },
-      { id: "m4", name: "Thanh Quang", role: "MEMBER", status: "ACTIVE", joinOrder: 4, spentAmount: 1200000 },
-      { id: "m5", name: "Thu Hà", role: "MEMBER", status: "ACTIVE", joinOrder: 5, spentAmount: 1000000, isNoAccount: true },
+      { id: "m1", name: "Lan Nguyễn", email: "lan.nguyen@gmail.com", role: "HOST", status: "ACTIVE", joinOrder: 1, spentAmount: 2350000, isCurrentUser: true },
+      { id: "m2", name: "Tuấn Huy", email: "tuan.huy@gmail.com", role: "MEMBER", status: "ACTIVE", joinOrder: 2, spentAmount: 1800000 },
+      { id: "m3", name: "Quang Minh", email: "quang.minh@gmail.com", role: "MEMBER", status: "ACTIVE", joinOrder: 3, spentAmount: 2100000 },
+      { id: "m4", name: "Thanh Quang", email: "thanh.quang@gmail.com", role: "MEMBER", status: "ACTIVE", joinOrder: 4, spentAmount: 1200000 },
+      { id: "m5", name: "Thu Hà", role: "MEMBER", status: "ACTIVE", joinOrder: 5, spentAmount: 1000000, isNoAccount: true, note: "Được Trưởng nhóm tạo để chia tiền" },
     ],
     recentExpenses: [
       {

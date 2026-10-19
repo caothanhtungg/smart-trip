@@ -4,12 +4,17 @@ import * as React from "react";
 import {
   TripDetailData,
   TripExpense,
+  TripMember,
+  TripMemberDetail,
   CreateExpenseFormData,
   ExpenseShare,
   TripRecentExpense,
   TripStatus,
   ItineraryItem,
   CreateItineraryItemFormData,
+  CreateGuestMemberFormData,
+  EditGuestMemberFormData,
+  MemberClaim,
 } from "@/types/trip";
 import { Settlement, SettlementTransfer, PaymentMethod } from "@/types/settlement";
 import { computeEqualShares, computeItemizedShares } from "@/lib/money/split";
@@ -29,6 +34,7 @@ import { formatDateInputToIso, formatExpenseDate } from "@/lib/view/expense-row"
 import { getExpenseCategoryLabel, getSplitMethodLabel } from "@/lib/labels";
 import { TripExpenseFormModal } from "@/components/trips/expenses/trip-expense-form-modal";
 import { getMockItineraryForTrip } from "@/lib/mock/itinerary";
+import { getMockClaimsForTrip } from "@/lib/mock/claims";
 import {
   canAddItineraryItem,
   canEditItineraryItem,
@@ -36,12 +42,23 @@ import {
   sortItineraryItems,
   validateItineraryItemForm,
 } from "@/lib/itinerary/validation";
+import {
+  validateGuestMemberForm,
+  canAddGuestMember,
+  canEditGuestMember,
+  canRemoveMember,
+  canLeaveTrip,
+  canDecideClaim,
+} from "@/lib/members/validation";
 
 interface TripSessionContextValue {
   trip: TripDetailData;
   sessionTrip: TripDetailData;
   sessionExpenses: TripExpense[];
   sessionItinerary: ItineraryItem[];
+  sessionMembers: TripMember[];
+  sessionClaims: MemberClaim[];
+  sessionInviteCode: string;
   sessionStatus: TripStatus;
   sessionTransfers: SettlementTransfer[];
   sessionSettlement: Settlement | null;
@@ -61,6 +78,18 @@ interface TripSessionContextValue {
   ) => { success: boolean; message?: string };
   handleDeleteItineraryItem: (id: string) => { success: boolean; message?: string };
   handleOpenAddExpenseForItinerary: (item: ItineraryItem) => void;
+  handleAddGuestMember: (
+    formData: CreateGuestMemberFormData
+  ) => { success: boolean; message?: string };
+  handleEditGuestMember: (
+    id: string,
+    formData: EditGuestMemberFormData
+  ) => { success: boolean; message?: string };
+  handleRemoveMember: (id: string) => { success: boolean; message?: string };
+  handleLeaveTrip: (id: string) => { success: boolean; message?: string };
+  handleApproveClaim: (claimId: string) => { success: boolean; message?: string };
+  handleRejectClaim: (claimId: string) => { success: boolean; message?: string };
+  handleResetInviteCode: () => { success: boolean; code?: string; message?: string };
   handleLockSettlement: () => void;
   handleReopenSettlement: () => { success: boolean; message?: string };
   handleMarkTransferPaid: (
@@ -96,7 +125,17 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
     initialTrip.status
   );
 
-  const currentMember = initialTrip.members.find((m) => m.id === currentMemberId);
+  const [sessionMembers, setSessionMembers] = React.useState<TripMember[]>(() => {
+    return [...(initialTrip.members || [])];
+  });
+  const [sessionClaims, setSessionClaims] = React.useState<MemberClaim[]>(() => {
+    return getMockClaimsForTrip(initialTrip.id);
+  });
+  const [sessionInviteCode, setSessionInviteCode] = React.useState<string>(
+    initialTrip.inviteCode
+  );
+
+  const currentMember = sessionMembers.find((m) => m.id === currentMemberId);
   const isHost = currentMember?.role === "HOST" || !!currentMember?.isHost;
 
   const [sessionExpenses, setSessionExpenses] = React.useState<TripExpense[]>(() => {
@@ -129,11 +168,14 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
     return calculateTotalSpent(sessionExpenses);
   }, [sessionExpenses]);
 
+  const memberBalancesResult = React.useMemo(() => {
+    return calculateMemberBalances(sessionMembers, sessionExpenses);
+  }, [sessionMembers, sessionExpenses]);
+
   // Preview transfers computed dynamically in ACTIVE state
   const previewTransfers = React.useMemo(() => {
-    const res = calculateMemberBalances(initialTrip.members, sessionExpenses);
-    return generateSettlementTransfers(initialTrip.id, res.balances);
-  }, [initialTrip.id, sessionExpenses, initialTrip.members]);
+    return generateSettlementTransfers(initialTrip.id, memberBalancesResult.balances);
+  }, [initialTrip.id, memberBalancesResult]);
 
   // If in ACTIVE, use preview transfers. Otherwise use lockedTransfers
   const effectiveTransfers = sessionStatus === "ACTIVE" ? previewTransfers : lockedTransfers;
@@ -152,7 +194,7 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
 
   const sessionTrip: TripDetailData = React.useMemo(() => {
     const recent: TripRecentExpense[] = sessionExpenses.slice(0, 4).map((e) => {
-      const payer = initialTrip.members.find((m) => m.id === e.paidByMemberId);
+      const payer = sessionMembers.find((m) => m.id === e.paidByMemberId);
       const userShare = e.shares.find((p) => p.memberId === currentMemberId);
       const splitText =
         e.splitMethod === "EQUAL"
@@ -177,15 +219,28 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
       planned,
       sessionTotalSpent
     );
+    const activeMembersCount = sessionMembers.filter((m) => m.status === "ACTIVE").length;
     const avgSpentPerPerson = calculateAvgSpentPerPerson(
       sessionTotalSpent,
-      initialTrip.members.length
+      activeMembersCount > 0 ? activeMembersCount : 1
     );
     const userSpent = calculateUserSpent(sessionExpenses, currentMemberId);
+
+    const detailMembers: TripMemberDetail[] = sessionMembers.map((m) => {
+      const memberSpent = sessionExpenses
+        .filter((e) => e.paidByMemberId === m.id)
+        .reduce((sum, e) => sum + e.amount, 0);
+      return {
+        ...m,
+        spentAmount: memberSpent,
+      };
+    });
 
     return {
       ...initialTrip,
       status: sessionStatus,
+      inviteCode: sessionInviteCode,
+      members: detailMembers,
       currentMemberId,
       totalSpent: sessionTotalSpent,
       hasBudget,
@@ -202,6 +257,8 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
   }, [
     initialTrip,
     sessionStatus,
+    sessionInviteCode,
+    sessionMembers,
     sessionExpenses,
     sessionItinerary,
     sessionTotalSpent,
@@ -218,7 +275,7 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
       const expenseId = `exp-${Date.now()}`;
 
       const participantsWithOrder = formData.participantMemberIds.map((id) => {
-        const m = initialTrip.members.find((member) => member.id === id);
+        const m = sessionMembers.find((member) => member.id === id);
         return { id, joinOrder: m ? m.joinOrder : 0 };
       });
 
@@ -272,7 +329,7 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
       handleAddExpense(newExpense);
       setSessionToast("Đã thêm khoản chi (dữ liệu demo, chưa được lưu)");
     },
-    [initialTrip, handleAddExpense]
+    [initialTrip, handleAddExpense, sessionMembers]
   );
 
   // Settlement Actions
@@ -510,6 +567,269 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
     setItineraryAddExpenseTarget(item);
   }, []);
 
+  const handleAddGuestMember = React.useCallback(
+    (formData: CreateGuestMemberFormData) => {
+      const permission = canAddGuestMember(sessionStatus, isHost);
+      if (!permission.allowed) {
+        return { success: false, message: permission.reason };
+      }
+
+      const validation = validateGuestMemberForm(formData, sessionMembers);
+      if (!validation.isValid) {
+        const firstError = Object.values(validation.errors)[0];
+        return { success: false, message: firstError };
+      }
+
+      const nextJoinOrder =
+        sessionMembers.length > 0
+          ? Math.max(...sessionMembers.map((m) => m.joinOrder)) + 1
+          : 1;
+
+      const newGuest: TripMember = {
+        id: `mem-guest-${Date.now()}`,
+        name: formData.displayName.trim(),
+        role: "MEMBER",
+        status: "ACTIVE",
+        joinOrder: nextJoinOrder,
+        isNoAccount: true,
+        note: formData.note?.trim() || undefined,
+        spentAmount: 0,
+      };
+
+      setSessionMembers((prev) => [...prev, newGuest]);
+      setSessionToast(
+        `Đã thêm thành viên "${newGuest.name}" vào chuyến đi (chưa có tài khoản).`
+      );
+      return { success: true };
+    },
+    [sessionStatus, isHost, sessionMembers]
+  );
+
+  const handleEditGuestMember = React.useCallback(
+    (id: string, formData: EditGuestMemberFormData) => {
+      const target = sessionMembers.find((m) => m.id === id);
+      if (!target) {
+        return { success: false, message: "Không tìm thấy thành viên cần sửa." };
+      }
+
+      const permission = canEditGuestMember(target, sessionStatus, isHost);
+      if (!permission.allowed) {
+        return { success: false, message: permission.reason };
+      }
+
+      const validation = validateGuestMemberForm(formData, sessionMembers, id);
+      if (!validation.isValid) {
+        const firstError = Object.values(validation.errors)[0];
+        return { success: false, message: firstError };
+      }
+
+      setSessionMembers((prev) =>
+        prev.map((m) =>
+          m.id === id
+            ? {
+                ...m,
+                name: formData.displayName.trim(),
+                note: formData.note?.trim() || undefined,
+              }
+            : m
+        )
+      );
+      setSessionToast(`Đã cập nhật thông tin thành viên "${formData.displayName.trim()}".`);
+      return { success: true };
+    },
+    [sessionMembers, sessionStatus, isHost]
+  );
+
+  const handleRemoveMember = React.useCallback(
+    (id: string) => {
+      const target = sessionMembers.find((m) => m.id === id);
+      if (!target) {
+        return { success: false, message: "Không tìm thấy thành viên cần xóa." };
+      }
+
+      const memberBalance = memberBalancesResult.balances.find((b) => b.memberId === id);
+      const net = memberBalance ? memberBalance.netAmount : 0;
+
+      // Kiểm tra xem thành viên có lịch sử tài chính không
+      const hasPaidExpenses = sessionExpenses.some((e) => e.paidByMemberId === id);
+      const hasShares = sessionExpenses.some((e) =>
+        e.shares.some((s) => s.memberId === id)
+      );
+      const hasFinancialHistory = hasPaidExpenses || hasShares || (target.spentAmount ?? 0) > 0;
+
+      const permission = canRemoveMember(
+        target,
+        net,
+        sessionStatus,
+        isHost,
+        hasFinancialHistory
+      );
+      if (!permission.allowed) {
+        return { success: false, message: permission.reason };
+      }
+
+      if (permission.isSoftDelete) {
+        // Chuyển status = 'LEFT' để bảo toàn lịch sử giao dịch (Rule R6)
+        setSessionMembers((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, status: "LEFT" as const } : m))
+        );
+        setSessionToast(
+          `Thành viên "${target.name}" đã được chuyển sang trạng thái Đã rời nhóm (bảo toàn lịch sử chi tiêu).`
+        );
+      } else {
+        // Xóa hoàn toàn vì chưa có giao dịch nào
+        setSessionMembers((prev) => prev.filter((m) => m.id !== id));
+        setSessionToast(`Đã xóa thành viên "${target.name}" khỏi chuyến đi.`);
+      }
+
+      return { success: true };
+    },
+    [sessionMembers, memberBalancesResult, sessionExpenses, sessionStatus, isHost]
+  );
+
+  const handleLeaveTrip = React.useCallback(
+    (id: string) => {
+      const target = sessionMembers.find((m) => m.id === id);
+      if (!target) {
+        return { success: false, message: "Không tìm thấy thành viên." };
+      }
+
+      const memberBalance = memberBalancesResult.balances.find((b) => b.memberId === id);
+      const net = memberBalance ? memberBalance.netAmount : 0;
+
+      const permission = canLeaveTrip(target, net, sessionStatus);
+      if (!permission.allowed) {
+        return { success: false, message: permission.reason };
+      }
+
+      // Thành viên rời chuyến -> chuyển status = 'LEFT'
+      setSessionMembers((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, status: "LEFT" as const } : m))
+      );
+      setSessionToast(`Bạn đã rời chuyến đi "${sessionTrip.name}".`);
+      return { success: true };
+    },
+    [sessionMembers, memberBalancesResult, sessionStatus, sessionTrip.name]
+  );
+
+  const handleApproveClaim = React.useCallback(
+    (claimId: string) => {
+      const claim = sessionClaims.find((c) => c.id === claimId);
+      if (!claim) {
+        return { success: false, message: "Không tìm thấy yêu cầu nhận diện." };
+      }
+
+      const placeholder = sessionMembers.find((m) => m.id === claim.placeholderMemberId);
+      if (!placeholder) {
+        return { success: false, message: "Không tìm thấy vị trí thành viên tương ứng." };
+      }
+
+      const permission = canDecideClaim(isHost, claim, placeholder, sessionStatus);
+      if (!permission.allowed) {
+        return { success: false, message: permission.reason };
+      }
+
+      // 1. Gán user_id vào dòng trip_members tương ứng, chuyển isNoAccount = false, xóa bank_* (Rule R13)
+      setSessionMembers((prev) =>
+        prev.map((m) =>
+          m.id === claim.placeholderMemberId
+            ? {
+                ...m,
+                userId: claim.userId,
+                email: claim.userEmail,
+                isNoAccount: false,
+                bankBin: null,
+                bankAccountNo: null,
+                bankAccountName: null,
+              }
+            : m
+        )
+      );
+
+      // 2. Cập nhật claim status = 'APPROVED'
+      // Tự động chuyển các yêu cầu PENDING khác của cùng placeholder sang 'REJECTED' (Rule R20)
+      setSessionClaims((prev) =>
+        prev.map((c) => {
+          if (c.id === claimId) {
+            return {
+              ...c,
+              status: "APPROVED" as const,
+              decidedAt: new Date().toISOString(),
+              decidedByMemberId: currentMemberId,
+            };
+          }
+          if (c.placeholderMemberId === claim.placeholderMemberId && c.status === "PENDING") {
+            return {
+              ...c,
+              status: "REJECTED" as const,
+              decidedAt: new Date().toISOString(),
+              decidedByMemberId: currentMemberId,
+            };
+          }
+          return c;
+        })
+      );
+
+      setSessionToast(
+        `Đã duyệt liên kết tài khoản cho "${claim.userName}" với vị trí "${placeholder.name}" thành công.`
+      );
+      return { success: true };
+    },
+    [sessionClaims, sessionMembers, isHost, sessionStatus, currentMemberId]
+  );
+
+  const handleRejectClaim = React.useCallback(
+    (claimId: string) => {
+      const claim = sessionClaims.find((c) => c.id === claimId);
+      if (!claim) {
+        return { success: false, message: "Không tìm thấy yêu cầu nhận diện." };
+      }
+
+      const placeholder = sessionMembers.find((m) => m.id === claim.placeholderMemberId);
+      if (!placeholder) {
+        return { success: false, message: "Không tìm thấy vị trí thành viên tương ứng." };
+      }
+
+      const permission = canDecideClaim(isHost, claim, placeholder, sessionStatus);
+      if (!permission.allowed) {
+        return { success: false, message: permission.reason };
+      }
+
+      setSessionClaims((prev) =>
+        prev.map((c) =>
+          c.id === claimId
+            ? {
+                ...c,
+                status: "REJECTED" as const,
+                decidedAt: new Date().toISOString(),
+                decidedByMemberId: currentMemberId,
+              }
+            : c
+        )
+      );
+
+      setSessionToast(`Đã từ chối yêu cầu liên kết của "${claim.userName}".`);
+      return { success: true };
+    },
+    [sessionClaims, sessionMembers, isHost, sessionStatus, currentMemberId]
+  );
+
+  const handleResetInviteCode = React.useCallback(() => {
+    if (!isHost) {
+      return { success: false, message: "Chỉ Trưởng nhóm mới có quyền đổi mã mời." };
+    }
+    if (sessionStatus !== "ACTIVE") {
+      return { success: false, message: "Chỉ có thể đổi mã mời khi chuyến đi đang lên kế hoạch." };
+    }
+
+    // Tạo mã mời mới tuân thủ Rule R14 (10-12 ký tự chữ/số + 1 dấu gạch nối)
+    const randSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const newCode = `DL3N2D-${randSuffix}99`;
+    setSessionInviteCode(newCode);
+    setSessionToast(`Đã đổi mã mời mới: ${newCode}. Mã mời cũ đã bị vô hiệu hóa.`);
+    return { success: true, code: newCode };
+  }, [isHost, sessionStatus]);
+
   return (
     <TripSessionContext.Provider
       value={{
@@ -517,6 +837,9 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
         sessionTrip,
         sessionExpenses,
         sessionItinerary,
+        sessionMembers,
+        sessionClaims,
+        sessionInviteCode,
         sessionStatus,
         sessionTransfers: effectiveTransfers,
         sessionSettlement,
@@ -531,6 +854,13 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
         handleUpdateItineraryItem,
         handleDeleteItineraryItem,
         handleOpenAddExpenseForItinerary,
+        handleAddGuestMember,
+        handleEditGuestMember,
+        handleRemoveMember,
+        handleLeaveTrip,
+        handleApproveClaim,
+        handleRejectClaim,
+        handleResetInviteCode,
         handleLockSettlement,
         handleReopenSettlement,
         handleMarkTransferPaid,
@@ -565,7 +895,7 @@ export function TripSessionProvider({ initialTrip, children }: TripSessionProvid
             const expenseId = `exp-${Date.now()}`;
 
             const participantsWithOrder = formData.participantMemberIds.map((id) => {
-              const m = initialTrip.members.find((member) => member.id === id);
+              const m = sessionMembers.find((member) => member.id === id);
               return { id, joinOrder: m ? m.joinOrder : 0 };
             });
 

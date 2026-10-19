@@ -16,7 +16,7 @@ const TABS: TabItem[] = [
   { id: "lich-trinh", segment: "itinerary", label: "Lịch trình", isImplemented: true },
   { id: "chi-tieu", segment: "expenses", label: "Chi tiêu", isImplemented: true },
   { id: "cong-no", segment: "settlement", label: "Công nợ", isImplemented: true },
-  { id: "thanh-vien", segment: "members", label: "Thành viên", isImplemented: false },
+  { id: "thanh-vien", segment: "members", label: "Thành viên", isImplemented: true },
 ];
 
 interface TripDetailTabsProps {

@@ -13,9 +13,80 @@ export interface TripMember {
   status: MemberStatus;
   joinOrder: number;
   avatarUrl?: string | null;
+  email?: string | null;
+  note?: string | null;
+  bankBin?: string | null;
+  bankAccountNo?: string | null;
+  bankAccountName?: string | null;
   isNoAccount?: boolean;
   isCurrentUser?: boolean;
   isHost?: boolean;
+  spentAmount?: number;
+}
+
+export type ClaimStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+/**
+ * Domain entity: MemberClaim (khớp ERD member_claims)
+ * Yêu cầu nhận diện thành viên chưa có tài khoản (UC33, UC30, Rule R13, R20)
+ */
+export interface MemberClaim {
+  id: string;
+  tripId: string;
+  placeholderMemberId: string; // ID của thành viên chưa có tài khoản trong trip_members
+  placeholderMemberName: string; // Tên của thành viên chưa có tài khoản
+  userId: string; // ID người gửi yêu cầu (người dùng thật)
+  userName: string; // Tên người gửi yêu cầu
+  userEmail: string; // Email người gửi yêu cầu
+  userAvatarUrl?: string | null;
+  status: ClaimStatus;
+  createdAt: string; // ISO timestamp
+  decidedAt?: string | null;
+  decidedByMemberId?: string | null; // ID của Trưởng nhóm đã duyệt/từ chối
+}
+
+export interface CreateGuestMemberFormData {
+  displayName: string;
+  note?: string;
+}
+
+export interface EditGuestMemberFormData {
+  displayName: string;
+  note?: string;
+}
+
+export interface GuestMemberValidationErrors {
+  displayName?: string;
+  note?: string;
+}
+
+export interface GuestMemberValidationResult {
+  isValid: boolean;
+  errors: GuestMemberValidationErrors;
+}
+
+/**
+ * Thẻ xem trước lời mời tham gia chuyến đi (tuân thủ Rule R19)
+ * Tuyệt đối không chứa lịch trình, chi tiêu, công nợ hay tài khoản ngân hàng.
+ */
+export interface TripInvitePreviewData {
+  id: string;
+  name: string;
+  destination?: string | null;
+  startDate: string;
+  endDate: string;
+  durationText: string;
+  hostName: string;
+  hostAvatarUrl?: string | null;
+  members: Array<{
+    id: string;
+    name: string;
+    avatarUrl?: string | null;
+    role: TripMemberRole;
+  }>;
+  memberCount: number;
+  status: TripStatus;
+  inviteCode: string;
 }
 
 export type BalanceType = "RECEIVE" | "PAY" | "SETTLED";
