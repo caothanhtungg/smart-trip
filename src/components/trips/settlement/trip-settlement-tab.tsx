@@ -6,6 +6,7 @@ import { useTripSession } from "@/components/trips/detail/trip-session-context";
 import { calculateMemberBalances, canReopenSettlement } from "@/lib/money/settlement";
 import { SettlementTransfer } from "@/types/settlement";
 import { MOCK_MEMBER_BANK_INFO } from "@/lib/mock/settlement";
+import { SPECIAL_LABELS } from "@/lib/labels";
 import { TripSettlementBanner } from "./trip-settlement-banner";
 import { TripSettlementTable } from "./trip-settlement-table";
 import { TripSettlementBalanceSidebar } from "./trip-settlement-balance-sidebar";
@@ -204,7 +205,7 @@ export function TripSettlementTab() {
                 )}
                 {m.isNoAccount && (
                   <span className="text-[10px] bg-amber-100 text-amber-800 px-1 rounded font-normal">
-                    Khách
+                    {SPECIAL_LABELS.NO_ACCOUNT}
                   </span>
                 )}
               </button>

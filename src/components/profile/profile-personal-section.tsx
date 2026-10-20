@@ -4,7 +4,6 @@ import * as React from "react";
 import {
   User,
   Mail,
-  Phone,
   Lock,
   CheckCircle,
   Save,
@@ -20,28 +19,24 @@ export function ProfilePersonalSection() {
   const { toast } = useToast();
 
   const [formData, setFormData] = React.useState({
-    fullName: profile.fullName || "",
-    displayName: profile.displayName || "",
-    phoneNumber: profile.phoneNumber || "",
+    displayName: profile.displayName || profile.fullName || "",
   });
 
   const [errors, setErrors] = React.useState<ProfileValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const initials = React.useMemo(() => {
-    const name = formData.displayName || formData.fullName || "L";
+    const name = formData.displayName || profile.fullName || "L";
     const parts = name.trim().split(" ");
     if (parts.length >= 2) {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
     return name.slice(0, 2).toUpperCase();
-  }, [formData.displayName, formData.fullName]);
+  }, [formData.displayName, profile.fullName]);
 
   const handleReset = () => {
     setFormData({
-      fullName: profile.fullName || "",
-      displayName: profile.displayName || "",
-      phoneNumber: profile.phoneNumber || "",
+      displayName: profile.displayName || profile.fullName || "",
     });
     setErrors({});
   };
@@ -52,9 +47,8 @@ export function ProfilePersonalSection() {
     setErrors({});
 
     const res = await updateProfile({
-      fullName: formData.fullName,
+      fullName: profile.fullName || formData.displayName,
       displayName: formData.displayName,
-      phoneNumber: formData.phoneNumber || undefined,
     });
 
     setIsSubmitting(false);
@@ -81,7 +75,7 @@ export function ProfilePersonalSection() {
           </h2>
         </div>
         <p className="text-sm text-text-muted">
-          Cập nhật ảnh đại diện và chi tiết liên hệ của bạn trên Smart Trip
+          Cập nhật ảnh đại diện và tên hiển thị của bạn trên Smart Trip
         </p>
       </div>
 
@@ -131,47 +125,13 @@ export function ProfilePersonalSection() {
 
       {/* 2-Column Form Grid */}
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-        {/* Field 1: Full name */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="fullName"
-            className="text-xs font-semibold text-yale-blue flex items-center justify-between"
-          >
-            <span>Họ và tên</span>
-            <span className="text-functional-negative text-xs">*</span>
-          </label>
-          <div className="relative">
-            <User className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              id="fullName"
-              type="text"
-              value={formData.fullName}
-              onChange={(e) => {
-                setFormData((p) => ({ ...p, fullName: e.target.value }));
-                if (errors.fullName) setErrors((p) => ({ ...p, fullName: undefined }));
-              }}
-              placeholder="Nhập họ và tên đầy đủ"
-              className={`w-full h-11 pl-10 pr-4 rounded-xl bg-surface-card text-on-surface text-sm border shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-ocean-mist ${
-                errors.fullName ? "border-functional-negative" : "border-divider-border"
-              }`}
-            />
-          </div>
-          {errors.fullName ? (
-            <span className="text-xs text-functional-negative font-medium">{errors.fullName}</span>
-          ) : (
-            <span className="text-[11px] text-text-muted">
-              Tên thật dùng để đối chiếu khi chuyển khoản qua ngân hàng.
-            </span>
-          )}
-        </div>
-
-        {/* Field 2: Group Display Name */}
+        {/* Field: Group Display Name */}
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="displayName"
             className="text-xs font-semibold text-yale-blue flex items-center justify-between"
           >
-            <span>Tên hiển thị trong nhóm</span>
+            <span>Tên hiển thị</span>
             <span className="text-functional-negative text-xs">*</span>
           </label>
           <div className="relative">
@@ -181,7 +141,7 @@ export function ProfilePersonalSection() {
               type="text"
               value={formData.displayName}
               onChange={(e) => {
-                setFormData((p) => ({ ...p, displayName: e.target.value }));
+                setFormData({ displayName: e.target.value });
                 if (errors.displayName) setErrors((p) => ({ ...p, displayName: undefined }));
               }}
               placeholder="Ví dụ: Lan, Hương Lan, Lan Mèo"
@@ -194,12 +154,12 @@ export function ProfilePersonalSection() {
             <span className="text-xs text-functional-negative font-medium">{errors.displayName}</span>
           ) : (
             <span className="text-[11px] text-text-muted">
-              Tên gọi ngắn gọn xuất hiện trong bảng phân chia hóa đơn.
+              Tên gọi hiển thị trong các chuyến đi và bảng phân chia chi phí.
             </span>
           )}
         </div>
 
-        {/* Field 3: Email */}
+        {/* Field: Email */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <label htmlFor="email" className="text-xs font-semibold text-yale-blue">
@@ -222,42 +182,8 @@ export function ProfilePersonalSection() {
             <Lock className="w-4 h-4 text-text-muted absolute right-3.5 top-1/2 -translate-y-1/2" />
           </div>
           <span className="text-[11px] text-text-muted">
-            Dùng để nhận thông báo thanh toán và sao kê nhóm du lịch.
+            Email tài khoản liên kết Google Auth (chế độ chỉ đọc).
           </span>
-        </div>
-
-        {/* Field 4: Phone */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="phoneNumber"
-            className="text-xs font-semibold text-yale-blue flex items-center justify-between"
-          >
-            <span>Số điện thoại</span>
-            <span className="text-text-muted text-xs">(Tùy chọn)</span>
-          </label>
-          <div className="relative">
-            <Phone className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              id="phoneNumber"
-              type="tel"
-              value={formData.phoneNumber}
-              onChange={(e) => {
-                setFormData((p) => ({ ...p, phoneNumber: e.target.value }));
-                if (errors.phoneNumber) setErrors((p) => ({ ...p, phoneNumber: undefined }));
-              }}
-              placeholder="Nhập số điện thoại (VD: 0912 345 678)"
-              className={`w-full h-11 pl-10 pr-4 rounded-xl bg-surface-card text-on-surface text-sm border shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-ocean-mist ${
-                errors.phoneNumber ? "border-functional-negative" : "border-divider-border"
-              }`}
-            />
-          </div>
-          {errors.phoneNumber ? (
-            <span className="text-xs text-functional-negative font-medium">{errors.phoneNumber}</span>
-          ) : (
-            <span className="text-[11px] text-text-muted">
-              Nhận mã SMS OTP xác nhận giao dịch chuyển tiền tự động.
-            </span>
-          )}
         </div>
 
         {/* Action Buttons Row */}

@@ -7,7 +7,7 @@ import {
 import { POPULAR_BANKS } from "@/lib/mock/banks";
 
 /**
- * Chuẩn hóa tên chủ tài khoản ngân hàng theo quy tắc R9:
+ * Chuẩn hóa tên chủ tài khoản ngân hàng:
  * - Chuyển sang chữ IN HOA
  * - Bỏ toàn bộ dấu tiếng Việt
  * - Loại bỏ ký tự đặc biệt, chỉ giữ lại chữ cái và khoảng trắng đơn
@@ -55,15 +55,6 @@ export function validateProfileForm(
     errors.displayName = "Tên hiển thị không được vượt quá 50 ký tự";
   }
 
-  if (data.phoneNumber) {
-    const cleanPhone = data.phoneNumber.replace(/[\s.-]/g, "");
-    const vnPhoneRegex = /^(03|05|07|08|09)\d{8}$/;
-    if (!vnPhoneRegex.test(cleanPhone)) {
-      errors.phoneNumber =
-        "Số điện thoại không hợp lệ (cần 10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09)";
-    }
-  }
-
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
@@ -94,10 +85,6 @@ export function validateBankForm(
     errors.accountHolder = "Vui lòng nhập tên chủ tài khoản";
   } else if (normalizedHolder.length < 2) {
     errors.accountHolder = "Tên chủ tài khoản phải có ít nhất 2 ký tự";
-  }
-
-  if (data.branch && data.branch.trim().length > 100) {
-    errors.branch = "Tên chi nhánh không được vượt quá 100 ký tự";
   }
 
   return {

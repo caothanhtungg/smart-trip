@@ -7,7 +7,6 @@ import {
   Info,
   Copy,
   Check,
-  Building,
   ShieldCheck,
   Trash2,
   Save,
@@ -27,7 +26,6 @@ export function ProfileBankSection() {
     bankBin: profile.bankInfo?.bankBin || "970407",
     accountNumber: profile.bankInfo?.accountNumber || "",
     accountHolder: profile.bankInfo?.accountHolder || normalizeAccountHolderName(profile.fullName),
-    branch: profile.bankInfo?.branch || "",
   });
 
   const [errors, setErrors] = React.useState<BankValidationErrors>({});
@@ -43,7 +41,7 @@ export function ProfileBankSection() {
   };
 
   const handleHolderNameChange = (val: string) => {
-    // Automatically uppercase and unaccent name per Rule R9
+    // Automatically uppercase and unaccent name
     const normalized = normalizeAccountHolderName(val);
     setFormData((p) => ({ ...p, accountHolder: normalized }));
     if (errors.accountHolder) setErrors((p) => ({ ...p, accountHolder: undefined }));
@@ -62,7 +60,6 @@ export function ProfileBankSection() {
       bankName,
       accountNumber: formData.accountNumber,
       accountHolder: formData.accountHolder,
-      branch: formData.branch || undefined,
     });
 
     setIsSubmitting(false);
@@ -81,7 +78,6 @@ export function ProfileBankSection() {
       bankBin: "970407",
       accountNumber: "",
       accountHolder: normalizeAccountHolderName(profile.fullName),
-      branch: "",
     });
     setErrors({});
     toast("Đã gỡ bỏ thông tin tài khoản ngân hàng.", "info");
@@ -95,7 +91,6 @@ export function ProfileBankSection() {
       bankName: selectedBank ? selectedBank.shortName : "Ngân hàng",
       accountNumber: formData.accountNumber,
       accountHolder: formData.accountHolder || normalizeAccountHolderName(profile.fullName),
-      branch: formData.branch,
     };
   }, [formData, profile.fullName, profile.bankInfo]);
 
@@ -124,7 +119,7 @@ export function ProfileBankSection() {
         <div className="text-xs sm:text-sm text-yale-blue leading-relaxed">
           <strong className="font-semibold text-yale-blue">Bảo vệ riêng tư tài chính:</strong>{" "}
           Chỉ hiển thị cho người cần chuyển tiền cho bạn khi quyết toán chi phí chuyến đi. Smart
-          Trip tự động tạo mã VietQR Napas 24/7 chính xác từng đồng để bạn nhận tiền tức thì mà
+          Trip tự động tạo mã VietQR Napas 24/7 chính xác từng đồng để bạn nhận tiền mà
           không cần nhập số tài khoản thủ công. (Dữ liệu thử nghiệm minh họa).
         </div>
       </div>
@@ -212,13 +207,12 @@ export function ProfileBankSection() {
             )}
           </div>
 
-          {/* Account Holder Name (Uppercase Unaccented per R9) */}
+          {/* Account Holder Name */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <label htmlFor="accountHolder" className="text-xs font-semibold text-yale-blue">
                 Tên chủ tài khoản (Viết HOA không dấu)
               </label>
-              <span className="text-[11px] text-text-muted">Chuẩn Napas R9</span>
             </div>
             <div className="relative">
               <ShieldCheck className="w-4 h-4 text-functional-positive absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -242,30 +236,6 @@ export function ProfileBankSection() {
                 <Check className="w-3 h-3" />
                 Tên chủ tài khoản tự động chuẩn hóa chữ in hoa không dấu.
               </span>
-            )}
-          </div>
-
-          {/* Branch Location */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="bankBranch" className="text-xs font-semibold text-yale-blue">
-              Chi nhánh ngân hàng <span className="text-text-muted font-normal">(Tùy chọn)</span>
-            </label>
-            <div className="relative">
-              <Building className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                id="bankBranch"
-                type="text"
-                value={formData.branch}
-                onChange={(e) => {
-                  setFormData((p) => ({ ...p, branch: e.target.value }));
-                  if (errors.branch) setErrors((p) => ({ ...p, branch: undefined }));
-                }}
-                placeholder="Ví dụ: Hội sở chính - Hà Nội"
-                className="w-full h-11 pl-10 pr-4 rounded-xl bg-surface-card text-on-surface text-sm border border-divider-border shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-ocean-mist"
-              />
-            </div>
-            {errors.branch && (
-              <span className="text-xs text-functional-negative font-medium">{errors.branch}</span>
             )}
           </div>
 

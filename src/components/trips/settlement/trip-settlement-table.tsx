@@ -8,7 +8,6 @@ import {
   Clock,
   HandCoins,
   QrCode,
-  ShieldCheck,
   UserCheck,
 } from "lucide-react";
 import { SettlementTransfer } from "@/types/settlement";
@@ -63,11 +62,6 @@ export function TripSettlementTable({
               ? `${unpaidCount} giao dịch cần xử lý`
               : "Tất cả đã hoàn tất"}
           </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 text-xs text-text-muted">
-          <ShieldCheck className="w-4 h-4 text-ocean-mist" />
-          <span>Đã đồng bộ ngân hàng VietQR</span>
         </div>
       </div>
 
@@ -469,30 +463,6 @@ export function TripSettlementTable({
         </>
       )}
 
-      {/* VietQR assistance banner under table */}
-      <div className="mt-5 p-4 rounded-xl bg-bg-canvas border border-divider-border/60 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-surface-card text-cerulean flex items-center justify-center shrink-0 shadow-xs border border-divider-border/40">
-            <QrCode className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="font-semibold text-xs text-yale-blue">
-              Chuyển khoản tự động quét mã VietQR Napas 24/7
-            </p>
-            <p className="text-[11px] text-text-muted mt-0.5">
-              Quét mã bằng bất kỳ app ngân hàng hoặc ví điện tử (Techcombank, VCB, MB, MoMo...) — tự động điền số tiền và nội dung chính xác.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="px-2.5 py-1 rounded bg-surface-card border border-divider-border font-semibold text-[10px] text-yale-blue shadow-2xs">
-            NAPAS 24/7
-          </span>
-          <span className="px-2.5 py-1 rounded bg-surface-card border border-divider-border font-semibold text-[10px] text-cerulean shadow-2xs">
-            VietQR PRO
-          </span>
-        </div>
-      </div>
     </div>
   );
 }

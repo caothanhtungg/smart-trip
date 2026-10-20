@@ -5,7 +5,7 @@ import {
   validateBankForm,
 } from "./validation";
 
-describe("normalizeAccountHolderName (Rule R9)", () => {
+describe("normalizeAccountHolderName", () => {
   it("converts lowercase accented names to uppercase unaccented", () => {
     expect(normalizeAccountHolderName("Nguyễn Phương Lan")).toBe("NGUYEN PHUONG LAN");
     expect(normalizeAccountHolderName("trần tuấn huy")).toBe("TRAN TUAN HUY");
@@ -32,20 +32,10 @@ describe("validateProfileForm", () => {
   const validData = {
     fullName: "Nguyễn Phương Lan",
     displayName: "Lan",
-    phoneNumber: "0912345678",
   };
 
   it("passes for valid profile data", () => {
     const res = validateProfileForm(validData);
-    expect(res.isValid).toBe(true);
-    expect(res.errors).toEqual({});
-  });
-
-  it("passes without optional phone number", () => {
-    const res = validateProfileForm({
-      fullName: "Nguyễn Phương Lan",
-      displayName: "Lan",
-    });
     expect(res.isValid).toBe(true);
     expect(res.errors).toEqual({});
   });
@@ -80,19 +70,6 @@ describe("validateProfileForm", () => {
     expect(res.isValid).toBe(false);
     expect(res.errors.displayName).toBeDefined();
   });
-
-  it("validates Vietnamese phone numbers correctly", () => {
-    // Valid cases (with spaces/dots should be accepted after cleaning)
-    expect(validateProfileForm({ ...validData, phoneNumber: "0912 345 678" }).isValid).toBe(true);
-    expect(validateProfileForm({ ...validData, phoneNumber: "038.123.4567" }).isValid).toBe(true);
-    expect(validateProfileForm({ ...validData, phoneNumber: "0771234567" }).isValid).toBe(true);
-
-    // Invalid cases
-    expect(validateProfileForm({ ...validData, phoneNumber: "1234567890" }).isValid).toBe(false);
-    expect(validateProfileForm({ ...validData, phoneNumber: "091234567" }).isValid).toBe(false);
-    expect(validateProfileForm({ ...validData, phoneNumber: "09123456789" }).isValid).toBe(false);
-    expect(validateProfileForm({ ...validData, phoneNumber: "0912abc678" }).isValid).toBe(false);
-  });
 });
 
 describe("validateBankForm", () => {
@@ -101,7 +78,6 @@ describe("validateBankForm", () => {
     bankName: "Vietcombank",
     accountNumber: "0071001234567",
     accountHolder: "NGUYEN PHUONG LAN",
-    branch: "Chi nhánh Ba Đình",
   };
 
   it("passes for valid bank data", () => {
@@ -130,10 +106,5 @@ describe("validateBankForm", () => {
   it("fails when account holder is empty or too short", () => {
     expect(validateBankForm({ ...validBank, accountHolder: "" }).isValid).toBe(false);
     expect(validateBankForm({ ...validBank, accountHolder: "A" }).isValid).toBe(false);
-  });
-
-  it("fails when branch name exceeds 100 characters", () => {
-    const longBranch = "B".repeat(101);
-    expect(validateBankForm({ ...validBank, branch: longBranch }).isValid).toBe(false);
   });
 });

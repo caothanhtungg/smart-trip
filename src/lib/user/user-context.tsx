@@ -18,14 +18,12 @@ const INITIAL_PROFILE: UserProfile = {
   fullName: "Nguyễn Phương Lan",
   displayName: "Lan",
   email: "lan.tran98@gmail.com",
-  phoneNumber: "0912 345 678",
   avatarUrl: null,
   bankInfo: {
     bankBin: "970407",
     bankName: "Techcombank",
     accountNumber: "19036542890011",
     accountHolder: "NGUYEN PHUONG LAN",
-    branch: "Hội sở chính - Hà Nội",
   },
 };
 
@@ -108,7 +106,6 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       ...prev,
       fullName: data.fullName.trim(),
       displayName: data.displayName.trim(),
-      phoneNumber: data.phoneNumber ? data.phoneNumber.trim() : undefined,
     }));
 
     return { success: true };
@@ -133,7 +130,6 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         bankName,
         accountNumber: data.accountNumber.trim(),
         accountHolder: normalizedHolder,
-        branch: data.branch ? data.branch.trim() : undefined,
       },
     }));
 
