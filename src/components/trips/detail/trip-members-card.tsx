@@ -6,6 +6,7 @@ import { TripDetailData } from "@/types/trip";
 import { formatMoney, getInitials } from "@/lib/utils";
 import { getMemberRoleLabel, SPECIAL_LABELS } from "@/lib/labels";
 import { TripInviteShareModal } from "./trip-invite-share-modal";
+import { useTripSession } from "./trip-session-context";
 
 interface TripMembersCardProps {
   trip: TripDetailData;
@@ -20,6 +21,7 @@ const AVATAR_COLORS = [
 ];
 
 export function TripMembersCard({ trip }: TripMembersCardProps) {
+  const { isHost, sessionInviteCode, handleResetInviteCode } = useTripSession();
   const [inviteModalOpen, setInviteModalOpen] = React.useState(false);
 
   // Sắp xếp danh sách thành viên theo joinOrder tăng dần
@@ -122,7 +124,9 @@ export function TripMembersCard({ trip }: TripMembersCardProps) {
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
         tripTitle={trip.name}
-        inviteCode={trip.inviteCode}
+        inviteCode={sessionInviteCode}
+        isHost={isHost}
+        onResetInviteCode={handleResetInviteCode}
       />
     </section>
   );

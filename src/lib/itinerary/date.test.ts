@@ -7,6 +7,9 @@ import {
   formatDurationHuman,
   classifyTimeOfDay,
   getTimeOfDayColorClasses,
+  timeStringToDbTime,
+  dbTimeToTimeString,
+  isValidCalendarDate,
 } from "./date";
 
 describe("Itinerary Date Helpers", () => {
@@ -115,6 +118,99 @@ describe("Itinerary Date Helpers", () => {
       expect(getTimeOfDayColorClasses("Trưa").text).toBe("text-functional-warning");
       expect(getTimeOfDayColorClasses("Chiều").text).toBe("text-tropical-teal");
       expect(getTimeOfDayColorClasses("Tối").text).toBe("text-yale-blue");
+    });
+  });
+
+  describe("timeStringToDbTime & dbTimeToTimeString (PostgreSQL TIME(0) Conversion)", () => {
+    it("chuyển đổi chuỗi HH:mm thành Date UTC 1970-01-01 an toàn độc lập timezone", () => {
+      const date = timeStringToDbTime("09:30");
+      expect(date).not.toBeNull();
+      expect(date?.getUTCFullYear()).toBe(1970);
+      expect(date?.getUTCMonth()).toBe(0);
+      expect(date?.getUTCDate()).toBe(1);
+      expect(date?.getUTCHours()).toBe(9);
+      expect(date?.getUTCMinutes()).toBe(30);
+      expect(date?.getUTCSeconds()).toBe(0);
+    });
+
+    it("chuyển đổi các mốc biên 00:00 và 23:59", () => {
+      const midnight = timeStringToDbTime("00:00");
+      expect(midnight?.getUTCHours()).toBe(0);
+      expect(midnight?.getUTCMinutes()).toBe(0);
+
+      const endOfDay = timeStringToDbTime("23:59");
+      expect(endOfDay?.getUTCHours()).toBe(23);
+      expect(endOfDay?.getUTCMinutes()).toBe(59);
+    });
+
+    it("trả về null cho đầu vào rỗng hoặc sai định dạng", () => {
+      expect(timeStringToDbTime(null)).toBeNull();
+      expect(timeStringToDbTime(undefined)).toBeNull();
+      expect(timeStringToDbTime("")).toBeNull();
+      expect(timeStringToDbTime("24:00")).toBeNull();
+      expect(timeStringToDbTime("12:60")).toBeNull();
+      expect(timeStringToDbTime("abc")).toBeNull();
+    });
+
+    it("dbTimeToTimeString chuyển đổi Date object thành chuỗi HH:mm", () => {
+      const date = new Date(Date.UTC(1970, 0, 1, 14, 5));
+      expect(dbTimeToTimeString(date)).toBe("14:05");
+    });
+
+    it("dbTimeToTimeString hỗ trợ chuỗi dạng HH:mm, HH:mm:ss và ISO", () => {
+      expect(dbTimeToTimeString("08:15")).toBe("08:15");
+      expect(dbTimeToTimeString("16:45:00")).toBe("16:45");
+      expect(dbTimeToTimeString("1970-01-01T07:20:00.000Z")).toBe("07:20");
+    });
+
+    it("dbTimeToTimeString trả về null cho giá trị null/undefined/sai ngày", () => {
+      expect(dbTimeToTimeString(null)).toBeNull();
+      expect(dbTimeToTimeString(undefined)).toBeNull();
+      expect(dbTimeToTimeString(new Date("invalid"))).toBeNull();
+      expect(dbTimeToTimeString("not-a-time")).toBeNull();
+    });
+
+    it("bảo đảm round-trip chuyển đổi hai chiều 100% khớp", () => {
+      const originalTimes = ["00:00", "07:30", "12:00", "18:45", "23:59"];
+      for (const time of originalTimes) {
+        const dbDate = timeStringToDbTime(time);
+        const backToTime = dbTimeToTimeString(dbDate);
+        expect(backToTime).toBe(time);
+      }
+    });
+  });
+
+  describe("isValidCalendarDate (Kiểm tra ngày lịch hợp lệ)", () => {
+    it("chấp nhận ngày lịch hợp lệ (2026-02-28 và năm nhuận 2024-02-29)", () => {
+      expect(isValidCalendarDate("2026-02-28")).toBe(true);
+      expect(isValidCalendarDate("2024-02-29")).toBe(true);
+      expect(isValidCalendarDate("2026-11-20")).toBe(true);
+      expect(isValidCalendarDate("2026-12-31")).toBe(true);
+      expect(isValidCalendarDate("2026-01-01")).toBe(true);
+    });
+
+    it("từ chối 2026-02-29 vì 2026 không phải năm nhuận", () => {
+      expect(isValidCalendarDate("2026-02-29")).toBe(false);
+    });
+
+    it("từ chối ngày không tồn tại (2026-02-31, 2026-04-31)", () => {
+      expect(isValidCalendarDate("2026-02-31")).toBe(false);
+      expect(isValidCalendarDate("2026-04-31")).toBe(false);
+      expect(isValidCalendarDate("2026-06-31")).toBe(false);
+      expect(isValidCalendarDate("2026-09-31")).toBe(false);
+      expect(isValidCalendarDate("2026-11-31")).toBe(false);
+    });
+
+    it("từ chối sai định dạng hoặc ngày/tháng vượt giới hạn", () => {
+      expect(isValidCalendarDate("")).toBe(false);
+      expect(isValidCalendarDate(null)).toBe(false);
+      expect(isValidCalendarDate(undefined)).toBe(false);
+      expect(isValidCalendarDate("invalid")).toBe(false);
+      expect(isValidCalendarDate("20/11/2026")).toBe(false);
+      expect(isValidCalendarDate("2026-13-01")).toBe(false);
+      expect(isValidCalendarDate("2026-00-10")).toBe(false);
+      expect(isValidCalendarDate("2026-05-32")).toBe(false);
+      expect(isValidCalendarDate("2026-05-00")).toBe(false);
     });
   });
 });

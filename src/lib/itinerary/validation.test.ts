@@ -64,6 +64,69 @@ describe("Itinerary Validation & Business Rules", () => {
       expect(result.errors.placeName).toContain("không được vượt quá 200 ký tự");
     });
 
+    it("báo lỗi khi ngày để trống hoặc sai định dạng", () => {
+      const emptyDay: CreateItineraryItemFormData = {
+        dayDate: "   ",
+        placeName: "Điểm đến",
+        startTime: "08:00",
+      };
+      const emptyResult = validateItineraryItemForm(emptyDay, tripStartDate, tripEndDate);
+      expect(emptyResult.isValid).toBe(false);
+      expect(emptyResult.errors.dayDate).toBe("Vui lòng chọn ngày cho hoạt động.");
+
+      const badFormat: CreateItineraryItemFormData = {
+        dayDate: "20/11/2026",
+        placeName: "Điểm đến",
+        startTime: "08:00",
+      };
+      const badResult = validateItineraryItemForm(badFormat, tripStartDate, tripEndDate);
+      expect(badResult.isValid).toBe(false);
+      expect(badResult.errors.dayDate).toBe("Ngày không đúng định dạng YYYY-MM-DD.");
+    });
+
+    it("báo lỗi khi ngày không tồn tại trên lịch (2026-02-29, 2026-02-31, 2026-04-31)", () => {
+      // 2026 không phải năm nhuận
+      const feb29NonLeap: CreateItineraryItemFormData = {
+        dayDate: "2026-02-29",
+        placeName: "Điểm đến",
+        startTime: "08:00",
+      };
+      const feb29Result = validateItineraryItemForm(feb29NonLeap, "2026-02-01", "2026-02-28");
+      expect(feb29Result.isValid).toBe(false);
+      expect(feb29Result.errors.dayDate).toBe("Ngày không hợp lệ.");
+
+      // Ngày 31 tháng 2
+      const feb31: CreateItineraryItemFormData = {
+        dayDate: "2026-02-31",
+        placeName: "Điểm đến",
+        startTime: "08:00",
+      };
+      const feb31Result = validateItineraryItemForm(feb31, "2026-02-01", "2026-03-01");
+      expect(feb31Result.isValid).toBe(false);
+      expect(feb31Result.errors.dayDate).toBe("Ngày không hợp lệ.");
+
+      // Tháng 4 chỉ có 30 ngày
+      const apr31: CreateItineraryItemFormData = {
+        dayDate: "2026-04-31",
+        placeName: "Điểm đến",
+        startTime: "08:00",
+      };
+      const apr31Result = validateItineraryItemForm(apr31, "2026-04-01", "2026-05-01");
+      expect(apr31Result.isValid).toBe(false);
+      expect(apr31Result.errors.dayDate).toBe("Ngày không hợp lệ.");
+    });
+
+    it("chấp nhận ngày 2024-02-29 trong năm nhuận khi nằm trong khoảng chuyến đi", () => {
+      const leapDayForm: CreateItineraryItemFormData = {
+        dayDate: "2024-02-29",
+        placeName: "Điểm ngày nhuận",
+        startTime: "09:00",
+      };
+      const leapResult = validateItineraryItemForm(leapDayForm, "2024-02-28", "2024-03-01");
+      expect(leapResult.isValid).toBe(true);
+      expect(leapResult.errors.dayDate).toBeUndefined();
+    });
+
     it("báo lỗi khi ngày nằm ngoài khoảng ngày của chuyến đi", () => {
       const formBefore: CreateItineraryItemFormData = {
         dayDate: "2026-11-19",

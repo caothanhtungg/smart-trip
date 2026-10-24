@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Wallet, UserCheck, Info, CheckCircle2 } from "lucide-react";
+import { MapPin, Calendar, Wallet, UserCheck, Info, CheckCircle2, Loader2 } from "lucide-react";
 import { CreateTripFormData } from "@/types/trip";
 import { formatMoney, formatDate } from "@/lib/utils";
 
@@ -13,6 +13,7 @@ interface CreateTripPreviewModalProps {
   onConfirmCreate: () => void;
   formData: CreateTripFormData;
   durationText: string | null;
+  isSubmitting?: boolean;
 }
 
 export function CreateTripPreviewModal({
@@ -21,11 +22,12 @@ export function CreateTripPreviewModal({
   onConfirmCreate,
   formData,
   durationText,
+  isSubmitting = false,
 }: CreateTripPreviewModalProps) {
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={isSubmitting ? () => {} : onClose}
       title="Xem trước thông tin chuyến đi"
       description="Biểu mẫu đã kiểm tra cú pháp và logic hợp lệ"
     >
@@ -105,26 +107,41 @@ export function CreateTripPreviewModal({
         <div className="p-3.5 rounded-xl bg-bg-canvas border border-border-hairline text-xs text-text-muted space-y-1">
           <div className="flex items-center gap-1.5 font-semibold text-yale-blue">
             <Info className="w-4 h-4 text-cerulean shrink-0" />
-            <span>Lưu ý phiên làm việc:</span>
+            <span>Lưu ý hệ thống:</span>
           </div>
           <p className="leading-relaxed">
-            Chuyến đi được lưu vào bộ nhớ phiên làm việc (Session Store). Bạn có thể tiếp tục thêm lịch trình và mời bạn bè ngay sau đây.
+            Chuyến đi sẽ được lưu trữ chính thức trên hệ thống cơ sở dữ liệu. Bạn có thể tiếp tục thêm lịch trình và mời bạn bè ngay sau đây.
           </p>
         </div>
 
         {/* Modal Action Buttons */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-hairline">
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Tiếp tục chỉnh sửa
           </Button>
           <Button
             type="button"
             variant="primary"
             onClick={onConfirmCreate}
+            disabled={isSubmitting}
             className="shadow-[0_4px_16px_rgba(26,117,159,0.25)] flex items-center gap-1.5"
           >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Tạo chuyến đi & Bắt đầu</span>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Đang tạo chuyến đi...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Tạo chuyến đi & Bắt đầu</span>
+              </>
+            )}
           </Button>
         </div>
       </div>

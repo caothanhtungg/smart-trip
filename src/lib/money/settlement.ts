@@ -28,7 +28,8 @@ export interface CalculateBalancesResult {
 export function calculateMemberBalances(
   members: readonly TripMember[],
   expenses: readonly TripExpense[],
-  bankInfoMap?: Record<string, MemberBankInfo>
+  bankInfoMap?: Record<string, MemberBankInfo>,
+  options?: { includeLeftMembers?: boolean }
 ): CalculateBalancesResult {
   if (!members || members.length === 0) {
     return {
@@ -39,23 +40,25 @@ export function calculateMemberBalances(
     };
   }
 
-  const activeMembers = members.filter((m) => m.status === "ACTIVE");
+  const effectiveMembers = options?.includeLeftMembers
+    ? members
+    : members.filter((m) => m.status === "ACTIVE");
   const memberMap = new Map<string, TripMember>();
-  activeMembers.forEach((m) => memberMap.set(m.id, m));
+  effectiveMembers.forEach((m) => memberMap.set(m.id, m));
 
   const paidMap = new Map<string, number>();
   const owedMap = new Map<string, number>();
 
-  // Khởi tạo 0 cho mọi active member
-  activeMembers.forEach((m) => {
+  // Khởi tạo 0 cho mọi thành viên được xét
+  effectiveMembers.forEach((m) => {
     paidMap.set(m.id, 0);
     owedMap.set(m.id, 0);
   });
 
   // 1. Tổng hợp tiền đã trả từ các khoản chi
   for (const exp of expenses || []) {
-    if (typeof exp.amount !== "number" || !Number.isSafeInteger(exp.amount) || exp.amount < 0) {
-      throw new TypeError(`[calculateMemberBalances] Số tiền khoản chi không hợp lệ: ${exp.amount}`);
+    if (typeof exp.amount !== "number" || !Number.isSafeInteger(exp.amount) || exp.amount <= 0) {
+      throw new TypeError(`[calculateMemberBalances] Số tiền khoản chi không hợp lệ (phải > 0): ${exp.amount}`);
     }
     if (exp.amount > MAX_MONEY_VND) {
       throw new Error(`[calculateMemberBalances] Số tiền khoản chi vượt quá giới hạn an toàn ${MAX_MONEY_VND} ₫`);
@@ -84,7 +87,7 @@ export function calculateMemberBalances(
   let sumNet = 0;
 
   // Giữ thứ tự theo joinOrder của các thành viên
-  const sortedMembers = [...activeMembers].sort((a, b) => {
+  const sortedMembers = [...effectiveMembers].sort((a, b) => {
     if (a.joinOrder !== b.joinOrder) return a.joinOrder - b.joinOrder;
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });

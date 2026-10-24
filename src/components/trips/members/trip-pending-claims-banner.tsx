@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 interface TripPendingClaimsBannerProps {
   claims: MemberClaim[];
   members: TripMember[];
-  onApproveClaim: (claimId: string) => void;
-  onRejectClaim: (claimId: string) => void;
+  onApproveClaim: (claimId: string) => unknown;
+  onRejectClaim: (claimId: string) => unknown;
 }
 
 export function TripPendingClaimsBanner({
@@ -18,6 +18,28 @@ export function TripPendingClaimsBanner({
   onApproveClaim,
   onRejectClaim,
 }: TripPendingClaimsBannerProps) {
+  const [processingClaimId, setProcessingClaimId] = React.useState<string | null>(null);
+
+  const handleApprove = async (claimId: string) => {
+    if (processingClaimId) return;
+    setProcessingClaimId(claimId);
+    try {
+      await onApproveClaim(claimId);
+    } finally {
+      setProcessingClaimId(null);
+    }
+  };
+
+  const handleReject = async (claimId: string) => {
+    if (processingClaimId) return;
+    setProcessingClaimId(claimId);
+    try {
+      await onRejectClaim(claimId);
+    } finally {
+      setProcessingClaimId(null);
+    }
+  };
+
   const pendingClaims = claims.filter((c) => c.status === "PENDING");
 
   if (pendingClaims.length === 0) {
@@ -117,21 +139,27 @@ export function TripPendingClaimsBanner({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => onRejectClaim(claim.id)}
+                    disabled={processingClaimId !== null}
+                    onClick={() => handleReject(claim.id)}
                     className="h-11 px-4 bg-white hover:bg-red-50 text-functional-negative border-functional-negative/30 font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-xs flex-1 sm:flex-initial"
                   >
                     <X className="w-4 h-4" />
-                    <span>Từ chối</span>
+                    <span>
+                      {processingClaimId === claim.id ? "Đang xử lý..." : "Từ chối"}
+                    </span>
                   </Button>
 
                   <Button
                     type="button"
                     variant="primary"
-                    onClick={() => onApproveClaim(claim.id)}
+                    disabled={processingClaimId !== null}
+                    onClick={() => handleApprove(claim.id)}
                     className="h-11 px-5 bg-cerulean hover:bg-baltic-blue text-white font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg flex-1 sm:flex-initial"
                   >
                     <Check className="w-4 h-4 stroke-[2.5]" />
-                    <span>Duyệt liên kết</span>
+                    <span>
+                      {processingClaimId === claim.id ? "Đang xử lý..." : "Duyệt liên kết"}
+                    </span>
                   </Button>
                 </div>
 

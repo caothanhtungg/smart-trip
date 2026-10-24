@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { UserCheck, Users } from "lucide-react";
+import { AlertTriangle, RefreshCw, UserCheck, Users } from "lucide-react";
 import { useTripSession } from "@/components/trips/detail/trip-session-context";
 import { calculateMemberBalances, canReopenSettlement } from "@/lib/money/settlement";
 import { SettlementTransfer } from "@/types/settlement";
@@ -32,6 +32,10 @@ export function TripSettlementTab() {
     handleMarkTransferPaid,
     handleConfirmTransferCompleted,
     sessionToast,
+    isSettlementLoading,
+    settlementError,
+    isSettlementMutating,
+    refetchSettlement,
   } = useTripSession();
 
   // Modals state
@@ -87,7 +91,9 @@ export function TripSettlementTab() {
     setConfirmModalState({
       isOpen: true,
       type: "LOCK_SETTLEMENT",
-      onConfirm: () => handleLockSettlement(),
+      onConfirm: async () => {
+        await handleLockSettlement();
+      },
     });
   };
 
@@ -95,10 +101,10 @@ export function TripSettlementTab() {
     setConfirmModalState({
       isOpen: true,
       type: "REOPEN_SETTLEMENT",
-      onConfirm: () => {
-        const res = handleReopenSettlement();
-        if (!res.success && res.message) {
-          alert(res.message);
+      onConfirm: async () => {
+        const res = await handleReopenSettlement();
+        if (res && !res.success && res.message) {
+          // Toast or message handled
         }
       },
     });
@@ -124,8 +130,8 @@ export function TripSettlementTab() {
       type: "PROXY_PAY",
       title: `Xác nhận Trả hộ cho ${fromName}`,
       description: `Bạn đang ghi nhận ${fromName} (thành viên chưa có tài khoản) đã thanh toán khoản nợ ${transfer.amount.toLocaleString("vi-VN")} ₫ cho ${toName}.`,
-      onConfirm: () => {
-        handleMarkTransferPaid(transfer.id, "CASH", "Trưởng nhóm trả hộ");
+      onConfirm: async () => {
+        await handleMarkTransferPaid(transfer.id, "CASH", "Trưởng nhóm trả hộ");
       },
     });
   };
@@ -139,8 +145,8 @@ export function TripSettlementTab() {
       type: "CONFIRM_RECEIVED",
       title: `Xác nhận đã nhận tiền từ ${fromName}`,
       description: `Vui lòng xác nhận bạn đã nhận đủ số tiền ${transfer.amount.toLocaleString("vi-VN")} ₫ từ ${fromName}.`,
-      onConfirm: () => {
-        handleConfirmTransferCompleted(transfer.id);
+      onConfirm: async () => {
+        await handleConfirmTransferCompleted(transfer.id);
       },
     });
   };
@@ -156,8 +162,8 @@ export function TripSettlementTab() {
       type: "PROXY_RECEIVE",
       title: `Xác nhận Nhận hộ cho ${toName}`,
       description: `Bạn đang xác nhận ${toName} (thành viên chưa có tài khoản) đã nhận đủ số tiền ${transfer.amount.toLocaleString("vi-VN")} ₫ từ ${fromName}.`,
-      onConfirm: () => {
-        handleConfirmTransferCompleted(transfer.id);
+      onConfirm: async () => {
+        await handleConfirmTransferCompleted(transfer.id);
       },
     });
   };
@@ -214,48 +220,93 @@ export function TripSettlementTab() {
         </div>
       </div>
 
-      {/* TOP BANNER */}
-      <TripSettlementBanner
-        status={sessionStatus}
-        transfersCount={sessionTransfers.length}
-        isHost={isHost}
-        canReopen={canReopen}
-        reopenDisabledReason={reopenDisabledReason}
-        onLockClick={handleOpenLockModal}
-        onReopenClick={handleOpenReopenModal}
-        onViewGraphClick={() => setIsGraphModalOpen(true)}
-      />
-
-      {/* 12-COLUMN GRID (8 cols main table vs 4 cols balances sidebar) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Main Left Workspace: Settlement Table */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
-          <TripSettlementTable
+      {/* SKELETON LOADING STATE */}
+      {isSettlementLoading ? (
+        <div
+          className="w-full flex flex-col gap-6 animate-pulse"
+          data-testid="settlement-loading-skeleton"
+        >
+          {/* Banner Skeleton */}
+          <div className="w-full bg-surface-container-low border border-divider-border/60 rounded-[20px] p-6 h-28" />
+          {/* Main Grid Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8 bg-surface-card rounded-[20px] border border-divider-border/60 p-6 h-96" />
+            <div className="lg:col-span-4 bg-surface-card rounded-[20px] border border-divider-border/60 p-6 h-96" />
+          </div>
+        </div>
+      ) : settlementError ? (
+        /* ERROR STATE */
+        <div
+          className="w-full p-6 bg-functional-warning-bg/40 border border-functional-warning/30 rounded-[20px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
+          role="alert"
+          data-testid="settlement-error-card"
+        >
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-functional-warning-bg flex items-center justify-center shrink-0 border border-functional-warning/40">
+              <AlertTriangle className="w-5 h-5 text-functional-warning" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm text-yale-blue">
+                Không thể tải dữ liệu quyết toán
+              </h3>
+              <p className="text-xs text-text-muted mt-0.5">{settlementError}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => refetchSettlement()}
+            className="px-4 py-2 bg-cerulean hover:bg-baltic-blue text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shrink-0 shadow-xs"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Thử lại</span>
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* TOP BANNER */}
+          <TripSettlementBanner
             status={sessionStatus}
-            transfers={sessionTransfers}
-            currentMemberId={currentMemberId}
+            transfersCount={sessionTransfers.length}
             isHost={isHost}
-            members={sessionTrip.members}
-            onPayClick={handleOpenPayment}
-            onRemindClick={handleOpenReminder}
-            onConfirmReceivedClick={handleOpenConfirmReceived}
-            onProxyPayClick={handleOpenProxyPay}
-            onProxyReceiveClick={handleOpenProxyReceive}
+            canReopen={canReopen}
+            reopenDisabledReason={reopenDisabledReason}
+            onLockClick={handleOpenLockModal}
+            onReopenClick={handleOpenReopenModal}
+            onViewGraphClick={() => setIsGraphModalOpen(true)}
           />
-        </div>
 
-        {/* Right Sidebar: Personal & Group Balances */}
-        <div className="lg:col-span-4">
-          <TripSettlementBalanceSidebar
-            status={sessionStatus}
-            currentMemberId={currentMemberId}
-            members={sessionTrip.members}
-            balances={balances}
-            transfers={sessionTransfers}
-            onPayMyDebtClick={handleOpenPayment}
-          />
-        </div>
-      </div>
+          {/* 12-COLUMN GRID (8 cols main table vs 4 cols balances sidebar) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Main Left Workspace: Settlement Table */}
+            <div className="lg:col-span-8 flex flex-col gap-6">
+              <TripSettlementTable
+                status={sessionStatus}
+                transfers={sessionTransfers}
+                currentMemberId={currentMemberId}
+                isHost={isHost}
+                members={sessionTrip.members}
+                onPayClick={handleOpenPayment}
+                onRemindClick={handleOpenReminder}
+                onConfirmReceivedClick={handleOpenConfirmReceived}
+                onProxyPayClick={handleOpenProxyPay}
+                onProxyReceiveClick={handleOpenProxyReceive}
+              />
+            </div>
+
+            {/* Right Sidebar: Personal & Group Balances */}
+            <div className="lg:col-span-4">
+              <TripSettlementBalanceSidebar
+                status={sessionStatus}
+                currentMemberId={currentMemberId}
+                members={sessionTrip.members}
+                balances={balances}
+                transfers={sessionTransfers}
+                onPayMyDebtClick={handleOpenPayment}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* MODALS */}
       {/* 1. Confirm Modal */}
@@ -264,6 +315,7 @@ export function TripSettlementTab() {
         type={confirmModalState.type}
         title={confirmModalState.title}
         description={confirmModalState.description}
+        isLoading={isSettlementMutating}
         onConfirm={confirmModalState.onConfirm}
         onClose={() =>
           setConfirmModalState((prev) => ({ ...prev, isOpen: false }))
@@ -274,6 +326,7 @@ export function TripSettlementTab() {
       <TripPaymentQrModal
         isOpen={paymentQrState.isOpen}
         transfer={paymentQrState.transfer}
+        tripId={sessionTrip.id}
         members={sessionTrip.members}
         tripName={sessionTrip.name}
         isProxy={paymentQrState.isProxy}

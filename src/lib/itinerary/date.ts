@@ -25,6 +25,28 @@ const VI_DAYS_FULL = [
 ];
 
 /**
+ * Kiểm tra xem một chuỗi YYYY-MM-DD có phải là ngày lịch hợp lệ không
+ * (loại trừ ngày không tồn tại như 2026-02-31, 2026-04-31, 2026-13-40).
+ */
+export function isValidCalendarDate(dateStr?: string | null): boolean {
+  if (!dateStr || typeof dateStr !== "string") return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  const parts = dateStr.split("-").map(Number);
+  const year = parts[0];
+  const month = parts[1];
+  const day = parts[2];
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+/**
  * Sinh danh sách các ngày trong chuyến đi từ startDate đến endDate.
  */
 export function generateTripDays(startDateStr: string, endDateStr: string): TripDayInfo[] {
@@ -91,6 +113,52 @@ export function minutesToTimeString(minutes: number): string {
   const hours = Math.floor(safeMinutes / 60);
   const mins = safeMinutes % 60;
   return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}
+
+/**
+ * Chuyển chuỗi giờ "HH:mm" thành đối tượng Date tương thích với PostgreSQL TIME(0) của Prisma.
+ * Luôn dùng epoch UTC 1970-01-01 để độc lập hoàn toàn với timezone của máy chủ.
+ */
+export function timeStringToDbTime(timeStr?: string | null): Date | null {
+  if (!timeStr || typeof timeStr !== "string") return null;
+  const match = timeStr.trim().match(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/);
+  if (!match) return null;
+
+  const hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0, 0));
+}
+
+/**
+ * Chuyển đổi dữ liệu thời gian từ Prisma/PostgreSQL (@db.Time(0)) thành chuỗi 24h "HH:mm".
+ * Hỗ trợ Date object (trích xuất UTC hours/minutes) và chuỗi thời gian (HH:mm hoặc ISO).
+ */
+export function dbTimeToTimeString(dbTime?: Date | string | null): string | null {
+  if (!dbTime) return null;
+
+  if (typeof dbTime === "string") {
+    const trimmed = dbTime.trim();
+    const timeMatch = trimmed.match(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])(?::[0-5][0-9])?$/);
+    if (timeMatch) {
+      return `${timeMatch[1].padStart(2, "0")}:${timeMatch[2]}`;
+    }
+    const parsedDate = new Date(trimmed);
+    if (!isNaN(parsedDate.getTime())) {
+      const h = String(parsedDate.getUTCHours()).padStart(2, "0");
+      const m = String(parsedDate.getUTCMinutes()).padStart(2, "0");
+      return `${h}:${m}`;
+    }
+    return null;
+  }
+
+  if (dbTime instanceof Date) {
+    if (isNaN(dbTime.getTime())) return null;
+    const h = String(dbTime.getUTCHours()).padStart(2, "0");
+    const m = String(dbTime.getUTCMinutes()).padStart(2, "0");
+    return `${h}:${m}`;
+  }
+
+  return null;
 }
 
 /**

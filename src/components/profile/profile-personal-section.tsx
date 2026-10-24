@@ -18,9 +18,12 @@ export function ProfilePersonalSection() {
   const { profile, updateProfile } = useUserProfile();
   const { toast } = useToast();
 
-  const [formData, setFormData] = React.useState({
-    displayName: profile.displayName || profile.fullName || "",
-  });
+  const [editedDisplayName, setEditedDisplayName] = React.useState<string | null>(null);
+  const currentDisplayName = editedDisplayName ?? (profile.displayName || profile.fullName || "");
+
+  const formData = React.useMemo(() => ({
+    displayName: currentDisplayName,
+  }), [currentDisplayName]);
 
   const [errors, setErrors] = React.useState<ProfileValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -35,14 +38,13 @@ export function ProfilePersonalSection() {
   }, [formData.displayName, profile.fullName]);
 
   const handleReset = () => {
-    setFormData({
-      displayName: profile.displayName || profile.fullName || "",
-    });
+    setEditedDisplayName(null);
     setErrors({});
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     setErrors({});
 
@@ -54,10 +56,13 @@ export function ProfilePersonalSection() {
     setIsSubmitting(false);
 
     if (res.success) {
+      setEditedDisplayName(null);
       toast("Đã lưu thông tin cá nhân thành công!", "success");
     } else if (res.errors) {
       setErrors(res.errors);
       toast("Vui lòng kiểm tra lại các trường thông tin chưa hợp lệ.", "error");
+    } else if (res.message) {
+      toast(res.message, "error");
     }
   };
 
@@ -141,7 +146,7 @@ export function ProfilePersonalSection() {
               type="text"
               value={formData.displayName}
               onChange={(e) => {
-                setFormData({ displayName: e.target.value });
+                setEditedDisplayName(e.target.value);
                 if (errors.displayName) setErrors((p) => ({ ...p, displayName: undefined }));
               }}
               placeholder="Ví dụ: Lan, Hương Lan, Lan Mèo"

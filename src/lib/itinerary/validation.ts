@@ -6,7 +6,7 @@ import {
   TimeConflictInfo,
   TripStatus,
 } from "@/types/trip";
-import { timeStringToMinutes } from "./date";
+import { timeStringToMinutes, isValidCalendarDate } from "./date";
 
 /**
  * Kiểm tra tính hợp lệ của biểu mẫu thêm/sửa địa điểm lịch trình.
@@ -26,14 +26,16 @@ export function validateItineraryItemForm(
     errors.placeName = "Tên địa điểm không được vượt quá 200 ký tự.";
   }
 
-  // 2. Ngày diễn ra (bắt buộc, phải nằm trong khoảng ngày của chuyến đi)
+  // 2. Ngày diễn ra (bắt buộc, phải là ngày lịch hợp lệ và nằm trong khoảng ngày của chuyến đi)
   const dayDate = (formData.dayDate || "").trim();
   if (!dayDate) {
     errors.dayDate = "Vui lòng chọn ngày cho hoạt động.";
   } else {
-    // Kiểm tra định dạng YYYY-MM-DD
+    // Kiểm tra định dạng YYYY-MM-DD và ngày lịch hợp lệ
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dayDate)) {
       errors.dayDate = "Ngày không đúng định dạng YYYY-MM-DD.";
+    } else if (!isValidCalendarDate(dayDate)) {
+      errors.dayDate = "Ngày không hợp lệ.";
     } else if (dayDate < tripStartDate || dayDate > tripEndDate) {
       errors.dayDate = `Ngày đã chọn phải nằm trong khoảng thời gian chuyến đi (${tripStartDate} đến ${tripEndDate}).`;
     }

@@ -142,6 +142,25 @@ describe("calculateMemberBalances", () => {
     );
   });
 
+  it("ném lỗi khi khoản chi có số tiền <= 0", () => {
+    const zeroExpense: TripExpense[] = [
+      {
+        id: "exp-0",
+        tripId: "trip-1",
+        title: "Chi tiêu 0đ",
+        amount: 0,
+        category: "OTHER",
+        paidByMemberId: "m1",
+        splitMethod: "EQUAL",
+        spentAt: "2026-10-15T12:00:00Z",
+        shares: [],
+      },
+    ];
+    expect(() => calculateMemberBalances(MOCK_MEMBERS, zeroExpense)).toThrowError(
+      /Số tiền khoản chi không hợp lệ/
+    );
+  });
+
   it("bỏ qua thành viên có status là LEFT (chỉ tính cho thành viên ACTIVE)", () => {
     const membersWithLeft: TripMember[] = [
       ...MOCK_MEMBERS,

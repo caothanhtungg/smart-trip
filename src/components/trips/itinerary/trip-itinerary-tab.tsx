@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { AlertCircle, RotateCw } from "lucide-react";
 import { useTripSession } from "@/components/trips/detail/trip-session-context";
 import { ItineraryItem, CreateItineraryItemFormData } from "@/types/trip";
 import { generateTripDays } from "@/lib/itinerary/date";
@@ -15,6 +16,9 @@ export function TripItineraryTab() {
     sessionItinerary,
     sessionExpenses,
     currentMemberId,
+    isItineraryLoading,
+    itineraryError,
+    refetchItinerary,
     handleAddItineraryItem,
     handleUpdateItineraryItem,
     handleDeleteItineraryItem,
@@ -70,46 +74,99 @@ export function TripItineraryTab() {
     setDeletingItem(item);
   };
 
-  const handleSaveModal = (formData: CreateItineraryItemFormData) => {
+  const handleSaveModal = async (formData: CreateItineraryItemFormData) => {
     if (editingItem) {
-      return handleUpdateItineraryItem(editingItem.id, formData);
+      return await handleUpdateItineraryItem(editingItem.id, formData);
     }
-    return handleAddItineraryItem(formData);
+    return await handleAddItineraryItem(formData);
   };
 
   return (
     <div className="w-full">
-      {/* Main Two-Column Layout Grid (8 - 4) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* LEFT COLUMN: 8 Columns (Schedule & Timeline) */}
-        <div className="lg:col-span-8">
-          <TripItineraryTimeline
-            trip={sessionTrip}
-            tripDays={tripDays}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            items={sessionItinerary}
-            expenses={sessionExpenses}
-            currentMember={currentMember}
-            isHost={isHost}
-            onOpenAddModal={handleOpenAdd}
-            onEditItem={handleOpenEdit}
-            onDeleteItem={handleOpenDelete}
-            onAddExpenseForItem={handleOpenAddExpenseForItinerary}
-          />
+      {/* Loading Skeleton */}
+      {isItineraryLoading ? (
+        <div
+          role="status"
+          aria-label="Đang tải lịch trình..."
+          className="w-full animate-pulse"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-8 space-y-4">
+              <div className="h-8 bg-hover-row rounded-xl w-64" />
+              <div className="h-4 bg-hover-row rounded-lg w-40" />
+              <div className="h-12 bg-hover-row rounded-2xl w-full" />
+              <div className="space-y-4 pt-4">
+                <div className="h-28 rounded-2xl bg-hover-row" />
+                <div className="h-28 rounded-2xl bg-hover-row" />
+                <div className="h-28 rounded-2xl bg-hover-row" />
+              </div>
+            </div>
+            <div className="lg:col-span-4">
+              <div className="h-64 rounded-3xl bg-hover-row" />
+            </div>
+          </div>
         </div>
+      ) : itineraryError ? (
+        /* Error Alert Card with Retry */
+        <div
+          role="alert"
+          className="w-full max-w-2xl mx-auto my-8 p-6 sm:p-8 bg-white rounded-3xl border border-functional-negative/20 shadow-sm text-center space-y-4"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-functional-negative/10 text-functional-negative flex items-center justify-center mx-auto">
+            <AlertCircle className="w-7 h-7" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-bold text-yale-blue">
+              Không thể tải lịch trình
+            </h3>
+            <p className="text-xs sm:text-sm text-text-muted max-w-md mx-auto">
+              {itineraryError}
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => refetchItinerary()}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cerulean hover:bg-baltic-blue text-white text-xs sm:text-sm font-semibold shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-cerulean/40 active:scale-95"
+            >
+              <RotateCw className="w-4 h-4" />
+              <span>Thử lại</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Main Two-Column Layout Grid (8 - 4) */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* LEFT COLUMN: 8 Columns (Schedule & Timeline) */}
+          <div className="lg:col-span-8">
+            <TripItineraryTimeline
+              trip={sessionTrip}
+              tripDays={tripDays}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              items={sessionItinerary}
+              expenses={sessionExpenses}
+              currentMember={currentMember}
+              isHost={isHost}
+              onOpenAddModal={handleOpenAdd}
+              onEditItem={handleOpenEdit}
+              onDeleteItem={handleOpenDelete}
+              onAddExpenseForItem={handleOpenAddExpenseForItinerary}
+            />
+          </div>
 
-        {/* RIGHT COLUMN: 4 Columns (Sticky Day Summary & Vector Art) */}
-        <div className="lg:col-span-4">
-          <TripItinerarySummaryCard
-            trip={sessionTrip}
-            tripDays={tripDays}
-            selectedDate={selectedDate}
-            items={sessionItinerary}
-            expenses={sessionExpenses}
-          />
+          {/* RIGHT COLUMN: 4 Columns (Sticky Day Summary & Vector Art) */}
+          <div className="lg:col-span-4">
+            <TripItinerarySummaryCard
+              trip={sessionTrip}
+              tripDays={tripDays}
+              selectedDate={selectedDate}
+              items={sessionItinerary}
+              expenses={sessionExpenses}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Add / Edit Stop Modal */}
       <TripItineraryFormModal

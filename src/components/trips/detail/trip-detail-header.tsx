@@ -24,7 +24,7 @@ interface TripDetailHeaderProps {
 }
 
 export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
-  const { isHost, handleUpdateTripInfo, handleArchiveTrip } = useTripSession();
+  const { isHost, sessionInviteCode, handleUpdateTripInfo, handleArchiveTrip, handleResetInviteCode } = useTripSession();
   const [inviteModalOpen, setInviteModalOpen] = React.useState(false);
   const [editInfoModalOpen, setEditInfoModalOpen] = React.useState(false);
 
@@ -152,7 +152,9 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
         tripTitle={trip.name}
-        inviteCode={trip.inviteCode}
+        inviteCode={sessionInviteCode}
+        isHost={isHost}
+        onResetInviteCode={handleResetInviteCode}
       />
 
       {/* Trip Edit Info Modal */}

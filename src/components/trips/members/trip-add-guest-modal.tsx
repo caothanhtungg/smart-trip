@@ -12,7 +12,9 @@ interface TripAddGuestModalProps {
   isOpen: boolean;
   onClose: () => void;
   existingMembers: TripMember[];
-  onAddGuest: (formData: CreateGuestMemberFormData) => { success: boolean; message?: string };
+  onAddGuest: (
+    formData: CreateGuestMemberFormData
+  ) => Promise<{ success: boolean; message?: string }> | { success: boolean; message?: string };
 }
 
 function TripAddGuestDialog({
@@ -23,9 +25,11 @@ function TripAddGuestDialog({
   const [displayName, setDisplayName] = React.useState("");
   const [note, setNote] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const formData: CreateGuestMemberFormData = {
       displayName: displayName.trim(),
@@ -38,13 +42,22 @@ function TripAddGuestDialog({
       return;
     }
 
-    const res = onAddGuest(formData);
-    if (!res.success) {
-      setError(res.message || "Không thể thêm thành viên");
-      return;
-    }
+    setIsSubmitting(true);
+    setError(null);
 
-    onClose();
+    try {
+      const res = await onAddGuest(formData);
+      if (!res.success) {
+        setError(res.message || "Không thể thêm thành viên");
+        return;
+      }
+
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra khi thêm thành viên.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -70,6 +83,7 @@ function TripAddGuestDialog({
               if (error) setError(null);
             }}
             maxLength={100}
+            disabled={isSubmitting}
             autoFocus
             className="h-11"
           />
@@ -90,6 +104,7 @@ function TripAddGuestDialog({
               if (error) setError(null);
             }}
             maxLength={200}
+            disabled={isSubmitting}
             className="h-11"
           />
         </div>
@@ -112,11 +127,16 @@ function TripAddGuestDialog({
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-hairline">
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
             Hủy
           </Button>
-          <Button type="submit" variant="primary" className="bg-cerulean hover:bg-baltic-blue">
-            Tạo thành viên
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={isSubmitting}
+            className="bg-cerulean hover:bg-baltic-blue"
+          >
+            {isSubmitting ? "Đang thêm..." : "Tạo thành viên"}
           </Button>
         </div>
       </form>

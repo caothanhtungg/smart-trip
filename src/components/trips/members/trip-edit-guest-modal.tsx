@@ -12,7 +12,10 @@ interface TripEditGuestModalProps {
   onClose: () => void;
   member: TripMember | null;
   existingMembers: TripMember[];
-  onEditGuest: (id: string, formData: EditGuestMemberFormData) => { success: boolean; message?: string };
+  onEditGuest: (
+    id: string,
+    formData: EditGuestMemberFormData
+  ) => Promise<{ success: boolean; message?: string }> | { success: boolean; message?: string };
 }
 
 function TripEditGuestDialog({
@@ -24,9 +27,11 @@ function TripEditGuestDialog({
   const [displayName, setDisplayName] = React.useState(member.name);
   const [note, setNote] = React.useState(member.note || "");
   const [error, setError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const formData: EditGuestMemberFormData = {
       displayName: displayName.trim(),
@@ -39,13 +44,22 @@ function TripEditGuestDialog({
       return;
     }
 
-    const res = onEditGuest(member.id, formData);
-    if (!res.success) {
-      setError(res.message || "Không thể cập nhật thành viên");
-      return;
-    }
+    setIsSubmitting(true);
+    setError(null);
 
-    onClose();
+    try {
+      const res = await onEditGuest(member.id, formData);
+      if (!res.success) {
+        setError(res.message || "Không thể cập nhật thành viên");
+        return;
+      }
+
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra khi cập nhật thành viên.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -69,6 +83,7 @@ function TripEditGuestDialog({
               if (error) setError(null);
             }}
             maxLength={100}
+            disabled={isSubmitting}
             autoFocus
             className="h-11"
           />
@@ -87,6 +102,7 @@ function TripEditGuestDialog({
               if (error) setError(null);
             }}
             maxLength={200}
+            disabled={isSubmitting}
             className="h-11"
           />
         </div>
@@ -98,11 +114,16 @@ function TripEditGuestDialog({
         )}
 
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-hairline">
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
             Hủy
           </Button>
-          <Button type="submit" variant="primary" className="bg-cerulean hover:bg-baltic-blue">
-            Lưu thay đổi
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={isSubmitting}
+            className="bg-cerulean hover:bg-baltic-blue"
+          >
+            {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
           </Button>
         </div>
       </form>

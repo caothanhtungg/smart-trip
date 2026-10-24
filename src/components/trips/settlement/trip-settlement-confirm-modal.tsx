@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, CheckCircle, Info, Lock, Unlock, X } from "lucide-react";
+import { AlertTriangle, CheckCircle, Info, Loader2, Lock, Unlock, X } from "lucide-react";
 
 export type ConfirmModalType =
   | "LOCK_SETTLEMENT"
@@ -19,7 +19,8 @@ interface TripSettlementConfirmModalProps {
   confirmText?: string;
   cancelText?: string;
   isDestructive?: boolean;
-  onConfirm: () => void;
+  isLoading?: boolean;
+  onConfirm: () => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -32,18 +33,21 @@ export function TripSettlementConfirmModal({
   confirmText,
   cancelText = "Hủy bỏ",
   isDestructive = false,
+  isLoading = false,
   onConfirm,
   onClose,
 }: TripSettlementConfirmModalProps) {
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !isLoading && !isSubmitting) onClose();
     }
     if (isOpen) {
       window.addEventListener("keydown", handleKeyDown);
     }
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isLoading, isSubmitting]);
 
   if (!isOpen) return null;
 
@@ -134,8 +138,9 @@ export function TripSettlementConfirmModal({
           </div>
           <button
             onClick={onClose}
+            disabled={isSubmitting || isLoading}
             aria-label="Đóng"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-5 h-5" />
           </button>
@@ -166,24 +171,37 @@ export function TripSettlementConfirmModal({
         <div className="px-6 py-4 border-t border-divider-border bg-bg-canvas/40 flex items-center justify-end gap-3">
           <button
             type="button"
+            disabled={isSubmitting || isLoading}
             onClick={onClose}
-            className="px-4 py-2.5 text-text-muted hover:text-yale-blue font-label-semibold text-sm rounded-xl transition-colors"
+            className="px-4 py-2.5 text-text-muted hover:text-yale-blue font-label-semibold text-sm rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {cancelText}
           </button>
           <button
             type="button"
-            onClick={() => {
-              onConfirm();
-              onClose();
+            disabled={isSubmitting || isLoading}
+            onClick={async () => {
+              if (isSubmitting || isLoading) return;
+              setIsSubmitting(true);
+              try {
+                await onConfirm();
+                onClose();
+              } catch {
+                // Handled by caller
+              } finally {
+                setIsSubmitting(false);
+              }
             }}
-            className={`px-5 py-2.5 rounded-xl font-label-semibold text-sm transition-all shadow-sm ${
+            className={`px-5 py-2.5 rounded-xl font-label-semibold text-sm transition-all shadow-sm flex items-center gap-2 ${
               isDestructive
-                ? "bg-functional-negative hover:bg-red-700 text-white"
-                : "bg-cerulean hover:bg-baltic-blue text-white"
+                ? "bg-functional-negative hover:bg-red-700 text-white disabled:opacity-60"
+                : "bg-cerulean hover:bg-baltic-blue text-white disabled:opacity-60"
             }`}
           >
-            {finalConfirmText}
+            {(isSubmitting || isLoading) && (
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+            )}
+            <span>{isSubmitting || isLoading ? "Đang xử lý..." : finalConfirmText}</span>
           </button>
         </div>
       </div>

@@ -210,6 +210,7 @@ export interface TripExpense {
   receiptImageUrl?: string; // Bỏ receiptUrl
   note?: string; // Bỏ notes
   locationName?: string; // Bỏ location
+  itineraryItemId?: string | null; // ID điểm lịch trình liên kết (nếu có)
   shares: ExpenseShare[]; // Bỏ participants
   items?: ExpenseItemData[]; // Món ăn khi splitMethod = ITEMIZED
   surcharge?: ExpenseSurchargeData | null; // Phụ phí VAT/dịch vụ khi splitMethod = ITEMIZED
@@ -266,6 +267,7 @@ export interface CreateExpenseFormData {
   note?: string;
   locationName?: string;
   receiptImageUrl?: string;
+  itineraryItemId?: string | null;
 }
 
 export interface ItemizedExpenseValidationErrors {
@@ -329,6 +331,7 @@ export interface TripDetailData {
   createdAt?: string;
   members: TripMemberDetail[];
   currentMemberId: string; // ID của trip_members ứng với user hiện tại
+  currentRole?: "HOST" | "MEMBER"; // Vai trò của người dùng hiện tại (HOST hoặc MEMBER)
   plannedBudget: number; // Integer VND
   totalSpent: number; // Integer VND
   hasBudget?: boolean;

@@ -15,6 +15,7 @@ import { TripExpenseFormModal } from "./trip-expense-form-modal";
 import { TripReceiptLightboxModal } from "./trip-receipt-lightbox-modal";
 import { TripExpenseDeleteModal } from "./trip-expense-delete-modal";
 import {
+  AlertCircle,
   CheckCircle2,
   Inbox,
   Lock,
@@ -25,32 +26,77 @@ import { computeEqualShares, computeItemizedShares } from "@/lib/money/split";
 import { formatDate } from "@/lib/utils";
 import { formatDateInputToIso } from "@/lib/view/expense-row";
 import { calculateTotalSpent } from "@/lib/money/budget";
+import { useOptionalTripSession } from "@/components/trips/detail/trip-session-context";
 
 interface TripExpensesTabProps {
-  trip: TripDetailData;
-  expenses: TripExpense[];
-  onAddExpense: (newExpense: TripExpense) => void;
-  onUpdateExpense?: (expenseId: string, formData: CreateExpenseFormData) => void;
-  onDeleteExpense?: (expenseId: string) => void;
-  currentUserId: string;
+  trip?: TripDetailData;
+  expenses?: TripExpense[];
+  onAddExpense?: (newExpense: TripExpense) => void;
+  onSaveExpenseFromModal?: (
+    formData: CreateExpenseFormData
+  ) =>
+    | Promise<{ success: boolean; message?: string } | void>
+    | { success: boolean; message?: string }
+    | void;
+  onUpdateExpense?: (
+    expenseId: string,
+    formData: CreateExpenseFormData
+  ) =>
+    | Promise<{ success: boolean; message?: string } | void>
+    | { success: boolean; message?: string }
+    | void;
+  onDeleteExpense?: (
+    expenseId: string
+  ) =>
+    | Promise<{ success: boolean; message?: string } | void>
+    | { success: boolean; message?: string }
+    | void;
+  currentUserId?: string;
+  isLoading?: boolean;
+  error?: string | null;
+  onRetry?: () => Promise<void> | void;
 }
 
-export function TripExpensesTab({
-  trip,
-  expenses,
-  onAddExpense,
-  onUpdateExpense,
-  onDeleteExpense,
-  currentUserId,
-}: TripExpensesTabProps) {
+export function TripExpensesTab(props: TripExpensesTabProps) {
+  // Read from TripSessionContext if available
+  const sessionCtx = useOptionalTripSession();
+
+  const trip = props.trip || sessionCtx?.sessionTrip;
+  const expenses =
+    props.expenses !== undefined
+      ? props.expenses
+      : sessionCtx?.sessionExpenses || [];
+  const currentUserId =
+    props.currentUserId || sessionCtx?.currentMemberId || "";
+  const isLoading =
+    props.isLoading !== undefined
+      ? props.isLoading
+      : sessionCtx?.isExpensesLoading || false;
+  const error =
+    props.error !== undefined ? props.error : sessionCtx?.expensesError || null;
+  const onRetry = props.onRetry || sessionCtx?.refetchExpenses;
+  const onSaveExpenseFromModal =
+    props.onSaveExpenseFromModal || sessionCtx?.handleSaveExpenseFromModal;
+  const onUpdateExpense =
+    props.onUpdateExpense || sessionCtx?.handleUpdateExpense;
+  const onDeleteExpense =
+    props.onDeleteExpense || sessionCtx?.handleDeleteExpense;
+  const onAddExpense = props.onAddExpense || sessionCtx?.handleAddExpense;
+
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = React.useState(false);
-  const [editingExpense, setEditingExpense] = React.useState<TripExpense | null>(null);
-  const [deletingExpense, setDeletingExpense] = React.useState<TripExpense | null>(null);
-  const [selectedReceiptExpense, setSelectedReceiptExpense] = React.useState<TripExpense | null>(null);
+  const [editingExpense, setEditingExpense] = React.useState<TripExpense | null>(
+    null
+  );
+  const [deletingExpense, setDeletingExpense] = React.useState<TripExpense | null>(
+    null
+  );
+  const [selectedReceiptExpense, setSelectedReceiptExpense] =
+    React.useState<TripExpense | null>(null);
 
   // Filters state
-  const [selectedCategory, setSelectedCategory] = React.useState<ExpenseFilterCategory>("ALL");
+  const [selectedCategory, setSelectedCategory] =
+    React.useState<ExpenseFilterCategory>("ALL");
   const [selectedMemberId, setSelectedMemberId] = React.useState<string>("ALL");
   const [searchQuery, setSearchQuery] = React.useState<string>("");
 
@@ -67,102 +113,152 @@ export function TripExpensesTab({
     }
   }, [sessionToast]);
 
+  // Loading skeleton state
+  if (isLoading) {
+    return (
+      <div
+        role="status"
+        aria-label="Đang tải danh sách chi tiêu..."
+        className="flex flex-col gap-6 max-w-[1200px] w-full mx-auto pb-12 animate-pulse"
+      >
+        <div className="h-28 bg-hover-row rounded-2xl w-full" />
+        <div className="h-14 bg-hover-row rounded-2xl w-full" />
+        <div className="h-72 bg-hover-row rounded-3xl w-full" />
+      </div>
+    );
+  }
+
+  // Error card with retry button
+  if (error) {
+    return (
+      <div
+        role="alert"
+        className="w-full max-w-2xl mx-auto my-8 p-6 sm:p-8 bg-white rounded-3xl border border-functional-negative/20 shadow-sm text-center space-y-4"
+      >
+        <div className="w-14 h-14 rounded-2xl bg-functional-negative/10 text-functional-negative flex items-center justify-center mx-auto">
+          <AlertCircle className="w-7 h-7" />
+        </div>
+        <div className="space-y-1.5">
+          <h3 className="text-lg font-bold text-yale-blue">
+            Không thể tải danh sách chi tiêu
+          </h3>
+          <p className="text-xs sm:text-sm text-text-muted max-w-md mx-auto">
+            {error}
+          </p>
+        </div>
+        {onRetry && (
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => onRetry()}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cerulean hover:bg-baltic-blue text-white text-xs sm:text-sm font-semibold shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-cerulean/40 active:scale-95 cursor-pointer"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Thử lại</span>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (!trip) return null;
+
   const isLocked = trip.status === "SETTLING" || trip.status === "COMPLETED";
   const currentUser = trip.members.find((m) => m.id === currentUserId);
   const isHost = currentUser?.role === "HOST" || !!currentUser?.isHost;
 
   // Calculate category counts
-  const categoryCounts: Record<ExpenseFilterCategory, number> = React.useMemo(() => {
-    const counts: Record<ExpenseFilterCategory, number> = {
-      ALL: expenses.length,
-      FOOD: 0,
-      TRANSPORT: 0,
-      LODGING: 0,
-      TICKET: 0,
-      SHOPPING: 0,
-      OTHER: 0,
-    };
-    expenses.forEach((e) => {
-      if (counts[e.category] !== undefined) {
-        counts[e.category]++;
-      }
-    });
-    return counts;
-  }, [expenses]);
+  const categoryCounts: Record<ExpenseFilterCategory, number> = {
+    ALL: expenses.length,
+    FOOD: 0,
+    TRANSPORT: 0,
+    LODGING: 0,
+    TICKET: 0,
+    SHOPPING: 0,
+    OTHER: 0,
+  };
+  expenses.forEach((e) => {
+    if (categoryCounts[e.category] !== undefined) {
+      categoryCounts[e.category]++;
+    }
+  });
 
   // Filter expenses
-  const filteredExpenses = React.useMemo(() => {
-    return expenses.filter((e) => {
-      // Category filter
-      if (selectedCategory !== "ALL" && e.category !== selectedCategory) {
+  const filteredExpenses = expenses.filter((e) => {
+    // Category filter
+    if (selectedCategory !== "ALL" && e.category !== selectedCategory) {
+      return false;
+    }
+    // Member filter
+    if (selectedMemberId !== "ALL" && e.paidByMemberId !== selectedMemberId) {
+      return false;
+    }
+    // Search query filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      const matchTitle = e.title.toLowerCase().includes(query);
+      const matchLocation = e.locationName
+        ? e.locationName.toLowerCase().includes(query)
+        : false;
+      const matchNotes = e.note ? e.note.toLowerCase().includes(query) : false;
+      const payer = trip.members.find((m) => m.id === e.paidByMemberId);
+      const matchPayer = payer
+        ? payer.name.toLowerCase().includes(query)
+        : false;
+      if (!matchTitle && !matchLocation && !matchNotes && !matchPayer) {
         return false;
       }
-      // Member filter
-      if (selectedMemberId !== "ALL" && e.paidByMemberId !== selectedMemberId) {
-        return false;
-      }
-      // Search query filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const matchTitle = e.title.toLowerCase().includes(query);
-        const matchLocation = e.locationName ? e.locationName.toLowerCase().includes(query) : false;
-        const matchNotes = e.note ? e.note.toLowerCase().includes(query) : false;
-        const payer = trip.members.find((m) => m.id === e.paidByMemberId);
-        const matchPayer = payer ? payer.name.toLowerCase().includes(query) : false;
-        if (!matchTitle && !matchLocation && !matchNotes && !matchPayer) {
-          return false;
-        }
-      }
-      return true;
-    });
-  }, [expenses, selectedCategory, selectedMemberId, searchQuery, trip.members]);
+    }
+    return true;
+  });
 
   // Group filtered expenses by date
-  const groupedByDay = React.useMemo(() => {
-    const map = new Map<string, TripExpense[]>();
-    filteredExpenses.forEach((exp) => {
-      const dateKey = exp.spentAt ? exp.spentAt.slice(0, 10) : "Chưa rõ ngày";
-      if (!map.has(dateKey)) {
-        map.set(dateKey, []);
-      }
-      map.get(dateKey)!.push(exp);
+  const map = new Map<string, TripExpense[]>();
+  filteredExpenses.forEach((exp) => {
+    const dateKey = exp.spentAt ? exp.spentAt.slice(0, 10) : "Chưa rõ ngày";
+    if (!map.has(dateKey)) {
+      map.set(dateKey, []);
+    }
+    map.get(dateKey)!.push(exp);
+  });
+
+  const groupedByDay: {
+    dateKey: string;
+    dayLabel: string;
+    expenses: TripExpense[];
+  }[] = [];
+  let dayIndex = 1;
+
+  map.forEach((items, dateKey) => {
+    const dayLabel = `Ngày ${dayIndex}`;
+    groupedByDay.push({
+      dateKey,
+      dayLabel,
+      expenses: items,
     });
-
-    const groups: { dateKey: string; dayLabel: string; expenses: TripExpense[] }[] = [];
-    let dayIndex = 1;
-
-    map.forEach((items, dateKey) => {
-      const dayLabel = `Ngày ${dayIndex}`;
-      groups.push({
-        dateKey,
-        dayLabel,
-        expenses: items,
-      });
-      dayIndex++;
-    });
-
-    return groups;
-  }, [filteredExpenses]);
+    dayIndex++;
+  });
 
   // Calculate totals using pure money function
-  const totalAmount = React.useMemo(() => {
-    return calculateTotalSpent(expenses);
-  }, [expenses]);
+  const totalAmount = calculateTotalSpent(expenses);
 
-  // Handle adding an expense
-  const handleSaveExpense = (formData: CreateExpenseFormData) => {
+  // Fallback local adding for legacy mock mode if onSaveExpenseFromModal not passed
+  const handleLocalSaveExpense = (formData: CreateExpenseFormData) => {
     const safeAmount = formData.amount || 0;
     const expenseId = `exp-${Date.now()}`;
 
-    // Sắp xếp participant theo joinOrder của các thành viên trong chuyến đi
     const participantsWithOrder = formData.participantMemberIds.map((id) => {
       const m = trip.members.find((member) => member.id === id);
       return { id, joinOrder: m ? m.joinOrder : 0 };
     });
 
-    // Compute shares via safe domain logic
     let shares: ExpenseShare[] = [];
-    if (formData.splitMethod === "ITEMIZED" && formData.items && formData.items.length > 0) {
+    if (
+      formData.splitMethod === "ITEMIZED" &&
+      formData.items &&
+      formData.items.length > 0
+    ) {
       const itemizedShares = computeItemizedShares(
         safeAmount,
         formData.items,
@@ -187,7 +283,10 @@ export function TripExpensesTab({
       );
     }
 
-    const spentAtIso = formatDateInputToIso(formData.spentAtDate, formData.spentAtTime);
+    const spentAtIso = formatDateInputToIso(
+      formData.spentAtDate,
+      formData.spentAtTime
+    );
 
     const newExpense: TripExpense = {
       id: expenseId,
@@ -200,6 +299,7 @@ export function TripExpensesTab({
       splitMethod: formData.splitMethod || "EQUAL",
       items: formData.items,
       surcharge: formData.surcharge,
+      itineraryItemId: formData.itineraryItemId ?? null,
       locationName: formData.locationName,
       note: formData.note,
       receiptImageUrl: formData.receiptImageUrl,
@@ -207,9 +307,10 @@ export function TripExpensesTab({
       createdAt: new Date().toISOString(),
     };
 
-    onAddExpense(newExpense);
+    if (onAddExpense) {
+      onAddExpense(newExpense);
+    }
 
-    // Show session alert toast
     setSessionToast("Đã thêm khoản chi (dữ liệu demo, chưa được lưu)");
   };
 
@@ -239,10 +340,15 @@ export function TripExpensesTab({
             <Lock className="w-5 h-5 text-functional-warning shrink-0" />
             <div>
               <p className="font-bold text-yale-blue text-sm">
-                Sổ chi tiêu đã chốt ({trip.status === "SETTLING" ? "Đang quyết toán" : "Đã hoàn tất"})
+                Sổ chi tiêu đã chốt (
+                {trip.status === "SETTLING"
+                  ? "Đang quyết toán"
+                  : "Đã hoàn tất"}
+                )
               </p>
               <p className="text-xs text-text-muted">
-                Các khoản chi tiêu đã được khóa sổ theo quy tắc nghiệp vụ. Không thể thêm mới hoặc sửa đổi.
+                Các khoản chi tiêu đã được khóa sổ theo quy tắc nghiệp vụ. Không
+                thể thêm mới hoặc sửa đổi.
               </p>
             </div>
           </div>
@@ -277,7 +383,11 @@ export function TripExpensesTab({
             <TripExpenseDayGroup
               key={group.dateKey}
               dayLabel={group.dayLabel}
-              spentDateFormatted={group.dateKey !== "Chưa rõ ngày" ? formatDate(group.dateKey) : ""}
+              spentDateFormatted={
+                group.dateKey !== "Chưa rõ ngày"
+                  ? formatDate(group.dateKey)
+                  : ""
+              }
               expenses={group.expenses}
               currentUserId={currentUserId}
               isHost={isHost}
@@ -296,11 +406,15 @@ export function TripExpensesTab({
               Không tìm thấy khoản chi nào
             </h4>
             <p className="text-xs sm:text-sm text-text-muted mt-1.5 max-w-sm mx-auto">
-              {searchQuery || selectedCategory !== "ALL" || selectedMemberId !== "ALL"
+              {searchQuery ||
+              selectedCategory !== "ALL" ||
+              selectedMemberId !== "ALL"
                 ? "Không có khoản chi nào khớp với bộ lọc hiện tại. Thử thay đổi điều kiện tìm kiếm."
                 : "Chuyến đi này chưa có khoản chi tiêu nào được ghi nhận."}
             </p>
-            {(searchQuery || selectedCategory !== "ALL" || selectedMemberId !== "ALL") && (
+            {(searchQuery ||
+              selectedCategory !== "ALL" ||
+              selectedMemberId !== "ALL") && (
               <button
                 type="button"
                 onClick={() => {
@@ -314,18 +428,21 @@ export function TripExpensesTab({
                 <span>Đặt lại bộ lọc</span>
               </button>
             )}
-            {!isLocked && !searchQuery && selectedCategory === "ALL" && selectedMemberId === "ALL" && (
-              <div className="mt-5">
-                <button
-                  type="button"
-                  onClick={() => setIsFormModalOpen(true)}
-                  className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-cerulean text-white text-xs font-semibold hover:bg-baltic-blue shadow-sm transition-all"
-                >
-                  <Plus className="w-4 h-4 stroke-[2.5]" />
-                  <span>Ghi khoản chi đầu tiên</span>
-                </button>
-              </div>
-            )}
+            {!isLocked &&
+              !searchQuery &&
+              selectedCategory === "ALL" &&
+              selectedMemberId === "ALL" && (
+                <div className="mt-5">
+                  <button
+                    type="button"
+                    onClick={() => setIsFormModalOpen(true)}
+                    className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-cerulean text-white text-xs font-semibold hover:bg-baltic-blue shadow-sm transition-all"
+                  >
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                    <span>Ghi khoản chi đầu tiên</span>
+                  </button>
+                </div>
+              )}
           </div>
         )}
       </div>
@@ -337,7 +454,12 @@ export function TripExpensesTab({
         trip={trip}
         currentUserMemberId={currentUserId}
         isHost={isHost}
-        onSaveExpense={handleSaveExpense}
+        onSaveExpense={async (formData) => {
+          if (onSaveExpenseFromModal) {
+            return await onSaveExpenseFromModal(formData);
+          }
+          handleLocalSaveExpense(formData);
+        }}
       />
 
       {/* Edit Expense Form Modal */}
@@ -349,14 +471,23 @@ export function TripExpensesTab({
           currentUserMemberId={currentUserId}
           isHost={isHost}
           initialExpense={editingExpense}
-          onSaveExpense={(formData) => {
+          onSaveExpense={async (formData) => {
             if (onUpdateExpense) {
-              onUpdateExpense(editingExpense.id, formData);
+              const res = await onUpdateExpense(editingExpense.id, formData);
+              if (
+                res &&
+                typeof res === "object" &&
+                "success" in res &&
+                !res.success
+              ) {
+                return res;
+              }
             }
             setEditingExpense(null);
           }}
           onDeleteExpense={(id) => {
-            const expToDelete = expenses.find((e) => e.id === id) || editingExpense;
+            const expToDelete =
+              expenses.find((e) => e.id === id) || editingExpense;
             setEditingExpense(null);
             setDeletingExpense(expToDelete);
           }}
@@ -367,9 +498,17 @@ export function TripExpensesTab({
       <TripExpenseDeleteModal
         isOpen={deletingExpense !== null}
         onClose={() => setDeletingExpense(null)}
-        onConfirmDelete={() => {
+        onConfirmDelete={async () => {
           if (deletingExpense && onDeleteExpense) {
-            onDeleteExpense(deletingExpense.id);
+            const res = await onDeleteExpense(deletingExpense.id);
+            if (
+              res &&
+              typeof res === "object" &&
+              "success" in res &&
+              !res.success
+            ) {
+              return res;
+            }
           }
           setDeletingExpense(null);
         }}

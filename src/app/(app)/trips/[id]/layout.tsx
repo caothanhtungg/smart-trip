@@ -4,6 +4,8 @@ import { getTripDetailById } from "@/lib/data/trips";
 import { TripNotFound } from "@/components/trips/detail/trip-not-found";
 import { TripSessionProvider } from "@/components/trips/detail/trip-session-context";
 import { TripDetailLayoutView } from "@/components/trips/detail/trip-detail-layout-view";
+import { TripDetailClientLoader } from "@/components/trips/detail/trip-detail-client-loader";
+import { isUuid } from "@/lib/utils";
 
 interface LayoutProps {
   params: Promise<{ id: string }>;
@@ -16,6 +18,16 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
+
+  // Nếu là UUID database, sử dụng tiêu đề chung để bảo mật thông tin riêng tư (chống IDOR / Data Leakage)
+  if (isUuid(id)) {
+    return {
+      title: "Chi tiết chuyến đi | Smart Trip",
+      description: "Quản lý kế hoạch, tiến độ ngân sách và các khoản chi tiêu cho chuyến đi trên Smart Trip.",
+    };
+  }
+
+  // Nếu là mock slug legacy (vd: trip-dalat-3n2d)
   const trip = await getTripDetailById(id);
 
   if (!trip) {
@@ -36,6 +48,17 @@ async function TripDetailLayoutContent({
   children,
 }: LayoutProps) {
   const { id } = await params;
+
+  // Phân nhánh 1: ID là UUID hợp lệ -> Tải dữ liệu thật qua API và bảo toàn session context
+  if (isUuid(id)) {
+    return (
+      <TripDetailClientLoader tripId={id}>
+        {children}
+      </TripDetailClientLoader>
+    );
+  }
+
+  // Phân nhánh 2: ID là mock slug legacy -> Giữ nguyên luồng mock hiện tại
   const trip = await getTripDetailById(id);
 
   if (!trip) {
@@ -43,7 +66,7 @@ async function TripDetailLayoutContent({
   }
 
   return (
-    <TripSessionProvider initialTrip={trip}>
+    <TripSessionProvider key={id} initialTrip={trip} isRealApi={false}>
       <TripDetailLayoutView tripId={id}>{children}</TripDetailLayoutView>
     </TripSessionProvider>
   );

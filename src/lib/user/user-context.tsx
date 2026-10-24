@@ -12,6 +12,12 @@ import {
 import { validateProfileForm, validateBankForm, normalizeAccountHolderName } from "./validation";
 import { findBankByBin } from "@/lib/mock/banks";
 import { MOCK_MEMBER_BANK_INFO } from "@/lib/mock/settlement";
+import {
+  fetchMyProfileApi,
+  updateMyProfileApi,
+  UserApiError,
+  type CurrentUserProfileDto,
+} from "@/lib/services/user-api";
 
 const INITIAL_PROFILE: UserProfile = {
   id: "usr-current",
@@ -59,15 +65,20 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
 
 interface UserProfileContextValue {
   profile: UserProfile;
+  isLoading: boolean;
+  profileError: string | null;
+  refetchProfile: () => Promise<void>;
   updateProfile: (data: UpdateProfileFormData) => Promise<{
     success: boolean;
     errors?: ProfileValidationErrors;
+    message?: string;
   }>;
   updateBankInfo: (data: UpdateBankFormData) => Promise<{
     success: boolean;
     errors?: BankValidationErrors;
+    message?: string;
   }>;
-  removeBankInfo: () => void;
+  removeBankInfo: () => Promise<{ success: boolean; message?: string }>;
   notifications: NotificationItem[];
   unreadNotificationCount: number;
   markNotificationAsRead: (id: string) => void;
@@ -76,9 +87,76 @@ interface UserProfileContextValue {
 
 const UserProfileContext = React.createContext<UserProfileContextValue | undefined>(undefined);
 
+function mapDtoToUserProfile(dto: CurrentUserProfileDto): UserProfile {
+  const bank = dto.bankBin ? findBankByBin(dto.bankBin) : null;
+  const bankName = bank ? bank.shortName : "Ngân hàng";
+
+  return {
+    id: dto.id,
+    fullName: dto.name,
+    displayName: dto.displayName || dto.name,
+    email: dto.email,
+    avatarUrl: dto.avatarUrl ?? null,
+    bankInfo:
+      dto.hasBankAccount && dto.bankBin
+        ? {
+            bankBin: dto.bankBin,
+            bankName,
+            accountNumber: dto.bankAccountMasked || "",
+            accountHolder: dto.bankAccountName || "",
+          }
+        : null,
+  };
+}
+
 export function UserProfileProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = React.useState<UserProfile>(INITIAL_PROFILE);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
+  const [profileError, setProfileError] = React.useState<string | null>(null);
   const [notifications, setNotifications] = React.useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
+
+  // Tải dữ liệu hồ sơ từ GET /api/me khi khởi chạy (hoặc reload)
+  const refetchProfile = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setProfileError(null);
+      const data = await fetchMyProfileApi();
+      setProfile(mapDtoToUserProfile(data));
+    } catch (err) {
+      if (err instanceof UserApiError && err.status === 401) {
+        setProfileError(null);
+      } else if (err instanceof Error) {
+        setProfileError(err.message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    let ignore = false;
+    fetchMyProfileApi()
+      .then((data) => {
+        if (!ignore) {
+          setProfile(mapDtoToUserProfile(data));
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          if (err instanceof UserApiError && err.status === 401) {
+            setProfileError(null);
+          } else if (err instanceof Error) {
+            setProfileError(err.message);
+          }
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // Đồng bộ bankInfo vào MOCK_MEMBER_BANK_INFO cho member m1 (Lan)
   React.useEffect(() => {
@@ -96,51 +174,113 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
 
   const updateProfile = async (
     data: UpdateProfileFormData
-  ): Promise<{ success: boolean; errors?: ProfileValidationErrors }> => {
+  ): Promise<{ success: boolean; errors?: ProfileValidationErrors; message?: string }> => {
     const validation = validateProfileForm(data);
     if (!validation.isValid) {
       return { success: false, errors: validation.errors };
     }
 
-    setProfile((prev) => ({
-      ...prev,
-      fullName: data.fullName.trim(),
-      displayName: data.displayName.trim(),
-    }));
+    try {
+      const updatedDto = await updateMyProfileApi({
+        name: data.fullName.trim(),
+        displayName: data.displayName.trim(),
+      });
 
-    return { success: true };
+      setProfile(mapDtoToUserProfile(updatedDto));
+      return { success: true };
+    } catch (err) {
+      // Nếu API trả lỗi (hoặc offline mock fallback), nếu là lỗi validation server thì trả lỗi
+      if (err instanceof UserApiError && err.status === 400) {
+        return {
+          success: false,
+          message: err.message,
+        };
+      }
+      // Khi offline / local mock: nếu không kết nối được server, cập nhật tạm state
+      if (err instanceof UserApiError && err.status === 401) {
+        setProfile((prev) => ({
+          ...prev,
+          fullName: data.fullName.trim(),
+          displayName: data.displayName.trim(),
+        }));
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        message: err instanceof Error ? err.message : "Cập nhật thông tin thất bại.",
+      };
+    }
   };
 
   const updateBankInfo = async (
     data: UpdateBankFormData
-  ): Promise<{ success: boolean; errors?: BankValidationErrors }> => {
+  ): Promise<{ success: boolean; errors?: BankValidationErrors; message?: string }> => {
     const validation = validateBankForm(data);
     if (!validation.isValid) {
       return { success: false, errors: validation.errors };
     }
 
-    const bank = findBankByBin(data.bankBin);
-    const bankName = bank ? bank.shortName : data.bankName;
     const normalizedHolder = normalizeAccountHolderName(data.accountHolder);
 
-    setProfile((prev) => ({
-      ...prev,
-      bankInfo: {
+    try {
+      const updatedDto = await updateMyProfileApi({
         bankBin: data.bankBin,
-        bankName,
-        accountNumber: data.accountNumber.trim(),
-        accountHolder: normalizedHolder,
-      },
-    }));
+        bankAccountNo: data.accountNumber.trim(),
+        bankAccountName: normalizedHolder,
+      });
 
-    return { success: true };
+      setProfile(mapDtoToUserProfile(updatedDto));
+      return { success: true };
+    } catch (err) {
+      if (err instanceof UserApiError && err.status === 400) {
+        return {
+          success: false,
+          message: err.message,
+        };
+      }
+      if (err instanceof UserApiError && err.status === 401) {
+        const bank = findBankByBin(data.bankBin);
+        const bankName = bank ? bank.shortName : data.bankName;
+        setProfile((prev) => ({
+          ...prev,
+          bankInfo: {
+            bankBin: data.bankBin,
+            bankName,
+            accountNumber: data.accountNumber.trim(),
+            accountHolder: normalizedHolder,
+          },
+        }));
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        message: err instanceof Error ? err.message : "Cập nhật thông tin ngân hàng thất bại.",
+      };
+    }
   };
 
-  const removeBankInfo = () => {
-    setProfile((prev) => ({
-      ...prev,
-      bankInfo: null,
-    }));
+  const removeBankInfo = async (): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const updatedDto = await updateMyProfileApi({
+        bankBin: null,
+        bankAccountNo: null,
+        bankAccountName: null,
+      });
+
+      setProfile(mapDtoToUserProfile(updatedDto));
+      return { success: true };
+    } catch (err) {
+      if (err instanceof UserApiError && err.status === 401) {
+        setProfile((prev) => ({ ...prev, bankInfo: null }));
+        return { success: true };
+      }
+      return {
+        success: false,
+        message: err instanceof Error ? err.message : "Gỡ thông tin tài khoản thất bại.",
+      };
+    }
   };
 
   const markNotificationAsRead = (id: string) => {
@@ -159,6 +299,9 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     <UserProfileContext.Provider
       value={{
         profile,
+        isLoading,
+        profileError,
+        refetchProfile,
         updateProfile,
         updateBankInfo,
         removeBankInfo,

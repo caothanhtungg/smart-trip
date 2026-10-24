@@ -2,8 +2,12 @@
 
 import * as React from "react";
 import { Trip, TripDetailData } from "@/types/trip";
-import { MOCK_TRIPS, registerMockTripDetail } from "@/lib/mock/trips";
-import { useUserProfile } from "@/lib/user/user-context";
+import { registerMockTripDetail } from "@/lib/mock/trips";
+import {
+  fetchMyTrips,
+  createTripApi,
+  TripsApiError,
+} from "@/lib/services/trips-api";
 
 export interface CreateTripData {
   name: string;
@@ -13,9 +17,13 @@ export interface CreateTripData {
   budgetAmount: number;
 }
 
-interface TripsStoreContextValue {
+export interface TripsStoreContextValue {
   trips: Trip[];
-  addTrip: (data: CreateTripData) => string;
+  isLoading: boolean;
+  error: TripsApiError | Error | null;
+  refetchTrips: () => Promise<void>;
+  createTrip: (data: CreateTripData) => Promise<string>;
+  addTrip: (data: CreateTripData) => Promise<string>;
   updateTrip: (id: string, updates: Partial<Trip>) => void;
   archiveTrip: (id: string) => void;
   getTrip: (id: string) => Trip | undefined;
@@ -23,67 +31,113 @@ interface TripsStoreContextValue {
 
 const TripsStoreContext = React.createContext<TripsStoreContextValue | undefined>(undefined);
 
-function generateValidInviteCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let prefix = "";
-  let suffix = "";
-  for (let i = 0; i < 5; i++) {
-    prefix += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  for (let i = 0; i < 5; i++) {
-    suffix += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return `${prefix}-${suffix}`;
+export interface TripsStoreProviderProps {
+  children?: React.ReactNode;
+  /**
+   * Dữ liệu khởi tạo tùy chọn dành cho testing hoặc SSR dehydration.
+   * Nếu được truyền vào, store sẽ không tự động fetch lại API khi mount.
+   */
+  initialTrips?: Trip[];
 }
 
-export function TripsStoreProvider({ children }: { children: React.ReactNode }) {
-  const { profile } = useUserProfile();
-  const [trips, setTrips] = React.useState<Trip[]>(() => [...MOCK_TRIPS]);
+export function TripsStoreProvider({
+  children,
+  initialTrips,
+}: TripsStoreProviderProps) {
+  const [trips, setTrips] = React.useState<Trip[]>(() => initialTrips ?? []);
+  const [isLoading, setIsLoading] = React.useState<boolean>(
+    () => initialTrips === undefined
+  );
+  const [error, setError] = React.useState<TripsApiError | Error | null>(null);
 
-  const addTrip = React.useCallback(
-    (data: CreateTripData): string => {
-      const timestamp = Date.now();
-      const id = `trip-${timestamp}`;
-      const inviteCode = generateValidInviteCode();
+  // Hàm tải dữ liệu chuyến đi từ API thật (GET /api/trips)
+  const fetchTripsInternal = React.useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchMyTrips();
+      setTrips(data);
+    } catch (err) {
+      setError(
+        err instanceof TripsApiError || err instanceof Error
+          ? err
+          : new Error("Lỗi không xác định khi tải danh sách chuyến đi.")
+      );
+      // TUÂN THỦ: Không hiển thị MOCK_TRIPS làm fallback im lặng khi API thất bại
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-      const newTrip: Trip = {
-        id,
-        name: data.name.trim(),
-        destination: data.destination.trim(),
+  // Tự động tải danh sách chuyến đi khi component mount lần đầu
+  React.useEffect(() => {
+    if (initialTrips !== undefined) return;
+
+    let isMounted = true;
+    (async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await fetchMyTrips();
+        if (isMounted) {
+          setTrips(data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(
+            err instanceof TripsApiError || err instanceof Error
+              ? err
+              : new Error("Lỗi không xác định khi tải danh sách chuyến đi.")
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialTrips]);
+
+  const refetchTrips = React.useCallback(async () => {
+    await fetchTripsInternal();
+  }, [fetchTripsInternal]);
+
+  /**
+   * Tạo chuyến đi mới qua API thật (POST /api/trips).
+   * BẢO MẬT:
+   * - Chỉ gửi thông tin cơ bản: name, destination, startDate, endDate, budgetAmount.
+   * - Không gửi id, userId, role hay memberId tự khai báo từ client.
+   * - Nhận lại UUID thật từ PostgreSQL do server sinh ra và gán Host an toàn.
+   */
+  const createTrip = React.useCallback(
+    async (data: CreateTripData): Promise<string> => {
+      const { dto, trip } = await createTripApi({
+        name: data.name,
+        destination: data.destination,
         startDate: data.startDate,
         endDate: data.endDate,
         budgetAmount: data.budgetAmount,
-        status: "ACTIVE",
-        inviteCode,
-        updatedAt: new Date().toISOString(),
-        members: [
-          {
-            id: "m1",
-            name: profile.fullName || "Lan Nguyễn",
-            role: "HOST",
-            status: "ACTIVE",
-            joinOrder: 1,
-            isCurrentUser: true,
-          },
-        ],
-        userBalance: {
-          type: "SETTLED",
-          amount: 0,
-        },
-      };
+      });
 
+      // Đăng ký tạm vào dynamicTripDetails để các màn con legacy /trips/[id] vẫn đọc được
+      // dữ liệu chuyến đi mới tạo trước khi Phase 3D-2D tích hợp API chi tiết thật.
       const newTripDetail: TripDetailData = {
-        id,
-        name: newTrip.name,
-        destination: newTrip.destination,
-        startDate: newTrip.startDate,
-        endDate: newTrip.endDate,
-        budgetAmount: newTrip.budgetAmount ?? 0,
-        plannedBudget: newTrip.budgetAmount ?? 0,
-        status: "ACTIVE",
-        inviteCode,
-        updatedAt: newTrip.updatedAt,
-        currentMemberId: "m1",
+        id: trip.id,
+        name: trip.name,
+        destination: trip.destination,
+        startDate: trip.startDate,
+        endDate: trip.endDate,
+        budgetAmount: trip.budgetAmount ?? 0,
+        plannedBudget: trip.budgetAmount ?? 0,
+        status: trip.status,
+        inviteCode: trip.inviteCode,
+        updatedAt: trip.updatedAt,
+        createdAt: trip.createdAt,
+        currentMemberId: dto.host.memberId,
         totalSpent: 0,
         userSpent: 0,
         userBalance: {
@@ -92,9 +146,9 @@ export function TripsStoreProvider({ children }: { children: React.ReactNode }) 
         },
         expenseCount: 0,
         paidActivitiesCount: 0,
-        members: newTrip.members.map((m) => ({
+        members: trip.members.map((m) => ({
           ...m,
-          spentAmount: m.spentAmount ?? 0,
+          spentAmount: 0,
         })),
         recentExpenses: [],
         expenses: [],
@@ -102,11 +156,16 @@ export function TripsStoreProvider({ children }: { children: React.ReactNode }) 
       };
       registerMockTripDetail(newTripDetail);
 
-      setTrips((prev) => [newTrip, ...prev]);
-      return id;
+      // Prepend chuyến đi mới vào danh sách trong state
+      setTrips((prev) => [trip, ...prev]);
+
+      return trip.id;
     },
-    [profile.fullName]
+    []
   );
+
+  // Alias tương thích ngược cho addTrip
+  const addTrip = createTrip;
 
   const updateTrip = React.useCallback((id: string, updates: Partial<Trip>) => {
     setTrips((prev) =>
@@ -147,6 +206,10 @@ export function TripsStoreProvider({ children }: { children: React.ReactNode }) 
     <TripsStoreContext.Provider
       value={{
         trips,
+        isLoading,
+        error,
+        refetchTrips,
+        createTrip,
         addTrip,
         updateTrip,
         archiveTrip,
@@ -164,4 +227,12 @@ export function useTripsStore(): TripsStoreContextValue {
     throw new Error("useTripsStore must be used within a TripsStoreProvider");
   }
   return context;
+}
+
+/**
+ * Hook tùy chọn lấy TripsStoreContext mà không ném lỗi nếu Provider chưa được bọc
+ * (Hữu ích khi render cô lập trong unit tests hoặc màn hình độc lập).
+ */
+export function useOptionalTripsStore(): TripsStoreContextValue | null {
+  return React.useContext(TripsStoreContext) ?? null;
 }

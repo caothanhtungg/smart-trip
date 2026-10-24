@@ -16,13 +16,75 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { authClient } from "@/lib/auth-client";
+import { useSearchParams } from "next/navigation";
+
+import { isSafeCallbackUrl } from "@/proxy";
+
+function LoginUrlListener({
+  onError,
+  onCallbackUrl,
+}: {
+  onError: (msg: string) => void;
+  onCallbackUrl: (url: string) => void;
+}) {
+  const searchParams = useSearchParams();
+  React.useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "google_oauth") {
+      onError("Đăng nhập bằng Google không thành công hoặc đã bị hủy. Vui lòng thử lại.");
+    } else if (errorParam) {
+      onError("Đăng nhập thất bại. Vui lòng thử lại sau.");
+    }
+
+    const callbackParam = searchParams.get("callbackUrl");
+    if (callbackParam && isSafeCallbackUrl(callbackParam)) {
+      onCallbackUrl(callbackParam);
+    }
+  }, [searchParams, onError, onCallbackUrl]);
+  return null;
+}
 
 export default function LoginPage() {
   const [oauthNoticeOpen, setOauthNoticeOpen] = React.useState(false);
   const [legalModalOpen, setLegalModalOpen] = React.useState<"terms" | "privacy" | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = React.useState(false);
+  const [loginError, setLoginError] = React.useState<string | null>(null);
+  const [callbackUrl, setCallbackUrl] = React.useState<string>("/trips");
+
+  const handleGoogleLogin = async () => {
+    if (isLoggingIn) return;
+    try {
+      setIsLoggingIn(true);
+      setLoginError(null);
+      const res = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: callbackUrl,
+        errorCallbackURL: `/login?error=google_oauth&callbackUrl=${encodeURIComponent(callbackUrl)}`,
+      });
+      if (res?.error) {
+        setLoginError(
+          res.error.message ||
+            "Không thể kết nối đến Google. Vui lòng kiểm tra lại cấu hình và thử lại."
+        );
+        setIsLoggingIn(false);
+        return;
+      }
+      if (res?.data?.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      console.error("Google sign in failed:", err);
+      setLoginError("Không thể kết nối đến Google. Vui lòng kiểm tra lại cấu hình và thử lại.");
+      setIsLoggingIn(false);
+    }
+  };
 
   return (
     <div className="w-full min-h-screen flex flex-col lg:flex-row bg-bg-canvas relative overflow-hidden font-sans antialiased text-text-body">
+      <React.Suspense fallback={null}>
+        <LoginUrlListener onError={setLoginError} onCallbackUrl={setCallbackUrl} />
+      </React.Suspense>
       {/* =========================================================================
           LEFT HALF: Decorative Ambient Visual Showcase (50% on Desktop, hidden on Mobile)
           ========================================================================= */}
@@ -195,38 +257,49 @@ export default function LoginPage() {
             <button
               type="button"
               id="google-signin-btn"
-              onClick={() => setOauthNoticeOpen(true)}
-              className="w-full h-[52px] px-5 rounded-xl bg-white hover:bg-hover-row transition-all duration-200 flex items-center justify-center gap-3.5 border border-border-hairline shadow-sm hover:shadow-md cursor-pointer active:scale-[0.99] focus:outline-none focus-visible:ring-3 focus-visible:ring-ocean-mist focus-visible:ring-offset-2"
+              disabled={isLoggingIn}
+              onClick={handleGoogleLogin}
+              className="w-full h-[52px] px-5 rounded-xl bg-white hover:bg-hover-row transition-all duration-200 flex items-center justify-center gap-3.5 border border-border-hairline shadow-sm hover:shadow-md cursor-pointer active:scale-[0.99] focus:outline-none focus-visible:ring-3 focus-visible:ring-ocean-mist focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {/* Authentic Google "G" 4-color SVG Icon */}
-              <svg
-                className="w-5 h-5 shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  fill="#EA4335"
-                />
-              </svg>
+              {isLoggingIn ? (
+                <div className="w-5 h-5 border-2 border-cerulean border-t-transparent rounded-full animate-spin shrink-0" />
+              ) : (
+                /* Authentic Google "G" 4-color SVG Icon */
+                <svg
+                  className="w-5 h-5 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                    fill="#EA4335"
+                  />
+                </svg>
+              )}
               <span className="text-base font-semibold text-yale-blue">
-                Tiếp tục với Google
+                {isLoggingIn ? "Đang kết nối Google..." : "Tiếp tục với Google"}
               </span>
             </button>
+
+            {loginError && (
+              <div className="mt-3 p-3 rounded-xl bg-functional-negative/10 border border-functional-negative/20 text-xs text-functional-negative text-center">
+                {loginError}
+              </div>
+            )}
 
             {/* Security & Scope Note */}
             <div className="mt-6 pt-5 border-t border-border-hairline">

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { AlertCircle, RotateCw } from "lucide-react";
 import { useTripSession } from "@/components/trips/detail/trip-session-context";
 import { TripMember } from "@/types/trip";
 import { TripMembersHeader } from "./trip-members-header";
@@ -17,6 +18,9 @@ export function TripMembersView() {
   const {
     sessionTrip,
     sessionMembers,
+    isMembersLoading,
+    membersError,
+    refetchMembers,
     sessionClaims,
     sessionExpenses,
     sessionStatus,
@@ -65,6 +69,50 @@ export function TripMembersView() {
       (e) => e.paidByMemberId === memberId || e.shares.some((s) => s.memberId === memberId)
     );
   };
+
+  if (isMembersLoading) {
+    return (
+      <div
+        role="status"
+        aria-label="Đang tải danh sách thành viên..."
+        className="flex flex-col gap-6 max-w-[1200px] w-full mx-auto pb-12 animate-pulse"
+      >
+        <div className="h-20 bg-hover-row rounded-2xl w-full" />
+        <div className="h-96 bg-hover-row rounded-3xl w-full" />
+      </div>
+    );
+  }
+
+  if (membersError) {
+    return (
+      <div
+        role="alert"
+        className="w-full max-w-2xl mx-auto my-8 p-6 sm:p-8 bg-white rounded-3xl border border-functional-negative/20 shadow-sm text-center space-y-4"
+      >
+        <div className="w-14 h-14 rounded-2xl bg-functional-negative/10 text-functional-negative flex items-center justify-center mx-auto">
+          <AlertCircle className="w-7 h-7" />
+        </div>
+        <div className="space-y-1.5">
+          <h3 className="text-lg font-bold text-yale-blue">
+            Không thể tải danh sách thành viên
+          </h3>
+          <p className="text-xs sm:text-sm text-text-muted max-w-md mx-auto">
+            {membersError}
+          </p>
+        </div>
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => refetchMembers()}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cerulean hover:bg-baltic-blue text-white text-xs sm:text-sm font-semibold shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-cerulean/40 active:scale-95"
+          >
+            <RotateCw className="w-4 h-4" />
+            <span>Thử lại</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 max-w-[1200px] w-full mx-auto pb-12">

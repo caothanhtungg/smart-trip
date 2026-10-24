@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { X, Calendar, MapPin, Wallet, Save, Archive, Info } from "lucide-react";
+import { X, Calendar, MapPin, Wallet, Save, Archive, Info, Loader2 } from "lucide-react";
 import { TripDetailData } from "@/types/trip";
 import { formatMoneyInputValue, parseMoneyInput } from "@/lib/money/parse";
 import { useToast } from "@/components/ui/toast";
@@ -16,8 +16,11 @@ interface TripEditInfoModalProps {
     startDate: string;
     endDate: string;
     budgetAmount: number;
-  }) => void;
-  onArchive?: () => void;
+  }) =>
+    | Promise<{ success: boolean; message?: string } | void>
+    | { success: boolean; message?: string }
+    | void;
+  onArchive?: () => void | Promise<void>;
 }
 
 export function TripEditInfoModal({
@@ -43,22 +46,26 @@ export function TripEditInfoModal({
     budget?: string;
   }>({});
 
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [confirmArchiveOpen, setConfirmArchiveOpen] = React.useState(false);
+  const [isArchiving, setIsArchiving] = React.useState(false);
 
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !isSubmitting) onClose();
     }
     if (isOpen) {
       window.addEventListener("keydown", handleKeyDown);
     }
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isSubmitting]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const newErrors: { name?: string; date?: string; budget?: string } = {};
 
     const trimmedName = name.trim();
@@ -82,15 +89,36 @@ export function TripEditInfoModal({
       return;
     }
 
-    onSave({
-      name: trimmedName,
-      destination: destination.trim(),
-      startDate,
-      endDate,
-      budgetAmount: budget,
-    });
-    toast("Đã cập nhật thông tin chuyến đi thành công!", "success");
-    onClose();
+    setIsSubmitting(true);
+    try {
+      const result = await onSave({
+        name: trimmedName,
+        destination: destination.trim(),
+        startDate,
+        endDate,
+        budgetAmount: budget,
+      });
+
+      if (result && !result.success) {
+        toast(
+          result.message || "Không thể cập nhật thông tin chuyến đi. Vui lòng thử lại.",
+          "error"
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      toast("Đã cập nhật thông tin chuyến đi thành công!", "success");
+      onClose();
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Đã có lỗi xảy ra khi cập nhật chuyến đi.";
+      toast(message, "error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -114,7 +142,8 @@ export function TripEditInfoModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors cursor-pointer"
+            disabled={isSubmitting}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Đóng"
           >
             <X className="w-5 h-5" />
@@ -254,21 +283,35 @@ export function TripEditInfoModal({
                   <div className="flex items-center justify-end gap-2 pt-1">
                     <button
                       type="button"
+                      disabled={isArchiving}
                       onClick={() => setConfirmArchiveOpen(false)}
-                      className="px-3 py-1 rounded-lg text-xs font-semibold text-text-muted hover:bg-hover-row cursor-pointer"
+                      className="px-3 py-1 rounded-lg text-xs font-semibold text-text-muted hover:bg-hover-row cursor-pointer disabled:opacity-50"
                     >
                       Hủy
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        onArchive();
-                        toast("Chuyến đi đã được lưu trữ (ARCHIVED).", "info");
-                        onClose();
+                      disabled={isArchiving}
+                      onClick={async () => {
+                        if (!onArchive || isArchiving) return;
+                        setIsArchiving(true);
+                        try {
+                          await onArchive();
+                          onClose();
+                        } finally {
+                          setIsArchiving(false);
+                        }
                       }}
-                      className="px-3 py-1 rounded-lg text-xs font-semibold bg-functional-warning text-white hover:bg-functional-warning/90 cursor-pointer shadow-xs"
+                      className="px-3 py-1 rounded-lg text-xs font-semibold bg-functional-warning text-white hover:bg-functional-warning/90 cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-1"
                     >
-                      Xác nhận lưu trữ
+                      {isArchiving ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Đang lưu trữ...</span>
+                        </>
+                      ) : (
+                        <span>Xác nhận lưu trữ</span>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -281,16 +324,27 @@ export function TripEditInfoModal({
             <button
               type="button"
               onClick={onClose}
-              className="h-11 px-5 rounded-xl text-text-muted font-semibold text-sm hover:bg-hover-row transition-colors cursor-pointer"
+              disabled={isSubmitting}
+              className="h-11 px-5 rounded-xl text-text-muted font-semibold text-sm hover:bg-hover-row transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
             <button
               type="submit"
-              className="h-11 px-6 rounded-xl bg-cerulean text-on-primary font-semibold text-sm hover:bg-baltic-blue shadow-sm transition-all flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ocean-mist"
+              disabled={isSubmitting}
+              className="h-11 px-6 rounded-xl bg-cerulean text-on-primary font-semibold text-sm hover:bg-baltic-blue shadow-sm transition-all flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ocean-mist disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save className="w-4 h-4" />
-              <span>Lưu thay đổi</span>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Lưu thay đổi</span>
+                </>
+              )}
             </button>
           </div>
         </form>

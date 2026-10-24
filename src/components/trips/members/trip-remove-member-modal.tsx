@@ -15,7 +15,9 @@ interface TripRemoveMemberModalProps {
   tripStatus: TripStatus;
   isHost: boolean;
   hasFinancialHistory: boolean;
-  onConfirmRemove: (id: string) => { success: boolean; message?: string };
+  onConfirmRemove: (
+    id: string
+  ) => Promise<{ success: boolean; message?: string }> | { success: boolean; message?: string };
 }
 
 export function TripRemoveMemberModal({
@@ -29,6 +31,7 @@ export function TripRemoveMemberModal({
   onConfirmRemove,
 }: TripRemoveMemberModalProps) {
   const [error, setError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   if (!member) return null;
 
@@ -40,16 +43,25 @@ export function TripRemoveMemberModal({
     hasFinancialHistory
   );
 
-  const handleConfirm = () => {
-    if (!permission.allowed) return;
+  const handleConfirm = async () => {
+    if (!permission.allowed || isSubmitting) return;
 
-    const res = onConfirmRemove(member.id);
-    if (!res.success) {
-      setError(res.message || "Không thể xóa thành viên");
-      return;
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await onConfirmRemove(member.id);
+      if (!res.success) {
+        setError(res.message || "Không thể xóa thành viên");
+        return;
+      }
+
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra khi xóa thành viên.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onClose();
   };
 
   return (
@@ -101,17 +113,18 @@ export function TripRemoveMemberModal({
             )}
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-hairline">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Hủy
               </Button>
               <Button
                 type="button"
                 variant="destructive"
                 onClick={handleConfirm}
+                disabled={isSubmitting}
                 className="bg-functional-negative hover:bg-red-700 text-white flex items-center gap-1.5"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>Xác nhận xóa</span>
+                <span>{isSubmitting ? "Đang xóa..." : "Xác nhận xóa"}</span>
               </Button>
             </div>
           </div>

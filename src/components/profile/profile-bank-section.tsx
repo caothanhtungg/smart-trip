@@ -22,15 +22,28 @@ export function ProfileBankSection() {
   const { profile, updateBankInfo, removeBankInfo } = useUserProfile();
   const { toast } = useToast();
 
-  const [formData, setFormData] = React.useState({
-    bankBin: profile.bankInfo?.bankBin || "970407",
-    accountNumber: profile.bankInfo?.accountNumber || "",
-    accountHolder: profile.bankInfo?.accountHolder || normalizeAccountHolderName(profile.fullName),
-  });
+  const [editedBin, setEditedBin] = React.useState<string | null>(null);
+  const [editedAccountNo, setEditedAccountNo] = React.useState<string | null>(null);
+  const [editedHolder, setEditedHolder] = React.useState<string | null>(null);
+
+  const bankBin = editedBin ?? (profile.bankInfo?.bankBin || "970407");
+  const accountNumber = editedAccountNo ?? (profile.bankInfo?.accountNumber || "");
+  const accountHolder =
+    editedHolder ?? (profile.bankInfo?.accountHolder || normalizeAccountHolderName(profile.fullName));
+
+  const formData = React.useMemo(
+    () => ({
+      bankBin,
+      accountNumber,
+      accountHolder,
+    }),
+    [bankBin, accountNumber, accountHolder]
+  );
 
   const [errors, setErrors] = React.useState<BankValidationErrors>({});
   const [copied, setCopied] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isRemoving, setIsRemoving] = React.useState(false);
 
   const handleCopyAccount = () => {
     if (formData.accountNumber && typeof navigator !== "undefined" && navigator.clipboard) {
@@ -43,12 +56,13 @@ export function ProfileBankSection() {
   const handleHolderNameChange = (val: string) => {
     // Automatically uppercase and unaccent name
     const normalized = normalizeAccountHolderName(val);
-    setFormData((p) => ({ ...p, accountHolder: normalized }));
+    setEditedHolder(normalized);
     if (errors.accountHolder) setErrors((p) => ({ ...p, accountHolder: undefined }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || isRemoving) return;
     setIsSubmitting(true);
     setErrors({});
 
@@ -65,22 +79,33 @@ export function ProfileBankSection() {
     setIsSubmitting(false);
 
     if (res.success) {
+      setEditedBin(null);
+      setEditedAccountNo(null);
+      setEditedHolder(null);
       toast("Đã cập nhật thông tin ngân hàng VietQR thành công!", "success");
     } else if (res.errors) {
       setErrors(res.errors);
       toast("Vui lòng kiểm tra lại thông tin ngân hàng.", "error");
+    } else if (res.message) {
+      toast(res.message, "error");
     }
   };
 
-  const handleRemove = () => {
-    removeBankInfo();
-    setFormData({
-      bankBin: "970407",
-      accountNumber: "",
-      accountHolder: normalizeAccountHolderName(profile.fullName),
-    });
-    setErrors({});
-    toast("Đã gỡ bỏ thông tin tài khoản ngân hàng.", "info");
+  const handleRemove = async () => {
+    if (isSubmitting || isRemoving) return;
+    setIsRemoving(true);
+    const res = await removeBankInfo();
+    setIsRemoving(false);
+
+    if (res.success) {
+      setEditedBin("970407");
+      setEditedAccountNo("");
+      setEditedHolder(normalizeAccountHolderName(profile.fullName));
+      setErrors({});
+      toast("Đã gỡ bỏ thông tin tài khoản ngân hàng.", "info");
+    } else {
+      toast(res.message || "Gỡ thông tin STK thất bại.", "error");
+    }
   };
 
   const currentPreviewBankInfo = React.useMemo(() => {
@@ -142,7 +167,7 @@ export function ProfileBankSection() {
                 id="bankBin"
                 value={formData.bankBin}
                 onChange={(e) => {
-                  setFormData((p) => ({ ...p, bankBin: e.target.value }));
+                  setEditedBin(e.target.value);
                   if (errors.bankBin) setErrors((p) => ({ ...p, bankBin: undefined }));
                 }}
                 className={`w-full h-11 px-3.5 rounded-xl bg-surface-card text-on-surface text-sm border shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-ocean-mist cursor-pointer ${
@@ -176,7 +201,7 @@ export function ProfileBankSection() {
                 type="text"
                 value={formData.accountNumber}
                 onChange={(e) => {
-                  setFormData((p) => ({ ...p, accountNumber: e.target.value.replace(/\s+/g, "") }));
+                  setEditedAccountNo(e.target.value.replace(/\s+/g, ""));
                   if (errors.accountNumber) setErrors((p) => ({ ...p, accountNumber: undefined }));
                 }}
                 placeholder="Nhập số tài khoản ngân hàng"
@@ -245,19 +270,20 @@ export function ProfileBankSection() {
               <button
                 type="button"
                 onClick={handleRemove}
-                className="w-full sm:w-auto h-11 px-4 rounded-xl text-functional-negative font-semibold text-xs hover:bg-functional-warning-bg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                disabled={isSubmitting || isRemoving}
+                className="w-full sm:w-auto h-11 px-4 rounded-xl text-functional-negative font-semibold text-xs hover:bg-functional-warning-bg transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>Gỡ thông tin STK</span>
+                <span>{isRemoving ? "Đang gỡ..." : "Gỡ thông tin STK"}</span>
               </button>
             )}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isRemoving}
               className="w-full sm:flex-1 h-11 px-6 rounded-xl bg-cerulean text-on-primary font-semibold text-sm hover:bg-baltic-blue shadow-[0_4px_16px_rgba(26,117,159,0.25)] transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ocean-mist disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
-              <span>Cập nhật tài khoản</span>
+              <span>{isSubmitting ? "Đang lưu..." : "Cập nhật tài khoản"}</span>
             </button>
           </div>
         </form>

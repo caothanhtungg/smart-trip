@@ -13,7 +13,9 @@ interface TripLeaveTripModalProps {
   member: TripMember | null;
   netBalance: number;
   tripStatus: TripStatus;
-  onConfirmLeave: (id: string) => { success: boolean; message?: string };
+  onConfirmLeave: (
+    id: string
+  ) => Promise<{ success: boolean; message?: string }> | { success: boolean; message?: string };
 }
 
 export function TripLeaveTripModal({
@@ -25,21 +27,31 @@ export function TripLeaveTripModal({
   onConfirmLeave,
 }: TripLeaveTripModalProps) {
   const [error, setError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   if (!member) return null;
 
   const permission = canLeaveTrip(member, netBalance, tripStatus);
 
-  const handleConfirm = () => {
-    if (!permission.allowed) return;
+  const handleConfirm = async () => {
+    if (!permission.allowed || isSubmitting) return;
 
-    const res = onConfirmLeave(member.id);
-    if (!res.success) {
-      setError(res.message || "Không thể rời chuyến đi");
-      return;
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await onConfirmLeave(member.id);
+      if (!res.success) {
+        setError(res.message || "Không thể rời chuyến đi");
+        return;
+      }
+
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra khi rời chuyến đi.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onClose();
   };
 
   return (
@@ -88,17 +100,18 @@ export function TripLeaveTripModal({
             )}
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-hairline">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Hủy
               </Button>
               <Button
                 type="button"
                 variant="destructive"
                 onClick={handleConfirm}
+                disabled={isSubmitting}
                 className="bg-functional-negative hover:bg-red-700 text-white flex items-center gap-1.5"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Xác nhận rời chuyến</span>
+                <span>{isSubmitting ? "Đang xử lý..." : "Xác nhận rời chuyến"}</span>
               </Button>
             </div>
           </div>

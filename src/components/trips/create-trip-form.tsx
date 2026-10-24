@@ -43,6 +43,7 @@ export function CreateTripForm() {
   const [errors, setErrors] = React.useState<CreateTripValidationErrors>({});
   const [previewModalOpen, setPreviewModalOpen] = React.useState(false);
   const [confirmCancelOpen, setConfirmCancelOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Field refs for auto-focusing on first error
   const nameInputRef = React.useRef<HTMLInputElement>(null);
@@ -126,6 +127,7 @@ export function CreateTripForm() {
   // Submit handler
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const validation = validateCreateTripForm(formData);
 
@@ -149,8 +151,37 @@ export function CreateTripForm() {
     setPreviewModalOpen(true);
   };
 
+  // Async Confirm create handler (gọi API qua TripsStore, bảo vệ chống double-click)
+  const handleConfirmCreate = async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const newId = await addTrip({
+        name: formData.name,
+        destination: formData.destination,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        budgetAmount: formData.budgetAmount || 0,
+      });
+
+      toast("Tạo chuyến đi thành công!", "success");
+      setPreviewModalOpen(false);
+      router.push(`/trips/${newId}`);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Không thể tạo chuyến đi. Vui lòng thử lại.";
+      toast(errorMessage, "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Cancel handler
   const handleCancelClick = () => {
+    if (isSubmitting) return;
     if (isDirty) {
       setConfirmCancelOpen(true);
     } else {
@@ -391,6 +422,7 @@ export function CreateTripForm() {
               type="button"
               variant="outline"
               onClick={handleCancelClick}
+              disabled={isSubmitting}
               className="h-12 px-6 rounded-xl text-text-muted hover:text-functional-negative hover:bg-functional-warning-bg/40 font-semibold"
             >
               Hủy
@@ -398,6 +430,7 @@ export function CreateTripForm() {
             <Button
               type="submit"
               variant="primary"
+              disabled={isSubmitting}
               className="flex-1 h-12 px-6 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(26,117,159,0.25)]"
             >
               <Eye className="w-4 h-4 stroke-[2.2]" />
@@ -417,21 +450,13 @@ export function CreateTripForm() {
       {/* Modals */}
       <CreateTripPreviewModal
         isOpen={previewModalOpen}
-        onClose={() => setPreviewModalOpen(false)}
-        onConfirmCreate={() => {
-          const newId = addTrip({
-            name: formData.name,
-            destination: formData.destination,
-            startDate: formData.startDate,
-            endDate: formData.endDate,
-            budgetAmount: formData.budgetAmount || 0,
-          });
-          toast("Tạo chuyến đi thành công!", "success");
-          setPreviewModalOpen(false);
-          router.push(`/trips/${newId}`);
+        onClose={() => {
+          if (!isSubmitting) setPreviewModalOpen(false);
         }}
+        onConfirmCreate={handleConfirmCreate}
         formData={formData}
         durationText={durationText}
+        isSubmitting={isSubmitting}
       />
 
       <ConfirmCancelModal

@@ -9,9 +9,13 @@ export default function TripExpensesPage() {
     sessionTrip,
     sessionExpenses,
     handleAddExpense,
+    handleSaveExpenseFromModal,
     handleUpdateExpense,
     handleDeleteExpense,
     currentMemberId,
+    isExpensesLoading,
+    expensesError,
+    refetchExpenses,
   } = useTripSession();
 
   return (
@@ -19,9 +23,13 @@ export default function TripExpensesPage() {
       trip={sessionTrip}
       expenses={sessionExpenses}
       onAddExpense={handleAddExpense}
+      onSaveExpenseFromModal={handleSaveExpenseFromModal}
       onUpdateExpense={handleUpdateExpense}
       onDeleteExpense={handleDeleteExpense}
       currentUserId={currentMemberId}
+      isLoading={isExpensesLoading}
+      error={expensesError}
+      onRetry={refetchExpenses}
     />
   );
 }

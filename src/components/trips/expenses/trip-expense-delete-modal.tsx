@@ -1,13 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Trash2, X } from "lucide-react";
+import { AlertTriangle, Trash2, X, Loader2 } from "lucide-react";
 import { formatMoney } from "@/lib/money/format";
 
 interface TripExpenseDeleteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirmDelete: () => void;
+  onConfirmDelete: () =>
+    | Promise<{ success: boolean; message?: string } | void>
+    | { success: boolean; message?: string }
+    | void;
   expenseTitle: string;
   expenseAmount: number;
 }
@@ -19,17 +22,48 @@ export function TripExpenseDeleteModal({
   expenseTitle,
   expenseAmount,
 }: TripExpenseDeleteModalProps) {
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleClose = React.useCallback(() => {
+    if (isDeleting) return;
+    setError(null);
+    setIsDeleting(false);
+    onClose();
+  }, [isDeleting, onClose]);
+
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !isDeleting) handleClose();
     }
     if (isOpen) {
       window.addEventListener("keydown", handleKeyDown);
     }
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, isDeleting, handleClose]);
 
   if (!isOpen) return null;
+
+  const handleConfirm = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    setError(null);
+    try {
+      const res = await onConfirmDelete();
+      if (res && typeof res === "object" && "success" in res && !res.success) {
+        setError(res.message || "Không thể xóa khoản chi.");
+        setIsDeleting(false);
+        return;
+      }
+      setIsDeleting(false);
+      handleClose();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Đã có lỗi xảy ra khi xóa khoản chi."
+      );
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div
@@ -46,8 +80,9 @@ export function TripExpenseDeleteModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors cursor-pointer"
+            onClick={handleClose}
+            disabled={isDeleting}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors cursor-pointer disabled:opacity-50"
             aria-label="Đóng"
           >
             <X className="w-5 h-5" />
@@ -55,7 +90,7 @@ export function TripExpenseDeleteModal({
         </div>
 
         {/* Title & Info */}
-        <div className="space-y-2 mb-6">
+        <div className="space-y-2 mb-4">
           <h3 id="delete-modal-title" className="text-lg font-bold text-yale-blue">
             Xác nhận xóa khoản chi?
           </h3>
@@ -70,25 +105,42 @@ export function TripExpenseDeleteModal({
           </p>
         </div>
 
+        {error && (
+          <div
+            role="alert"
+            className="mb-4 p-3 rounded-xl bg-functional-negative/10 border border-functional-negative/20 text-functional-negative text-xs font-semibold animate-fadeIn"
+          >
+            {error}
+          </div>
+        )}
+
         {/* Buttons */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-divider-border">
           <button
             type="button"
-            onClick={onClose}
-            className="h-11 px-5 rounded-xl text-text-muted font-semibold text-sm hover:bg-hover-row transition-colors cursor-pointer"
+            disabled={isDeleting}
+            onClick={handleClose}
+            className="h-11 px-5 rounded-xl text-text-muted font-semibold text-sm hover:bg-hover-row transition-colors cursor-pointer disabled:opacity-50"
           >
             Hủy bỏ
           </button>
           <button
             type="button"
-            onClick={() => {
-              onConfirmDelete();
-              onClose();
-            }}
-            className="h-11 px-5 rounded-xl bg-functional-negative text-white font-semibold text-sm hover:bg-functional-negative/90 shadow-sm transition-all flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-functional-negative/40"
+            disabled={isDeleting}
+            onClick={handleConfirm}
+            className="h-11 px-5 rounded-xl bg-functional-negative text-white font-semibold text-sm hover:bg-functional-negative/90 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm transition-all flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-functional-negative/40"
           >
-            <Trash2 className="w-4 h-4" />
-            <span>Xác nhận xóa</span>
+            {isDeleting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Đang xóa...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 className="w-4 h-4" />
+                <span>Xác nhận xóa</span>
+              </>
+            )}
           </button>
         </div>
       </div>

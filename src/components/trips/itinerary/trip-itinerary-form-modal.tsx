@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Sparkles,
   Info,
+  Loader2,
 } from "lucide-react";
 import {
   ItineraryItem,
@@ -35,10 +36,11 @@ interface TripItineraryFormModalProps {
   initialItem?: ItineraryItem | null;
   defaultDate?: string;
   existingItems: ItineraryItem[];
-  onSave: (formData: CreateItineraryItemFormData) => {
-    success: boolean;
-    message?: string;
-  };
+  onSave: (
+    formData: CreateItineraryItemFormData
+  ) =>
+    | Promise<{ success: boolean; message?: string }>
+    | { success: boolean; message?: string };
 }
 
 // Popular spots by destination to enhance user experience without external APIs
@@ -97,6 +99,7 @@ function TripItineraryFormDialog({
   const [note, setNote] = React.useState<string>(initialItem ? initialItem.note || "" : "");
   const [errors, setErrors] = React.useState<ItineraryValidationErrors>({});
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Destination quick spots
   const quickSpots = React.useMemo(() => {
@@ -130,8 +133,9 @@ function TripItineraryFormDialog({
     );
   }, [dayDate, startTime, endTime, existingItems, initialItem?.id]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const formData: CreateItineraryItemFormData = {
       dayDate,
@@ -149,13 +153,26 @@ function TripItineraryFormDialog({
       return;
     }
 
-    const res = onSave(formData);
-    if (!res.success) {
-      setSubmitError(res.message || "Không thể lưu địa điểm.");
-      return;
+    setErrors({});
+    setSubmitError(null);
+    setIsSubmitting(true);
+    try {
+      const res = await onSave(formData);
+      if (!res.success) {
+        setSubmitError(res.message || "Không thể lưu địa điểm.");
+        setIsSubmitting(false);
+        return;
+      }
+      setIsSubmitting(false);
+      onClose();
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error
+          ? err.message
+          : "Đã có lỗi xảy ra khi lưu địa điểm."
+      );
+      setIsSubmitting(false);
     }
-
-    onClose();
   };
 
   return (
@@ -182,7 +199,8 @@ function TripItineraryFormDialog({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors focus:outline-none focus:ring-2 focus:ring-cerulean/30"
+            disabled={isSubmitting}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors focus:outline-none focus:ring-2 focus:ring-cerulean/30 disabled:opacity-50 disabled:pointer-events-none"
             aria-label="Đóng cửa sổ"
           >
             <X className="w-5 h-5" />
@@ -453,16 +471,27 @@ function TripItineraryFormDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl text-text-muted hover:text-yale-blue hover:bg-hover-row text-xs sm:text-sm font-semibold transition-colors focus:outline-none"
+                disabled={isSubmitting}
+                className="px-4 py-2.5 rounded-xl text-text-muted hover:text-yale-blue hover:bg-hover-row text-xs sm:text-sm font-semibold transition-colors focus:outline-none disabled:opacity-50 disabled:pointer-events-none"
               >
                 Hủy
               </button>
               <button
                 type="submit"
-                className="h-10 sm:h-11 px-6 rounded-xl bg-cerulean hover:bg-baltic-blue text-white text-xs sm:text-sm font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-cerulean/40"
+                disabled={isSubmitting}
+                className="h-10 sm:h-11 px-6 rounded-xl bg-cerulean hover:bg-baltic-blue text-white text-xs sm:text-sm font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-cerulean/40 disabled:opacity-60 disabled:pointer-events-none"
               >
-                <MapPin className="w-4 h-4" />
-                <span>{isEditing ? "Lưu thay đổi" : "Lưu địa điểm"}</span>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang lưu...</span>
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="w-4 h-4" />
+                    <span>{isEditing ? "Lưu thay đổi" : "Lưu địa điểm"}</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

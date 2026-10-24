@@ -38,11 +38,6 @@ enum SplitMethod {
   ITEMIZED
 }
 
-enum ExpenseItemType {
-  ITEM
-  SURCHARGE
-}
-
 enum SettlementStatus {
   ACTIVE
   CANCELLED
@@ -66,19 +61,69 @@ enum PaymentMethod {
 }
 
 model User {
-  id              String              @id @default(uuid()) @db.Uuid
-  email           String              @unique @db.VarChar(255)
-  name            String              @db.VarChar(100)
-  imageUrl        String?             @map("image_url")
-  bankBin         String?             @map("bank_bin") @db.VarChar(10)
-  bankAccountNo   String?             @map("bank_account_no") @db.VarChar(30)
-  bankAccountName String?             @map("bank_account_name") @db.VarChar(100)
-  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  tripMembers     TripMember[]
-  claims          MemberClaim[]
-  snapshots       BankClaimSnapshot[]
+  id                    String              @id @default(uuid()) @db.Uuid
+  email                 String              @unique @db.VarChar(255)
+  name                  String              @db.VarChar(100)
+  displayName           String?             @map("display_name") @db.VarChar(100)
+  emailVerified         Boolean             @default(false) @map("email_verified")
+  image                 String?             @map("image")
+  bankBin               String?             @map("bank_bin") @db.VarChar(10)
+  bankAccountNo         String?             @map("bank_account_no") @db.VarChar(255)
+  bankAccountName       String?             @map("bank_account_name") @db.VarChar(100)
+  bankAccountKeyVersion Int                 @default(1) @map("bank_account_key_version")
+  createdAt             DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  sessions              Session[]
+  accounts              Account[]
+  tripMembers           TripMember[]
+  claims                MemberClaim[]
+  snapshots             BankClaimSnapshot[]
 
   @@map("users")
+}
+
+model Account {
+  id                    String    @id @default(uuid()) @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamptz(6)
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamptz(6)
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("accounts")
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Verification {
+  id         String   @id @default(uuid()) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("verifications")
 }
 
 model Trip {
@@ -102,33 +147,34 @@ model Trip {
 }
 
 model TripMember {
-  id                 String               @id @default(uuid()) @db.Uuid
-  tripId             String               @map("trip_id") @db.Uuid
-  userId             String?              @map("user_id") @db.Uuid
-  displayName        String               @map("display_name") @db.VarChar(100)
-  role               MemberRole           @default(MEMBER)
-  status             MemberStatus         @default(ACTIVE)
-  joinOrder          Int                  @map("join_order")
-  joinedAt           DateTime             @default(now()) @map("joined_at") @db.Timestamptz(6)
-  leftAt             DateTime?            @map("left_at") @db.Timestamptz(6)
-  bankBin            String?              @map("bank_bin") @db.VarChar(10)
-  bankAccountNo      String?              @map("bank_account_no") @db.VarChar(30)
-  bankAccountName    String?              @map("bank_account_name") @db.VarChar(100)
-  trip               Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  user               User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
-  placeholderClaims  MemberClaim[]        @relation("ClaimPlaceholder")
-  decidedClaims      MemberClaim[]        @relation("ClaimDecider")
-  itineraryCreated   ItineraryItem[]
-  paidExpenses       Expense[]            @relation("ExpensePayer")
-  createdExpenses    Expense[]            @relation("ExpenseCreator")
-  shares             ExpenseShare[]
-  itemMembers        ExpenseItemMember[]
-  createdSettlements Settlement[]
-  transfersFrom      SettlementTransfer[] @relation("TransferFrom")
-  transfersTo        SettlementTransfer[] @relation("TransferTo")
-  paidTransfers      SettlementTransfer[] @relation("TransferPaidMarker")
-  completedTransfers SettlementTransfer[] @relation("TransferCompleter")
-  snapshots          BankClaimSnapshot[]
+  id                    String               @id @default(uuid()) @db.Uuid
+  tripId                String               @map("trip_id") @db.Uuid
+  userId                String?              @map("user_id") @db.Uuid
+  displayName           String               @map("display_name") @db.VarChar(100)
+  role                  MemberRole           @default(MEMBER)
+  status                MemberStatus         @default(ACTIVE)
+  joinOrder             Int                  @map("join_order")
+  joinedAt              DateTime             @default(now()) @map("joined_at") @db.Timestamptz(6)
+  leftAt                DateTime?            @map("left_at") @db.Timestamptz(6)
+  bankBin               String?              @map("bank_bin") @db.VarChar(10)
+  bankAccountNo         String?              @map("bank_account_no") @db.VarChar(255)
+  bankAccountName       String?              @map("bank_account_name") @db.VarChar(100)
+  bankAccountKeyVersion Int                  @default(1) @map("bank_account_key_version")
+  trip                  Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user                  User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  placeholderClaims     MemberClaim[]        @relation("ClaimPlaceholder")
+  decidedClaims         MemberClaim[]        @relation("ClaimDecider")
+  itineraryCreated      ItineraryItem[]
+  paidExpenses          Expense[]            @relation("ExpensePayer")
+  createdExpenses       Expense[]            @relation("ExpenseCreator")
+  shares                ExpenseShare[]
+  itemMembers           ExpenseItemMember[]
+  createdSettlements    Settlement[]
+  transfersFrom         SettlementTransfer[] @relation("TransferFrom")
+  transfersTo           SettlementTransfer[] @relation("TransferTo")
+  paidTransfers         SettlementTransfer[] @relation("TransferPaidMarker")
+  completedTransfers    SettlementTransfer[] @relation("TransferCompleter")
+  snapshots             BankClaimSnapshot[]
 
   @@unique([tripId, userId])
   @@unique([tripId, displayName])
@@ -157,18 +203,18 @@ model MemberClaim {
 }
 
 model BankClaimSnapshot {
-  id                        String      @id @default(uuid()) @db.Uuid
-  claimId                   String      @unique @map("claim_id") @db.Uuid
-  placeholderMemberId       String      @map("placeholder_member_id") @db.Uuid
-  userId                    String      @db.Uuid
-  bankBinCiphertext         String      @map("bank_bin_ciphertext")
-  bankAccountNoCiphertext   String      @map("bank_account_no_ciphertext")
-  bankAccountNameCiphertext String?     @map("bank_account_name_ciphertext")
-  keyVersion                String      @map("key_version") @db.VarChar(64)
-  createdAt                 DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  claim                     MemberClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
-  placeholderMember         TripMember  @relation(fields: [placeholderMemberId], references: [id], onDelete: Restrict)
-  user                      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                      String      @id @default(uuid()) @db.Uuid
+  claimId                 String      @unique @map("claim_id") @db.Uuid
+  placeholderMemberId     String      @map("placeholder_member_id") @db.Uuid
+  userId                  String      @db.Uuid
+  bankBin                 String?     @map("bank_bin") @db.VarChar(10)
+  bankAccountNoCiphertext String      @map("bank_account_no_ciphertext") @db.VarChar(255)
+  bankAccountName         String?     @map("bank_account_name") @db.VarChar(100)
+  keyVersion              Int         @default(1) @map("key_version")
+  createdAt               DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  claim                   MemberClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  placeholderMember       TripMember  @relation(fields: [placeholderMemberId], references: [id], onDelete: Restrict)
+  user                    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([placeholderMemberId])
   @@index([userId])
@@ -183,6 +229,8 @@ model ItineraryItem {
   placeName         String     @map("place_name") @db.VarChar(200)
   address           String?
   note              String?
+  startTime         DateTime?  @map("start_time") @db.Time(0)
+  endTime           DateTime?  @map("end_time") @db.Time(0)
   createdByMemberId String     @map("created_by_member_id") @db.Uuid
   createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -200,11 +248,13 @@ model Expense {
   itineraryItemId   String?         @map("itinerary_item_id") @db.Uuid
   title             String          @db.VarChar(200)
   amount            Int
+  surchargeAmount   Int             @default(0) @map("surcharge_amount")
   category          ExpenseCategory @default(OTHER)
   paidByMemberId    String          @map("paid_by_member_id") @db.Uuid
   createdByMemberId String          @map("created_by_member_id") @db.Uuid
   splitMethod       SplitMethod     @default(EQUAL) @map("split_method")
   spentAt           DateTime        @default(now()) @map("spent_at") @db.Timestamptz(6)
+  receiptImageUrl   String?         @map("receipt_image_url")
   note              String?
   createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -236,7 +286,6 @@ model ExpenseItem {
   expenseId String              @map("expense_id") @db.Uuid
   name      String              @db.VarChar(200)
   amount    Int
-  itemType  ExpenseItemType     @default(ITEM) @map("item_type")
   expense   Expense             @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   members   ExpenseItemMember[]
 
@@ -291,4 +340,13 @@ model SettlementTransfer {
   @@index([fromMemberId])
   @@index([toMemberId])
   @@map("settlement_transfers")
+}
+
+model RateLimit {
+  key     String   @id @db.VarChar(255)
+  count   Int      @default(1)
+  resetAt DateTime @map("reset_at") @db.Timestamptz(6)
+
+  @@index([resetAt])
+  @@map("rate_limits")
 }

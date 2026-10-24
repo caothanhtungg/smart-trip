@@ -127,3 +127,5 @@ export function getAvatarBgColor(name: string): string {
   const index = Math.abs(hash) % palette.length;
   return palette[index];
 }
+
+export { isUuid, UUID_REGEX } from "@/lib/services/trips-api";
