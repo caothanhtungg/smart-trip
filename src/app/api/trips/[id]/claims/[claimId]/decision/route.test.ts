@@ -403,4 +403,92 @@ describe("POST & PATCH /api/trips/[id]/claims/[claimId]/decision (UC30 Decide Cl
     expect(body.success).toBe(false);
     expect(body.error.code).toBe("CONFLICT");
   });
+
+  it("dissociates prior LEFT membership when approving claim, avoiding unique constraint violation", async () => {
+    vi.mocked(requireTripMembership).mockResolvedValueOnce(mockHostAuth);
+
+    const updateManyClaimMock = vi.fn().mockResolvedValue({ count: 1 });
+    const updateManyMemberMock = vi.fn().mockResolvedValue({ count: 1 });
+    const updateMemberMock = vi.fn().mockResolvedValue({ id: "left-mem-id", userId: null });
+
+    vi.mocked(prisma.$transaction).mockImplementationOnce(async (callback) => {
+      return callback({
+        memberClaim: {
+          findFirst: vi.fn().mockResolvedValue(mockPendingClaim),
+          updateMany: updateManyClaimMock,
+        },
+        tripMember: {
+          findFirst: vi
+            .fn()
+            // 1st call for ACTIVE: null
+            .mockResolvedValueOnce(null)
+            // 2nd call for LEFT: returns left member
+            .mockResolvedValueOnce({ id: "left-mem-id", status: "LEFT" }),
+          update: updateMemberMock,
+          updateMany: updateManyMemberMock,
+        },
+      } as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+    });
+
+    const req = new Request(`http://localhost/api/trips/${TRIP_ID}/claims/${CLAIM_ID}/decision`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ decision: "APPROVE" }),
+    });
+
+    const res = await PATCH(req, {
+      params: Promise.resolve({ id: TRIP_ID, claimId: CLAIM_ID }),
+    });
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.data.status).toBe("APPROVED");
+
+    // Verifies the prior LEFT membership had its userId cleared
+    expect(updateMemberMock).toHaveBeenCalledWith({
+      where: { id: "left-mem-id" },
+      data: { userId: null },
+    });
+    // Verifies placeholder is linked with claimant userId
+    expect(updateManyMemberMock).toHaveBeenCalledWith({
+      where: { id: PLACEHOLDER_ID, userId: null },
+      data: {
+        userId: CLAIMANT_USER_ID,
+        bankBin: null,
+        bankAccountNo: null,
+        bankAccountName: null,
+      },
+    });
+  });
+
+  it("maps Prisma P2002 unique constraint error to 409 Conflict instead of 500", async () => {
+    vi.mocked(requireTripMembership).mockResolvedValueOnce(mockHostAuth);
+
+    const p2002Error = {
+      code: "P2002",
+      meta: {
+        target: ["trip_id", "user_id"],
+        constraint: "trip_members_trip_id_user_id_key",
+      },
+    };
+
+    vi.mocked(prisma.$transaction).mockRejectedValueOnce(p2002Error);
+
+    const req = new Request(`http://localhost/api/trips/${TRIP_ID}/claims/${CLAIM_ID}/decision`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ decision: "APPROVE" }),
+    });
+
+    const res = await PATCH(req, {
+      params: Promise.resolve({ id: TRIP_ID, claimId: CLAIM_ID }),
+    });
+    expect(res.status).toBe(409);
+
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error.code).toBe("CONFLICT");
+    expect(body.error.message).toContain("Người dùng này hiện đã là thành viên trong chuyến đi.");
+  });
 });

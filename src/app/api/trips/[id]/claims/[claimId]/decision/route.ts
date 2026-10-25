@@ -9,6 +9,7 @@ import { parseJsonBody } from "@/lib/api/parse";
 import { requireTripMembership } from "@/lib/api/auth-guard";
 import { prisma } from "@/lib/db/prisma";
 import { DecideClaimSchema } from "@/lib/validation/claim-api";
+import { mapClaimDatabaseError } from "@/lib/api/claim-db-errors";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -116,6 +117,19 @@ async function handleClaimDecision(req: Request, { params }: RouteParams) {
         throw new ConflictError("Người dùng này hiện đã là thành viên trong chuyến đi.");
       }
 
+      // Xử lý bản ghi thành viên cũ nếu người dùng từng tham gia và đã rời nhóm (status = LEFT)
+      // Giải phóng userId khỏi bản ghi cũ để tránh vi phạm unique constraint (trip_id, user_id)
+      const existingLeftMember = await tx.tripMember.findFirst({
+        where: { tripId, userId: claim.userId, status: "LEFT" },
+        select: { id: true },
+      });
+      if (existingLeftMember) {
+        await tx.tripMember.update({
+          where: { id: existingLeftMember.id },
+          data: { userId: null },
+        });
+      }
+
       // Khóa lạc quan 1: Chuyển claim sang APPROVED nếu vẫn còn PENDING
       const claimUpdate = await tx.memberClaim.updateMany({
         where: { id: claimId, status: "PENDING" },
@@ -187,6 +201,10 @@ async function handleClaimDecision(req: Request, { params }: RouteParams) {
 
     return apiSuccess(result, { message: result.message });
   } catch (err) {
+    const mapped = mapClaimDatabaseError(err);
+    if (mapped) {
+      return handleApiError(mapped);
+    }
     return handleApiError(err);
   }
 }

@@ -48,6 +48,21 @@ describe("mapClaimDatabaseError (Phase 3ZN-H: Claim Concurrency Hardening)", () 
     expect(mapped?.message).toContain("Rule R20");
   });
 
+  it("maps P2002 / 23505 unique constraint on trip_members (trip_id, user_id) to ConflictError", () => {
+    const error = {
+      code: "P2002",
+      meta: {
+        target: ["trip_id", "user_id"],
+        constraint: "trip_members_trip_id_user_id_key",
+      },
+    };
+
+    const mapped = mapClaimDatabaseError(error);
+    expect(mapped).toBeInstanceOf(ConflictError);
+    expect(mapped?.statusCode).toBe(409);
+    expect(mapped?.message).toContain("Người dùng này hiện đã là thành viên trong chuyến đi.");
+  });
+
   it("maps foreign key violation on trip_id (P2003) to NotFoundError", () => {
     const error = {
       code: "P2003",

@@ -66,6 +66,17 @@ export function mapClaimDatabaseError(error: unknown): AppError | null {
     constraintId.includes("unique constraint");
 
   if (isUniqueViolation) {
+    // Unique constraint on trip_members: (trip_id, user_id)
+    if (
+      constraintId.includes("trip_members_trip_id_user_id") ||
+      (constraintId.includes("trip_members") &&
+        (constraintId.includes("user_id") || constraintId.includes("userId")))
+    ) {
+      return new ConflictError(
+        "Người dùng này hiện đã là thành viên trong chuyến đi."
+      );
+    }
+
     // Partial unique index: "one_pending_claim" ON member_claims("trip_id", "userId") WHERE "status" = 'PENDING'
     if (
       constraintId.includes("one_pending_claim") ||
