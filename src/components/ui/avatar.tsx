@@ -17,6 +17,14 @@ export function Avatar({
   isNoAccount = false,
   ...props
 }: AvatarProps) {
+  const [prevSrc, setPrevSrc] = React.useState(src);
+  const [hasError, setHasError] = React.useState(false);
+
+  if (prevSrc !== src) {
+    setPrevSrc(src);
+    setHasError(false);
+  }
+
   const sizes = {
     sm: "h-8 w-8 text-xs",
     md: "h-10 w-10 text-sm", // 40px standard
@@ -26,6 +34,7 @@ export function Avatar({
 
   const initials = getInitials(name);
   const bgColor = getAvatarBgColor(name);
+  const showImage = Boolean(src && !hasError);
 
   return (
     <div
@@ -33,19 +42,21 @@ export function Avatar({
       className={cn(
         "relative inline-flex items-center justify-center rounded-full font-bold text-yale-blue shrink-0 select-none overflow-hidden",
         sizes[size],
-        !src && bgColor,
+        !showImage && bgColor,
         isNoAccount && "ring-2 ring-dashed ring-ocean-mist ring-offset-2",
         className
       )}
       {...props}
     >
-      {src ? (
+      {showImage ? (
         <Image
-          src={src}
+          src={src!}
           alt={name}
           fill
+          unoptimized
           className="object-cover rounded-full"
           sizes="64px"
+          onError={() => setHasError(true)}
         />
       ) : (
         <span>{initials}</span>
