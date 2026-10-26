@@ -16,11 +16,17 @@ function parsePoolMax(): number {
   return process.env.VERCEL ? 1 : 10;
 }
 
+function getSanitizedDatabaseUrl(): string | undefined {
+  const raw = process.env.DATABASE_URL?.trim();
+  if (!raw) return undefined;
+  return raw.replace(/^["']+|["']+$/g, "").trim();
+}
+
 function createPrismaClient(): PrismaClient {
   const pool =
     globalForPrisma.pool ??
     new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: getSanitizedDatabaseUrl(),
       max: parsePoolMax(),
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
