@@ -2,7 +2,7 @@
 
 > Tài liệu ngữ cảnh dùng chung cho Antigravity, Claude, Cline và các công cụ AI khác.
 > Cập nhật từ tài liệu dự án hiện có. Khi có mâu thuẫn, không tự suy đoán: chỉ ra mâu thuẫn và hỏi người dùng.
-> Tình trạng triển khai hiện tại theo kế hoạch: ưu tiên hoàn thiện UI/UX và frontend; chưa triển khai backend/API nghiệp vụ, database thật, OAuth thật hoặc thanh toán thật.
+> **Tình trạng triển khai hiện tại (Phase 3ZP — 24/10/2026):** Đã hoàn tất toàn bộ Backend API Release 1, xác thực Better Auth, mã hóa STK ngân hàng AES-256-GCM, đối soát công nợ & phân quyền chi tiêu, VietQR chuẩn EMVCo Napas 247 (UC18), QR mời (UC34), Lưu trữ ảnh hóa đơn bền vững (UC32), và GitHub Actions CI. Toàn bộ 75 test files / 1.121 tests offline đạt 100% passed.
 
 ## 1. Tổng quan sản phẩm
 
@@ -37,6 +37,7 @@ Các khối giao diện sau thuộc Release 2 và 3, đã có component mẫu nh
 - **Dự báo thời tiết** (thẻ thời tiết trong thông tin phụ chuyến đi — thuộc Release 2).
 - **Điểm đến tiếp theo & Bản đồ lộ trình** (widget bản đồ trong thông tin phụ — thuộc Release 2).
 - **Biểu đồ tròn phân bổ chi tiêu** (`TripExpenseDonutChart` — đã lưu component, không render ở Release 1 — thuộc Release 3).
+- **Chuông thông báo** (nút chuông thông báo trên Header — ẩn khỏi giao diện Release 1, bảo lưu code component cho Release sau; không tạo bảng `notifications` trong cơ sở dữ liệu).
 
 ### Lưu ý khi chuyển Stitch sang React
 Các màn hình trong thiết kế Google Stitch chứa một số chi tiết nằm ngoài phạm vi Release 1 (các mục ngoài phạm vi ở trên, cùng các nhãn/tính năng như "Thuật toán Simplex", "Chính xác tuyệt đối 100%", "VietQR PRO", "Google Places", "Ví chuyến đi", "Mã PIN"). Khi chuyển đổi thiết kế sang component React, **bắt buộc phải loại bỏ** các chi tiết này để giữ giao diện chuẩn xác với phạm vi Release 1.
@@ -52,38 +53,49 @@ Các màn hình trong thiết kế Google Stitch chứa một số chi tiết n�
 
 Không sửa/xóa/ghi đè các tài liệu nguồn này khi chưa có sự đồng ý của người dùng.
 
-## 3. Stack kỹ thuật
+## 3. Stack kỹ thuật và hiện trạng hệ thống
 
-### Stack được đề xuất trong tài liệu
-- Next.js 16.4.2, App Router.
-- TypeScript.
-- Tailwind CSS.
-- PostgreSQL.
-- Route Handler phía server cho API.
-- Auth.js/Google OAuth cho xác thực (chỉ triển khai khi sang giai đoạn backend).
-- `next/font/google` với Be Vietnam Pro.
-- Có thể dùng Phosphor Icons hoặc Lucide React; chọn một thư viện và dùng thống nhất.
-- Có thể dùng thư viện `qrcode` để tạo QR mời phía trình duyệt.
+### Stack kỹ thuật thực tế (Hiện tại)
+- **Framework:** Next.js 16.4.2 (App Router), React 19.3.0.
+- **Language:** TypeScript 5 (Strict Mode).
+- **Styling:** Tailwind CSS 4.
+- **Database & ORM:** PostgreSQL trên Supabase, Prisma ORM 7.10.1 (`@prisma/client`, `@prisma/adapter-pg`).
+- **Xác thực:** Better Auth 1.7.11 với Google OAuth provider, tích hợp Prisma adapter, quản trị routing qua `src/proxy.ts`.
+- **Validation:** Zod 3.25.
+- **Mã hóa:** AES-256-GCM tại tầng server (`src/lib/crypto/bank-encryption.ts`) với khóa 256-bit `BANK_ENCRYPTION_KEY`.
+- **Thanh toán & Mã QR:** Offline VietQR generator (`src/lib/money/vietqr.ts`) tuân thủ chuẩn EMVCo Napas 247; tạo QR code offline qua thư viện `qrcode` 1.5.4.
+- **Lưu trữ hóa đơn (UC32):** Magic Bytes validation (JPEG, PNG, WebP), UUID object keys, Private bucket proxy architecture (`/api/trips/[id]/receipts/[fileId]`), hỗ trợ cả Supabase Storage REST và Memory Storage Provider cho testing.
+- **Testing:** Vitest 5.0.5 (75 test files, 1.121 tests offline passing).
+- **CI/CD:** GitHub Actions (`.github/workflows/ci.yml`) chạy `npm ci`, `npx tsc --noEmit`, `npm run lint`, `npm test` offline.
 
-Đây là stack được đề xuất theo các tài liệu kiến trúc; trước khi thay đổi công nghệ cần giải thích lý do và xin người dùng duyệt.
+### Bảng đối chiếu trạng thái tính năng Release 1
 
-### Quyết định công nghệ đã chốt (chưa cài — sẽ cài khi sang giai đoạn tương ứng)
-- **Database:** PostgreSQL trên Supabase.
-- **ORM:** Prisma.
-- **Xác thực:** Auth.js với Google OAuth.
-- **Kiểm thử:** Vitest.
-- **Icon:** Lucide React (đã dùng thống nhất).
-- **Validation API:** zod cho kiểm tra dữ liệu API.
+| Tính năng / Phân hệ | Use Case | Trạng thái kỹ thuật | Trạng thái kiểm chứng |
+| :--- | :--- | :--- | :--- |
+| Đăng nhập Google OAuth | UC01 | IMPLEMENTED | TESTED OFFLINE; NOT VERIFIED (Cần credentials thật E2E) |
+| Xem / Cập nhật hồ sơ cá nhân | UC02 | IMPLEMENTED | TESTED OFFLINE |
+| Mã hóa STK ngân hàng AES-256-GCM | UC03, UC18 | IMPLEMENTED | TESTED OFFLINE |
+| Tạo chuyến đi, sửa thông tin | UC04, UC05 | IMPLEMENTED | TESTED OFFLINE |
+| Đổi mã mời (Rotate Invite Code) | UC07 | IMPLEMENTED | TESTED OFFLINE |
+| Lưu trữ chuyến đi (Archive Trip) | UC08 | IMPLEMENTED | TESTED OFFLINE |
+| Quản lý thành viên (Thêm/Sửa/Xóa/Rời) | UC09, UC10, UC11, UC12 | IMPLEMENTED | TESTED OFFLINE |
+| Nhận diện thành viên ảo (Claims flow) | UC13, UC14 | IMPLEMENTED | TESTED OFFLINE |
+| Lịch trình theo ngày & sắp xếp | UC15, UC16, UC17 | IMPLEMENTED | TESTED OFFLINE |
+| Thông tin thanh toán đối soát (Payment Info) | UC18 | IMPLEMENTED | TESTED OFFLINE |
+| QR Code thanh toán VietQR EMVCo | UC18 | IMPLEMENTED | TESTED OFFLINE; NOT VERIFIED (Cần quét app ngân hàng thật) |
+| Quản lý chi tiêu (Chia đều & chia món) | UC19, UC20, UC21, UC22 | IMPLEMENTED | TESTED OFFLINE |
+| Lưu trữ ảnh hóa đơn bền vững | UC32 | IMPLEMENTED | TESTED OFFLINE; NOT VERIFIED (Cần bucket remote Supabase) |
+| Đối soát nợ & Rút gọn nợ | UC24, UC25, UC26 | IMPLEMENTED | TESTED OFFLINE |
+| Đánh dấu thanh toán & Xác nhận chuyển khoản | UC27, UC28 | IMPLEMENTED | TESTED OFFLINE |
+| Mở lại sổ công nợ (Reopen Settlement) | UC29 | IMPLEMENTED | TESTED OFFLINE |
+| Tham gia chuyến bằng Link/Mã mời/QR | UC30, UC31, UC34 | IMPLEMENTED | TESTED OFFLINE |
+| GitHub Actions CI tự động | CI/CD | IMPLEMENTED | TESTED OFFLINE |
 
-*(Lưu ý: Không cài thêm bất kỳ gói nào tại thời điểm này; chỉ cài khi chuyển sang giai đoạn triển khai tương ứng).*
-
-### Ranh giới giai đoạn hiện tại
-Hiện tại ưu tiên **UI/UX và frontend**:
-- Được phép dựng cấu trúc frontend, Design Tokens, component dùng chung, màn hình, responsive và tương tác trực quan.
-- Dữ liệu mẫu tĩnh có thể dùng để trình diễn, nhưng phải ghi chú rõ và tách khỏi lớp dữ liệu thật.
-- Chưa xây backend/API nghiệp vụ, chưa kết nối PostgreSQL/migration, chưa triển khai Google OAuth thực tế, chưa lưu giao dịch tài chính thật, chưa tích hợp thanh toán VietQR thật.
-- Tổ chức code để có thể nối backend về sau mà không phải viết lại toàn bộ UI.
-- Thực hiện theo từng giai đoạn, chạy kiểm tra và báo cáo trước khi chuyển sang giai đoạn tiếp theo.
+### Hướng dẫn chạy kiểm tra hệ thống
+- Chạy unit/integration tests: `npm test`
+- Chạy kiểm tra kiểu tĩnh TypeScript: `npx tsc --noEmit`
+- Chạy linter: `npm run lint`
+- Khởi động dev server: `npm run dev`
 
 ## 4. Vai trò và thuật ngữ giao diện
 
@@ -209,7 +221,7 @@ Tổng cộng 34 UC:
 - Mỗi chuyến chỉ có một Trưởng nhóm; tài liệu đề nghị partial unique index để bảo đảm.
 - Không xóa cứng thành viên đã có dữ liệu liên quan; cập nhật `status = LEFT`.
 - Mỗi chuyến tối đa một settlement `ACTIVE`; mở lại sổ sẽ chuyển settlement cũ sang `CANCELLED`.
-- Tài khoản Auth.js adapter (`accounts`, `sessions`, `verification_tokens`) do adapter tạo; không nằm trong ERD nghiệp vụ hiện tại.
+- Tài khoản Better Auth adapter (`user`, `account`, `session`, `verification`) do adapter tạo; bảng `users` mở rộng thêm các cột ngân hàng.
 
 ## 9. Quy tắc nghiệp vụ quan trọng
 
@@ -267,11 +279,18 @@ Trước khi thêm trạng thái hoặc modal, đối chiếu bảng UI trong b�
 
 1. **R18 — Quyền ghi khoản chi:** ✅ **ĐÃ DUYỆT** (Nguồn: Người dùng duyệt ngày 18/10/2026). Thành viên chỉ được ghi khoản chi do chính mình thanh toán. Trưởng nhóm được ghi hộ cho **BẤT KỲ thành viên nào** (bao gồm thành viên chưa có tài khoản). Đã thống nhất đồng bộ trong toàn bộ tài liệu, mã nguồn và unit test.
 2. **Phí dịch vụ / VAT:** ✅ **ĐÃ DUYỆT** (Nguồn: Người dùng duyệt ngày 18/10/2026). VAT và phí dịch vụ là một dòng phụ phí riêng, chia đều cho những người cùng tham gia hóa đơn. Giao diện phải minh bạch cách phân bổ.
-3. **VietQR:** ✅ **ĐÃ DUYỆT CHO GIAI ĐOẠN GIAO DIỆN** (Nguồn: Người dùng duyệt ngày 18/10/2026). CHỈ áp dụng minh họa UI nội bộ bằng SVG và dữ liệu giả định, kèm chú thích "Minh họa — chưa hỗ trợ thanh toán thật". Không gọi dịch vụ bên ngoài, không dùng STK thật. Quyết định kỹ thuật cho giai đoạn backend vẫn **MỞ**.
+3. **VietQR:** ✅ **ĐÃ TRIỂN KHAI CHO BACKEND & UI (Phase 3ZO)**: Đã triển khai bộ sinh payload chuẩn EMVCo Napas 247 (`src/lib/money/vietqr.ts`), trích xuất thông tin người nhận qua endpoint bảo mật `/api/trips/:id/transfers/:transferId/payment-info` (UC18), và hiển thị mã QR thật offline qua thư viện `qrcode` trên modal thanh toán. Kiểm thử quét thực tế trên thiết bị thật đánh dấu: **NOT VERIFIED** (cần thiết bị và app ngân hàng thật).
 4. **Điểm đến (destination):** ✅ **ĐÃ DUYỆT** (Nguồn: Người dùng duyệt ngày 18/10/2026). Điểm đến không bắt buộc; ô nhập trên giao diện tạo chuyến đi KHÔNG được có dấu hoa thị (*).
-5. **Mã mời (invite_code):** ✅ **ĐÃ DUYỆT CHỌN PHƯƠNG ÁN 1** (Nguồn: Người dùng duyệt ngày 19/10/2026). Giữ nguyên chuẩn `varchar(13)` trong ERD và codebase (`trips.invite_code`), cho phép 10–12 ký tự chữ/số kèm tối đa 1 dấu gạch nối phân đoạn (ví dụ: `DL3N2D-TRIP99`) để thuận tiện cho trải nghiệm đọc và nhập mã trên thiết bị di động. Giữ nguyên commit `b15c467`, không rollback.
+5. **Mã mời (invite_code):** ✅ **ĐÃ DUYỆT** (Nguồn: Người dùng duyệt ngày 19/10/2026 & 20/10/2026). Giữ nguyên chuẩn `varchar(13)` trong ERD và codebase (`trips.invite_code`). Server sinh đúng 12 ký tự ngẫu nhiên bằng bộ sinh số an toàn mật mã `crypto` (loại bỏ triệt để các ký tự dễ nhầm lẫn `0`, `O`, `1`, `I`, `L` — bảng mã Base31: `23456789ABCDEFGHJKMNPQRSTUVWXYZ`). Lưu trữ và hiển thị dạng `XXXXXX-XXXXXX` (đúng 13 ký tự). Tra cứu chuẩn hóa đầu vào: tự động loại bỏ khoảng trắng và dấu gạch nối, chuyển in hoa, kiểm tra đúng 12 ký tự Base31 hợp lệ và tự động chèn dấu gạch nối sau ký tự thứ 6 trước khi truy vấn DB. Giữ nguyên commit `b15c467`, không rollback.
 6. **Giảm giá trong chia theo món (discount):** ✅ **ĐÃ DUYỆT CHỌN PHƯƠNG ÁN B** (Nguồn: Người dùng duyệt ngày 18/10/2026). Chưa hỗ trợ dòng giảm giá số âm trong Release 1 để bảo toàn mô hình ERD (`expense_items.amount > 0` và `expense_shares.amount >= 0`). Nếu có khuyến mãi/voucher, người dùng tự trừ trước vào số tiền món hoặc tổng tiền hóa đơn.
 7. **Đối tượng chịu thuế VAT & phí dịch vụ (surcharge):** ✅ **ĐÃ DUYỆT** (Nguồn: Người dùng duyệt ngày 18/10/2026). Chỉ những thành viên có ít nhất 1 món trong hóa đơn mới cùng chia sẻ dòng Thuế & phí dịch vụ. Thành viên không ăn món nào trong hóa đơn (0 món) thì không phải chịu phụ phí của hóa đơn đó.
+8. **Đăng nhập (Authentication):** ✅ **ĐÃ DUYỆT & TRIỂN KHAI** (Nguồn: Người dùng duyệt ngày 20/10/2026). Sử dụng **Better Auth** với duy nhất Google OAuth provider, tích hợp Prisma adapter. Tuyệt đối không dùng Auth.js (NextAuth). Next.js 16 sử dụng `proxy.ts` thay cho `middleware.ts`.
+9. **Mô hình hóa phụ phí (Surcharge Persistence):** ✅ **ĐÃ DUYỆT CHỌN PHƯƠNG ÁN C** (Nguồn: Người dùng duyệt ngày 20/10/2026). Bổ sung cột `surcharge_amount integer NOT NULL DEFAULT 0` kèm ràng buộc `CHECK (surcharge_amount >= 0)` trực tiếp vào bảng `expenses`. Không sửa đổi cấu trúc bảng `expense_items`. Phụ phí chỉ phân bổ cho thành viên có món ăn trong khoản chi; chia đều tiền phụ phí, phần dư nguyên (remainder) phân bổ theo thứ tự `join_order`.
+10. **Mã hóa số tài khoản ngân hàng (Bank Account Encryption):** ✅ **ĐÃ DUYỆT & TRIỂN KHAI** (Nguồn: Người dùng duyệt ngày 20/10/2026). Mã hóa đối xứng **AES-256-GCM** tại tầng ứng dụng server. Khóa 32-byte (256-bit) lưu trong biến môi trường chỉ ở server `BANK_ENCRYPTION_KEY` (chuỗi hex 64 ký tự, tuyệt đối không có tiền tố `NEXT_PUBLIC_`). Cột `bank_account_no varchar(255)` lưu chuỗi định dạng `iv:authTag:ciphertext`. Cột `bank_account_key_version integer NOT NULL DEFAULT 1` theo dõi phiên bản khóa. Quy trình đổi khóa thủ công qua script bảo trì một lần. Trường hợp mất khóa, bắt lỗi giải mã an toàn và yêu cầu người dùng nhập lại STK tại trang Cài đặt / Hồ sơ cá nhân. Không sử dụng dịch vụ KMS đám mây.
+11. **Chuông thông báo (Notification Bell):** ✅ **ĐÃ DUYỆT** (Nguồn: Người dùng duyệt ngày 20/10/2026). Loại bỏ hoàn toàn khỏi phạm vi Release 1 (ẩn nút chuông thông báo trên Header, bảo lưu mã nguồn component cho Release sau). Không tạo bảng `notifications` trong cơ sở dữ liệu.
+12. **Lưu trữ ảnh hóa đơn bền vững (UC32):** ✅ **ĐÃ TRIỂN KHAI (Phase 3ZP)**. Xác thực Magic Bytes (JPEG/PNG/WebP), kiểm tra giới hạn dung lượng 5MB, sinh UUID object key ngẫu nhiên. Kiến trúc Private Storage Bucket kết hợp Route Handler proxy có phân quyền (`/api/trips/[id]/receipts/[fileId]`). Hỗ trợ Supabase REST Storage Provider và Memory Storage Provider cho unit/offline test. Cấu hình bucket trên Supabase Staging/Production đánh dấu: **NOT VERIFIED** (phụ thuộc thao tác hạ tầng).
+13. **GitHub Actions CI/CD:** ✅ **ĐÃ TRIỂN KHAI (Phase 3ZP)**. Workflow `.github/workflows/ci.yml` tự động chạy khi push/PR: `npm ci`, `npx tsc --noEmit`, `npm run lint`, `npm test` offline mà không yêu cầu secret thật hay database bên ngoài.
+
 
 ## 12. Cách AI phải làm việc với dự án
 

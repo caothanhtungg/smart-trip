@@ -8,9 +8,11 @@ Project smart_trip {
   database_type: 'PostgreSQL'
   Note: '''
     Release 1: tài khoản, chuyến đi, lịch trình, chi tiêu, công nợ.
-    Bảng của Auth.js (accounts, sessions, verification_tokens) do adapter tự tạo, không vẽ ở đây.
+    Xác thực dùng Better Auth với Google OAuth (Prisma adapter), gồm các bảng users, accounts, sessions, verifications.
     NGUYÊN TẮC: mọi khoản tiền (người trả, phần chia, khoản nợ) trỏ tới trip_members, KHÔNG trỏ tới users,
     vì thành viên không tài khoản (R11) có user_id = NULL.
+    Mã hóa số tài khoản ngân hàng bằng AES-256-GCM tại tầng ứng dụng (Node.js crypto) kèm key_version.
+    Phụ phí (VAT / phí dịch vụ) lưu tại expenses.surcharge_amount (Phương án C).
   '''
 }
 
@@ -65,12 +67,55 @@ Table users {
   id uuid [pk, default: `gen_random_uuid()`]
   email varchar(255) [not null, unique]
   name varchar(100) [not null]
-  image_url text
-  bank_bin varchar(10) [note: 'mã BIN ngân hàng dùng cho VietQR']
-  bank_account_no varchar(30) [note: 'mã hóa khi lưu (R9)']
+  display_name varchar(100) [note: 'biệt danh trong app, người dùng tự đổi']
+  email_verified boolean [not null, default: false]
+  image text
+  bank_bin varchar(10) [note: 'mã BIN ngân hàng VietQR']
+  bank_account_no varchar(255) [note: 'mã hóa AES-256-GCM iv:authTag:ciphertext']
   bank_account_name varchar(100)
+  bank_account_key_version integer [not null, default: 1, note: 'phiên bản khóa mã hóa']
   created_at timestamptz [not null, default: `now()`]
-  Note: 'Người dùng thật, đăng nhập bằng Google (UC01). STK của thành viên có tài khoản nằm ở đây.'
+  updated_at timestamptz [not null, default: `now()`]
+  Note: 'Bảng người dùng chuẩn Better Auth kết hợp các trường STK ngân hàng mở rộng. Bỏ hoàn toàn phone và branch.'
+}
+
+Table accounts {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  account_id text [not null]
+  provider_id text [not null, note: 'google']
+  access_token text
+  refresh_token text
+  id_token text
+  access_token_expires_at timestamptz
+  refresh_token_expires_at timestamptz
+  scope text
+  password text
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  Note: 'Bảng liên kết tài khoản OAuth của Better Auth.'
+}
+
+Table sessions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null]
+  token varchar(255) [not null, unique]
+  expires_at timestamptz [not null]
+  ip_address text
+  user_agent text
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  Note: 'Bảng quản lý phiên đăng nhập server-side của Better Auth.'
+}
+
+Table verifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  identifier text [not null]
+  value text [not null]
+  expires_at timestamptz [not null]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  Note: 'Bảng lưu token xác thực của Better Auth.'
 }
 
 Table trips {
@@ -81,7 +126,7 @@ Table trips {
   end_date date [not null]
   budget_amount integer [note: 'ngân sách dự kiến, có thể để trống']
   status trip_status [not null, default: 'ACTIVE']
-  invite_code varchar(13) [not null, unique, note: '10-12 ký tự chữ/số + tối đa 1 dấu gạch nối (tối đa 13 ký tự), đổi mã = ghi đè cột này (UC28, R14)']
+  invite_code varchar(13) [not null, unique, note: 'Server sinh đúng 12 ký tự ngẫu nhiên Base31 (bỏ 0, O, 1, I, L) dạng XXXXXX-XXXXXX đúng 13 ký tự. Tra cứu chuẩn hóa: bỏ gạch/khoảng trắng, in hoa, tự chèn gạch sau ký tự thứ 6. Đổi mã = ghi đè cột này (UC28, R14).']
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
   Note: 'CHECK (end_date >= start_date). Chuyến đã có khoản chi chỉ được ARCHIVED, không xóa (R15).'
@@ -98,8 +143,9 @@ Table trip_members {
   joined_at timestamptz [not null, default: `now()`]
   left_at timestamptz
   bank_bin varchar(10) [note: 'chỉ dùng khi user_id IS NULL, Host nhập hộ (R9, R12)']
-  bank_account_no varchar(30)
+  bank_account_no varchar(255) [note: 'mã hóa AES-256-GCM iv:authTag:ciphertext']
   bank_account_name varchar(100)
+  bank_account_key_version integer [not null, default: 1, note: 'phiên bản khóa mã hóa']
 
   indexes {
     (trip_id, user_id) [unique, name: 'uq_member_user_in_trip']
@@ -138,6 +184,35 @@ Table member_claims {
   '''
 }
 
+Table bank_claim_snapshots {
+  id uuid [pk, default: `gen_random_uuid()`]
+  claim_id uuid [not null, unique]
+  placeholder_member_id uuid [not null]
+  user_id uuid [not null]
+  bank_bin varchar(10) [note: 'mã BIN ngân hàng']
+  bank_account_no_ciphertext varchar(255) [not null, note: 'mã hóa AES-256-GCM iv:authTag:ciphertext']
+  bank_account_name varchar(100)
+  key_version integer [not null, default: 1, note: 'phiên bản khóa mã hóa']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    placeholder_member_id
+    user_id
+  }
+  Note: 'Snapshot thông tin tài khoản ngân hàng của người claim tại thời điểm gửi yêu cầu (bảo toàn lịch sử)'
+}
+
+Table rate_limits {
+  key varchar(255) [pk, note: 'định danh rate limit: invite:IP hoặc claim:user_id']
+  count integer [not null, default: 1]
+  reset_at timestamptz [not null]
+
+  indexes {
+    reset_at
+  }
+  Note: 'Giới hạn tần suất gọi API trực tiếp trong PostgreSQL Release 1'
+}
+
 // ---------------- NHÓM 2: LỊCH TRÌNH ----------------
 Table itinerary_items {
   id uuid [pk, default: `gen_random_uuid()`]
@@ -168,6 +243,7 @@ Table expenses {
   itinerary_item_id uuid [note: 'gắn với địa điểm, có thể để trống']
   title varchar(200) [not null]
   amount integer [not null, note: 'đồng VND, CHECK > 0 (R3)']
+  surcharge_amount integer [not null, default: 0, note: 'phụ phí chia món (VAT/phí DV), CHECK (surcharge_amount >= 0). Tổng tiền = sum(items) + surcharge_amount.']
   category expense_category [not null, default: 'OTHER']
   paid_by_member_id uuid [not null, note: 'người ứng tiền']
   created_by_member_id uuid [not null, note: 'người nhập; Host nhập hộ thì = Host (R5, R12)']
@@ -204,7 +280,7 @@ Table expense_items {
   name varchar(200) [not null]
   amount integer [not null, note: 'thành tiền của món']
 
-  Note: 'Chỉ dùng khi split_method = ITEMIZED. Phí dịch vụ/VAT: nhập thành một món riêng hoặc phân bổ theo tỷ lệ (chốt khi viết thuật toán).'
+  Note: 'Chỉ dùng khi split_method = ITEMIZED. Phụ phí dịch vụ/VAT được lưu tại expenses.surcharge_amount (Phương án C) và phân bổ cho thành viên có món ăn.'
 }
 
 Table expense_item_members {
@@ -255,6 +331,9 @@ Table settlement_transfers {
 }
 
 // ---------------- QUAN HỆ ----------------
+Ref: accounts.user_id > users.id [delete: cascade]
+Ref: sessions.user_id > users.id [delete: cascade]
+
 Ref: trip_members.trip_id > trips.id [delete: cascade]
 Ref: trip_members.user_id > users.id [delete: set null]
 
@@ -262,6 +341,10 @@ Ref: member_claims.trip_id > trips.id [delete: cascade]
 Ref: member_claims.placeholder_member_id > trip_members.id [delete: restrict]
 Ref: member_claims.user_id > users.id [delete: cascade]
 Ref: member_claims.decided_by_member_id > trip_members.id [delete: restrict]
+
+Ref: bank_claim_snapshots.claim_id - member_claims.id [delete: cascade]
+Ref: bank_claim_snapshots.placeholder_member_id > trip_members.id [delete: restrict]
+Ref: bank_claim_snapshots.user_id > users.id [delete: cascade]
 
 Ref: itinerary_items.trip_id > trips.id [delete: cascade]
 Ref: itinerary_items.created_by_member_id > trip_members.id [delete: restrict]
@@ -290,9 +373,13 @@ Ref: settlement_transfers.completed_by_member_id > trip_members.id [delete: rest
 // ---------------- NHÓM MÀU TRÊN SƠ ĐỒ ----------------
 TableGroup nhom_chuyen_di [color: #3498DB] {
   users
+  accounts
+  sessions
+  verifications
   trips
   trip_members
   member_claims
+  bank_claim_snapshots
 }
 TableGroup nhom_lich_trinh [color: #27AE60] {
   itinerary_items
@@ -306,4 +393,7 @@ TableGroup nhom_chi_tieu [color: #E67E22] {
 TableGroup nhom_cong_no [color: #8E44AD] {
   settlements
   settlement_transfers
+}
+TableGroup nhom_he_thong [color: #95A5A6] {
+  rate_limits
 }
