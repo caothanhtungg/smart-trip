@@ -30,15 +30,15 @@ export function TripExpenseDayGroup({
   const dailyTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <section className="bg-white rounded-[20px] shadow-[0_4px_16px_rgba(24,78,119,0.06)] overflow-hidden border border-border-hairline mb-6">
+    <section className="bg-white rounded-2xl sm:rounded-3xl shadow-[0_4px_20px_rgba(24,78,119,0.04)] overflow-hidden border border-border-hairline mb-6 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(24,78,119,0.07)]">
       {/* Day Header with subtle gradient */}
-      <div className="px-5 py-3.5 bg-gradient-to-r from-surface-container/60 to-white flex flex-wrap items-center justify-between gap-3 border-b border-border-hairline">
+      <div className="px-5 sm:px-6 py-4 bg-gradient-to-r from-surface-container/50 to-white flex flex-wrap items-center justify-between gap-3 border-b border-border-hairline">
         <div className="flex items-center gap-2.5">
-          <div className="w-2 h-5 rounded-full bg-cerulean shrink-0" />
+          <div className="w-2.5 h-6 rounded-full bg-cerulean shrink-0" />
           <h3 className="font-bold text-yale-blue text-sm sm:text-base tracking-tight">
             {dayLabel} {spentDateFormatted ? `· ${spentDateFormatted}` : ""}
           </h3>
-          <span className="text-xs text-text-muted font-medium bg-white px-2 py-0.5 rounded-full border border-border-hairline">
+          <span className="text-xs text-text-muted font-medium bg-white px-2.5 py-0.5 rounded-full border border-border-hairline shadow-2xs">
             {expenses.length} khoản chi
           </span>
         </div>

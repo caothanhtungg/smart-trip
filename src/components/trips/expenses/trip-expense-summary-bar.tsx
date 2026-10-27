@@ -30,12 +30,12 @@ export function TripExpenseSummaryBar({
   const count = expenseCount ?? totalExpensesCount ?? trip.expenseCount ?? 0;
 
   return (
-    <section className="bg-white rounded-[20px] p-5 sm:p-6 shadow-[0_4px_16px_rgba(24,78,119,0.06)] border border-border-hairline mb-6">
+    <section className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(24,78,119,0.04)] border border-border-hairline mb-6 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(24,78,119,0.07)]">
       {/* Top Section: Financial Highlights & Actions */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-5 border-b border-border-hairline">
         {/* Left: Total Spent Big Metric */}
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-cerulean shrink-0 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-cerulean shrink-0 shadow-xs">
             <CreditCard className="w-6 h-6" />
           </div>
           <div>
@@ -60,7 +60,7 @@ export function TripExpenseSummaryBar({
               type="button"
               disabled
               title="Sổ quỹ đã khóa do chuyến đi đang quyết toán hoặc đã hoàn tất (Quy tắc R7)"
-              className="h-11 px-5 rounded-xl bg-gray-100 text-text-muted font-semibold text-sm inline-flex items-center gap-2 border border-border-hairline cursor-not-allowed opacity-75"
+              className="h-10 px-5 rounded-full bg-hover-row text-text-muted font-semibold text-xs sm:text-sm inline-flex items-center gap-2 border border-border-hairline cursor-not-allowed opacity-75"
             >
               <Lock className="w-4 h-4" />
               <span>Sổ quỹ đã khóa</span>
@@ -69,7 +69,7 @@ export function TripExpenseSummaryBar({
             <button
               type="button"
               onClick={onOpenAddExpenseModal}
-              className="h-11 px-5 rounded-xl bg-cerulean hover:bg-baltic-blue text-white font-semibold text-sm inline-flex items-center gap-2 shadow-[0_4px_12px_rgba(26,117,159,0.25)] transition-all cursor-pointer active:scale-[0.98]"
+              className="h-10 px-5 rounded-full bg-cerulean hover:bg-baltic-blue text-white font-semibold text-xs sm:text-sm inline-flex items-center gap-2 shadow-[0_4px_14px_rgba(26,117,159,0.25)] transition-all cursor-pointer active:scale-95"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>Thêm khoản chi</span>
