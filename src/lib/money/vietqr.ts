@@ -7,7 +7,10 @@ import QRCode from "qrcode";
  * Value: data string
  */
 export function formatTlv(tag: string, value: string): string {
-  const byteLength = Buffer.byteLength(value, "utf8");
+  const byteLength =
+    typeof Buffer !== "undefined"
+      ? Buffer.byteLength(value, "utf8")
+      : new TextEncoder().encode(value).length;
   const lenStr = byteLength.toString().padStart(2, "0");
   return `${tag}${lenStr}${value}`;
 }
