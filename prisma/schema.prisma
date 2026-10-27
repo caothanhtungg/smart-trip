@@ -228,6 +228,9 @@ model ItineraryItem {
   sortOrder         Int        @default(0) @map("sort_order")
   placeName         String     @map("place_name") @db.VarChar(200)
   address           String?
+  latitude          Float?
+  longitude         Float?
+  isLocked          Boolean    @default(false) @map("is_locked")
   note              String?
   startTime         DateTime?  @map("start_time") @db.Time(0)
   endTime           DateTime?  @map("end_time") @db.Time(0)
@@ -255,6 +258,8 @@ model Expense {
   splitMethod       SplitMethod     @default(EQUAL) @map("split_method")
   spentAt           DateTime        @default(now()) @map("spent_at") @db.Timestamptz(6)
   receiptImageUrl   String?         @map("receipt_image_url")
+  placeName         String?         @map("place_name") @db.VarChar(200)
+  address           String?
   note              String?
   createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)

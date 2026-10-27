@@ -11,7 +11,8 @@ function getMigrationDatasourceUrl(): string {
   if (databaseUrl) {
     // Phát hiện Transaction Connection Pooler (Supabase port 6543 hoặc query param pgbouncer=true)
     const isPooler = databaseUrl.includes(":6543") || databaseUrl.includes("pgbouncer=true");
-    if (isPooler) {
+    const isMigrateCmd = process.argv.some((arg) => arg.includes("migrate"));
+    if (isPooler && isMigrateCmd) {
       throw new Error(
         "[Prisma CLI Protection] Phát hiện DATABASE_URL đang trỏ đến Transaction Connection Pooler (port 6543 / pgbouncer=true). " +
         "Prisma Migrate yêu cầu DIRECT_URL (Direct Connection port 5432) để thực thi DDL và advisory locks. " +
