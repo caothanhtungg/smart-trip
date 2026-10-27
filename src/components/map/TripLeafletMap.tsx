@@ -4,6 +4,8 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+import { RoadsidePoi } from '@/lib/types/roadside';
+
 export interface MapPoint {
   id: string;
   title: string;
@@ -28,6 +30,7 @@ export interface TripLeafletMapProps {
   showRoute?: boolean;
   onSelectPoint?: (point: MapPoint) => void;
   userLocation?: [number, number] | null;
+  roadsidePois?: RoadsidePoi[];
   className?: string;
   interactive?: boolean;
   onMapClick?: (lat: number, lng: number) => void;
@@ -40,6 +43,7 @@ export default function TripLeafletMap({
   showRoute = true,
   onSelectPoint,
   userLocation,
+  roadsidePois = [],
   className = 'h-[400px] w-full rounded-2xl overflow-hidden',
   interactive = true,
   onMapClick,
@@ -243,7 +247,87 @@ export default function TripLeafletMap({
       latLngs.push([point.latitude, point.longitude]);
     });
 
-    // 3. Nối tuyến Polyline giữa các điểm
+    // 3. Vẽ các Roadside POIs (Cây xăng & Tiệm sửa xe)
+    if (roadsidePois && roadsidePois.length > 0) {
+      roadsidePois.forEach((poi) => {
+        const isGas = poi.type === 'gas_station';
+        const bgColor = isGas ? '#D97706' : '#1A759F';
+        const iconSymbol = isGas ? '⛽' : '🔧';
+
+        const poiIcon = L.divIcon({
+          className: 'roadside-poi-marker',
+          html: `
+            <div style="
+              background: ${bgColor};
+              color: #FFFFFF;
+              width: 26px;
+              height: 26px;
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 13px;
+              border: 2px solid #FFFFFF;
+              box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+              cursor: pointer;
+            ">
+              ${iconSymbol}
+            </div>
+          `,
+          iconSize: [26, 26],
+          iconAnchor: [13, 13],
+        });
+
+        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${poi.latitude},${poi.longitude}`;
+
+        const poiPopup = `
+          <div style="font-family: 'Be Vietnam Pro', sans-serif; min-width: 190px; padding: 4px;">
+            <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+              <span style="font-size: 10px; font-weight: 700; background: ${
+                isGas ? '#FEF3C7' : '#E0F2FE'
+              }; color: ${isGas ? '#92400E' : '#0369A1'}; padding: 2px 6px; border-radius: 4px;">
+                ${isGas ? 'Cây xăng' : 'Sửa xe / Cứu hộ'}
+              </span>
+              ${poi.brand ? `<span style="font-size: 11px; color: #64748B;">• ${poi.brand}</span>` : ''}
+            </div>
+            <div style="font-weight: 700; font-size: 13px; color: #184E77; margin-bottom: 3px;">
+              ${poi.name}
+            </div>
+            <div style="font-size: 11px; color: #64748B; margin-bottom: 4px;">
+              📍 ${poi.address}
+            </div>
+            ${
+              poi.phone
+                ? `
+              <div style="font-size: 12px; font-weight: 600; color: #1E6091; margin-bottom: 8px;">
+                📞 <a href="tel:${poi.phone.replace(/\s+/g, '')}" style="color: inherit; text-decoration: none;">${poi.phone}</a>
+              </div>
+            `
+                : ''
+            }
+            <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer" style="
+              display: inline-block;
+              background: #184E77;
+              color: #FFFFFF;
+              font-size: 11px;
+              font-weight: 600;
+              padding: 4px 10px;
+              border-radius: 6px;
+              text-decoration: none;
+              text-align: center;
+            ">
+              Chỉ đường Google Maps ↗
+            </a>
+          </div>
+        `;
+
+        L.marker([poi.latitude, poi.longitude], { icon: poiIcon })
+          .addTo(markersGroup)
+          .bindPopup(poiPopup);
+      });
+    }
+
+    // 4. Nối tuyến Polyline giữa các điểm
     if (showRoute && latLngs.length >= 2) {
       routePolylineRef.current = L.polyline(latLngs, {
         color: '#1A759F',
@@ -253,7 +337,7 @@ export default function TripLeafletMap({
       }).addTo(map);
     }
 
-    // 4. Tự động Fit Bounds để hiển thị trọn vẹn các điểm
+    // 5. Tự động Fit Bounds để hiển thị trọn vẹn các điểm
     if (latLngs.length > 0) {
       if (latLngs.length === 1) {
         map.setView(latLngs[0], zoom);
@@ -262,7 +346,7 @@ export default function TripLeafletMap({
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
       }
     }
-  }, [points, userLocation, showRoute, zoom, onSelectPoint]);
+  }, [points, userLocation, roadsidePois, showRoute, zoom, onSelectPoint]);
 
   return <div ref={mapContainerRef} className={className} />;
 }
