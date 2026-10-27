@@ -21,7 +21,7 @@ export function TripDetailLayoutView({
     sessionMembers,
     currentMemberId,
     handleAddItineraryItem,
-    handleAddExpense,
+    handleSaveExpenseFromModal,
   } = useTripSession();
 
   const { toast } = useToast();
@@ -32,9 +32,8 @@ export function TripDetailLayoutView({
       const ok = await handleAddItineraryItem({
         dayDate,
         placeName: suggestion.name,
-        plannedTime: "09:00",
+        startTime: "09:00",
         note: suggestion.description || "Gợi ý bởi Trợ lý AI Smart Trip",
-        cost: suggestion.estimatedCostMin ?? 0,
         latitude: suggestion.latitude,
         longitude: suggestion.longitude,
       });
@@ -55,7 +54,7 @@ export function TripDetailLayoutView({
       }
 
       const activeMemberIds = sessionMembers.map((m) => m.id);
-      const res = await handleAddExpense({
+      const res = await handleSaveExpenseFromModal({
         title: suggestion.name,
         amount: suggestion.estimatedCostMin || 100000,
         category:
@@ -74,7 +73,7 @@ export function TripDetailLayoutView({
         note: suggestion.description || "Gợi ý bởi Trợ lý AI Smart Trip",
       });
 
-      if (res && (res.success || (res as any) === true)) {
+      if (res && res.success) {
         toast(`Đã thêm khoản chi "${suggestion.name}" thành công!`, "success");
       }
     } catch {

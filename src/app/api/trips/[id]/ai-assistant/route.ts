@@ -42,7 +42,7 @@ export async function POST(
 
     const tripContext: AITripContext = {
       id: trip.id,
-      title: trip.title,
+      title: trip.name,
       destination: trip.destination || undefined,
       startDate: trip.startDate ? trip.startDate.toISOString().split('T')[0] : undefined,
       endDate: trip.endDate ? trip.endDate.toISOString().split('T')[0] : undefined,
