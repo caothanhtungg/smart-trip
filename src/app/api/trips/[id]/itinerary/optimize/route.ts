@@ -9,6 +9,7 @@ import { requireTripMembership, isValidUuid } from "@/lib/api/auth-guard";
 import { prisma } from "@/lib/db/prisma";
 import { OptimizeItinerarySchema } from "@/lib/validation/itinerary";
 import { optimizeDayRoute } from "@/lib/geo/distance";
+import { resolveItemCoordinates } from "@/lib/geo/destination-coords";
 
 interface RouteContext {
   params: Promise<{ id: string }> | { id: string };
@@ -53,6 +54,25 @@ export async function POST(
 
     if (items.length <= 1) {
       return apiSuccess(items);
+    }
+
+    // Tự động bổ sung tọa độ cho các địa điểm chưa lưu tọa độ (nếu khớp địa danh)
+    for (const item of items) {
+      if (item.latitude == null || item.longitude == null) {
+        const coords = resolveItemCoordinates(item, trip.destination);
+        if (coords) {
+          item.latitude = coords[0];
+          item.longitude = coords[1];
+          try {
+            await prisma.itineraryItem.update({
+              where: { id: item.id },
+              data: { latitude: coords[0], longitude: coords[1] },
+            });
+          } catch {
+            // bỏ qua nếu lỗi DB
+          }
+        }
+      }
     }
 
     // Tối ưu lộ trình bằng thuật toán TSP (Nearest Neighbor + 2-Opt)

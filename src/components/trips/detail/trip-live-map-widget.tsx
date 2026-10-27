@@ -17,6 +17,7 @@ import InteractiveMap, { MapPoint } from '@/components/map/InteractiveMap';
 import { TripDetailData, ItineraryItem } from '@/types/trip';
 import { calculateNavigationStatus, findNearbyRoadsidePois } from '@/lib/geo/roadside-service';
 import { formatDistance, formatTravelTime } from '@/lib/geo/roadside-format';
+import { getDestinationCoordinates, resolveItemCoordinates } from '@/lib/geo/destination-coords';
 import RoadsidePoiList from './RoadsidePoiList';
 import Link from 'next/link';
 
@@ -31,20 +32,34 @@ export function TripLiveMapWidget({ trip, itineraryItems = [] }: TripLiveMapWidg
   const [locationStatus, setLocationStatus] = useState<string | null>(null);
   const [showRoadsideList, setShowRoadsideList] = useState(false);
 
-  // Map points from itinerary items that have coordinates
-  const mapPoints: MapPoint[] = useMemo(() => {
-    return itineraryItems
-      .filter((it) => (it.latitude != null && it.longitude != null) || (it.lat != null && it.lng != null))
-      .map((it, idx) => ({
-        id: it.id,
-        title: it.placeName,
-        address: it.address,
-        latitude: (it.latitude ?? it.lat)!,
-        longitude: (it.longitude ?? it.lng)!,
-        sortOrder: it.sortOrder ?? idx,
-        isLocked: it.isLocked,
-      }));
-  }, [itineraryItems]);
+  // Map points from itinerary items that have coordinates or match landmarks
+  const mapPoints = useMemo<MapPoint[]>(() => {
+    const list: MapPoint[] = [];
+    for (let idx = 0; idx < itineraryItems.length; idx++) {
+      const it = itineraryItems[idx];
+      const coords = resolveItemCoordinates(it, trip.destination);
+      if (coords) {
+        list.push({
+          id: it.id,
+          title: it.placeName,
+          address: it.address ?? undefined,
+          latitude: coords[0],
+          longitude: coords[1],
+          sortOrder: it.sortOrder ?? idx,
+          isLocked: it.isLocked,
+        });
+      }
+    }
+    return list;
+  }, [itineraryItems, trip.destination]);
+
+  // Center on points or destination
+  const defaultCenter = useMemo(() => {
+    if (mapPoints.length > 0) {
+      return [mapPoints[0].latitude, mapPoints[0].longitude] as [number, number];
+    }
+    return getDestinationCoordinates(trip.destination);
+  }, [mapPoints, trip.destination]);
 
   // Request browser geolocation
   const handleGetLocation = () => {
@@ -207,32 +222,31 @@ export function TripLiveMapWidget({ trip, itineraryItems = [] }: TripLiveMapWidg
         </div>
       )}
 
-      {/* Map View or Empty State */}
+      {/* Map View */}
       <div className="relative w-full rounded-2xl overflow-hidden border border-border-hairline shadow-xs">
-        {mapPoints.length > 0 || userLocation ? (
-          <InteractiveMap
-            points={mapPoints}
-            userLocation={userLocation}
-            roadsidePois={roadsidePois}
-            showRoute={true}
-            zoom={13}
-            className="w-full h-72 sm:h-80 rounded-2xl"
-          />
-        ) : (
-          <div className="w-full h-64 bg-gradient-to-b from-[#ebf5ff]/60 to-[#f4f9ec] rounded-2xl flex flex-col items-center justify-center gap-2 p-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-white shadow-xs flex items-center justify-center text-cerulean mb-1">
-              <MapPin className="w-6 h-6" />
+        <InteractiveMap
+          points={mapPoints}
+          center={defaultCenter}
+          userLocation={userLocation}
+          roadsidePois={roadsidePois}
+          showRoute={true}
+          zoom={mapPoints.length > 0 ? 13 : 12}
+          className="w-full h-72 sm:h-80 rounded-2xl"
+        />
+
+        {mapPoints.length === 0 && (
+          <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 z-10 p-3 rounded-xl bg-white/95 backdrop-blur-xs border border-divider-border shadow-md flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-cerulean shrink-0" />
+              <span className="text-yale-blue font-medium">
+                Bản đồ khu vực {trip.destination || "chuyến đi"}
+              </span>
             </div>
-            <h4 className="font-bold text-sm text-yale-blue">Chưa có tọa độ điểm đến trong lịch trình</h4>
-            <p className="text-xs text-text-muted max-w-sm">
-              Hãy thêm các địa điểm ghé thăm kèm địa chỉ để hệ thống hiển thị đường đi và vị trí hiện trạng của nhóm.
-            </p>
             <Link
               href={`/trips/${trip.id}/itinerary`}
-              className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cerulean hover:bg-baltic-blue text-white text-xs font-semibold shadow-xs transition-all"
+              className="px-2.5 py-1 rounded-lg bg-cerulean hover:bg-baltic-blue text-white text-[11px] font-semibold whitespace-nowrap"
             >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Đến trang Lịch trình</span>
+              + Thêm điểm
             </Link>
           </div>
         )}

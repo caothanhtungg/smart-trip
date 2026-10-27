@@ -83,6 +83,11 @@ export default function TripLeafletMap({
       markersLayerRef.current = markersGroup;
       mapInstanceRef.current = map;
 
+      // Invalidate size after layout settles
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 200);
+
       if (onMapClick) {
         map.on('click', (e: L.LeafletMouseEvent) => {
           onMapClick(e.latlng.lat, e.latlng.lng);
@@ -345,8 +350,14 @@ export default function TripLeafletMap({
         const bounds = L.latLngBounds(latLngs);
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
       }
+    } else if (center) {
+      map.setView(center, zoom);
     }
-  }, [points, userLocation, roadsidePois, showRoute, zoom, onSelectPoint]);
+
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
+  }, [points, center, userLocation, roadsidePois, showRoute, zoom, onSelectPoint]);
 
   return <div ref={mapContainerRef} className={className} />;
 }

@@ -24,6 +24,8 @@ import { classifyTimeOfDay, getTimeOfDayColorClasses } from "@/lib/itinerary/dat
 import { formatVnd } from "@/lib/money/format";
 import { canEditItineraryItem, canDeleteItineraryItem } from "@/lib/itinerary/validation";
 import { TripItineraryConflictBadge } from "./trip-itinerary-conflict-badge";
+import { WeatherBadge } from "@/components/itinerary/WeatherBadge";
+import { resolveItemCoordinates } from "@/lib/geo/destination-coords";
 
 interface TripItineraryCardProps {
   item: ItineraryItem;
@@ -81,6 +83,8 @@ export function TripItineraryCard({
   const timeColors = getTimeOfDayColorClasses(timeTag);
   const hasConflict = conflict && conflict.hasConflict;
 
+  const coords = React.useMemo(() => resolveItemCoordinates(item), [item]);
+
   return (
     <div className="relative mb-6 group">
       {/* Node Pin Indicator */}
@@ -129,6 +133,13 @@ export function TripItineraryCard({
                   <Lock className="w-3 h-3" />
                   <span>Cố định</span>
                 </span>
+              )}
+              {coords && (
+                <WeatherBadge
+                  lat={coords[0]}
+                  lng={coords[1]}
+                  dateStr={item.dayDate}
+                />
               )}
             </div>
             <h3 className="font-bold text-base sm:text-lg text-yale-blue leading-snug">

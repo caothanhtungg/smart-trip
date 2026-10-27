@@ -27,6 +27,9 @@ export interface ApiItineraryItemDto {
   sortOrder: number;
   placeName: string;
   address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  isLocked?: boolean;
   note?: string | null;
   startTime?: string | null; // "HH:mm"
   endTime?: string | null; // "HH:mm"
@@ -50,6 +53,9 @@ export interface CreateItineraryItemInput {
   startTime: string; // HH:mm
   endTime?: string | null; // HH:mm
   address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  isLocked?: boolean;
   note?: string | null;
   sortOrder?: number;
 }
@@ -60,6 +66,9 @@ export interface UpdateItineraryItemInput {
   startTime?: string;
   endTime?: string | null;
   address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  isLocked?: boolean;
   note?: string | null;
   sortOrder?: number;
 }
@@ -157,6 +166,11 @@ export function mapApiItineraryItemToDomain(
     sortOrder: dto.sortOrder,
     placeName: dto.placeName,
     address: dto.address ?? null,
+    latitude: dto.latitude ?? null,
+    longitude: dto.longitude ?? null,
+    lat: dto.latitude ?? null,
+    lng: dto.longitude ?? null,
+    isLocked: dto.isLocked ?? false,
     startTime,
     endTime,
     note: dto.note ?? null,
@@ -257,6 +271,15 @@ export async function createItineraryItem(
   if (input.address !== undefined) {
     payload.address = input.address ? input.address.trim() : null;
   }
+  if (input.latitude !== undefined) {
+    payload.latitude = input.latitude;
+  }
+  if (input.longitude !== undefined) {
+    payload.longitude = input.longitude;
+  }
+  if (input.isLocked !== undefined) {
+    payload.isLocked = input.isLocked;
+  }
   if (input.note !== undefined) {
     payload.note = input.note ? input.note.trim() : null;
   }
@@ -335,6 +358,15 @@ export async function updateItineraryItem(
   }
   if (input.address !== undefined) {
     payload.address = input.address ? input.address.trim() : null;
+  }
+  if (input.latitude !== undefined) {
+    payload.latitude = input.latitude;
+  }
+  if (input.longitude !== undefined) {
+    payload.longitude = input.longitude;
+  }
+  if (input.isLocked !== undefined) {
+    payload.isLocked = input.isLocked;
   }
   if (input.note !== undefined) {
     payload.note = input.note ? input.note.trim() : null;

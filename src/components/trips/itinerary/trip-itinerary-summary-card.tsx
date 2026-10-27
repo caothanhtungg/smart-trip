@@ -13,6 +13,7 @@ import { ItineraryItem, TripExpense, TripDetailData } from "@/types/trip";
 import { TripDayInfo } from "@/lib/itinerary/date";
 import { formatVnd } from "@/lib/money/format";
 import InteractiveMap, { MapPoint } from "@/components/map/InteractiveMap";
+import { getDestinationCoordinates, resolveItemCoordinates } from "@/lib/geo/destination-coords";
 
 interface TripItinerarySummaryCardProps {
   trip: TripDetailData;
@@ -72,19 +73,32 @@ export function TripItinerarySummaryCard({
     return { linkedCount: count, totalLinkedAmount: sum };
   }, [dayItems, expenses]);
 
-  const mapPoints: MapPoint[] = React.useMemo(() => {
-    return dayItems
-      .filter((it) => (it.latitude != null && it.longitude != null) || (it.lat != null && it.lng != null))
-      .map((it, idx) => ({
-        id: it.id,
-        title: it.placeName,
-        address: it.address,
-        latitude: (it.latitude ?? it.lat)!,
-        longitude: (it.longitude ?? it.lng)!,
-        sortOrder: it.sortOrder ?? idx,
-        isLocked: it.isLocked,
-      }));
-  }, [dayItems]);
+  const mapPoints = React.useMemo<MapPoint[]>(() => {
+    const list: MapPoint[] = [];
+    for (let idx = 0; idx < dayItems.length; idx++) {
+      const it = dayItems[idx];
+      const coords = resolveItemCoordinates(it, trip.destination);
+      if (coords) {
+        list.push({
+          id: it.id,
+          title: it.placeName,
+          address: it.address ?? undefined,
+          latitude: coords[0],
+          longitude: coords[1],
+          sortOrder: it.sortOrder ?? idx,
+          isLocked: it.isLocked,
+        });
+      }
+    }
+    return list;
+  }, [dayItems, trip.destination]);
+
+  const defaultCenter = React.useMemo(() => {
+    if (mapPoints.length > 0) {
+      return [mapPoints[0].latitude, mapPoints[0].longitude] as [number, number];
+    }
+    return getDestinationCoordinates(trip.destination);
+  }, [mapPoints, trip.destination]);
 
   return (
     <div className="space-y-6 sticky top-24">
@@ -149,26 +163,23 @@ export function TripItinerarySummaryCard({
 
       {/* 2. Interactive Route Map Card */}
       <div className="bg-surface-card rounded-2xl p-4 border border-divider-border shadow-[0_4px_16px_rgba(24,78,119,0.04)] overflow-hidden">
-        {mapPoints.length > 0 ? (
-          <div className="relative w-full h-56 rounded-xl overflow-hidden border border-divider-border/60">
-            <InteractiveMap
-              points={mapPoints}
-              showRoute={true}
-              zoom={13}
-              className="w-full h-full rounded-xl"
-            />
-            <div className="absolute top-2.5 left-2.5 z-10 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur-xs border border-divider-border text-[11px] font-bold text-yale-blue shadow-2xs flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-cerulean animate-ping" />
-              <span>Bản đồ lộ trình ({mapPoints.length} điểm)</span>
-            </div>
+        <div className="relative w-full h-56 rounded-xl overflow-hidden border border-divider-border/60">
+          <InteractiveMap
+            points={mapPoints}
+            center={defaultCenter}
+            showRoute={true}
+            zoom={mapPoints.length > 0 ? 13 : 12}
+            className="w-full h-full rounded-xl"
+          />
+          <div className="absolute top-2.5 left-2.5 z-10 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur-xs border border-divider-border text-[11px] font-bold text-yale-blue shadow-2xs flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-cerulean animate-ping" />
+            <span>
+              {mapPoints.length > 0
+                ? `Bản đồ lộ trình (${mapPoints.length} điểm)`
+                : `Bản đồ khu vực ${trip.destination || "điểm đến"}`}
+            </span>
           </div>
-        ) : (
-          <div className="relative w-full h-36 rounded-xl overflow-hidden bg-gradient-to-b from-[#ebf5ff] to-[#f4f9ec] flex flex-col items-center justify-center border border-divider-border/60 text-center p-4">
-            <MapPin className="w-8 h-8 text-cerulean mb-1 opacity-70" />
-            <span className="text-xs font-bold text-yale-blue">Chưa có tọa độ bản đồ</span>
-            <span className="text-[11px] text-text-muted mt-0.5">Thêm địa điểm để xem lộ trình trên bản đồ</span>
-          </div>
-        )}
+        </div>
 
         {/* Travel Tips */}
         <div className="mt-4 pt-3 border-t border-divider-border/80">
