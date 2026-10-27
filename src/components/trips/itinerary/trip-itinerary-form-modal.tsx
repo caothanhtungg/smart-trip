@@ -27,6 +27,7 @@ import {
   validateItineraryItemForm,
   detectTimeConflict,
 } from "@/lib/itinerary/validation";
+import { searchPlaces } from "@/lib/geo/nominatim";
 
 interface TripItineraryFormModalProps {
   isOpen: boolean;
@@ -146,12 +147,29 @@ function TripItineraryFormDialog({
     e.preventDefault();
     if (isSubmitting) return;
 
+    setIsSubmitting(true);
+    let finalLat = latitude;
+    let finalLng = longitude;
+
+    if (finalLat === null || finalLng === null) {
+      try {
+        const query = [placeName.trim(), address.trim(), trip.destination].filter(Boolean).join(", ");
+        const results = await searchPlaces(query);
+        if (results && results.length > 0) {
+          finalLat = results[0].lat;
+          finalLng = results[0].lng;
+        }
+      } catch {
+        // Fallback silently if geocoding fails
+      }
+    }
+
     const formData: CreateItineraryItemFormData = {
       dayDate,
       placeName: placeName.trim(),
       address: address.trim() || undefined,
-      latitude,
-      longitude,
+      latitude: finalLat,
+      longitude: finalLng,
       isLocked,
       startTime,
       endTime: endTime.trim() || undefined,
@@ -162,6 +180,7 @@ function TripItineraryFormDialog({
 
     if (!valResult.isValid) {
       setErrors(valResult.errors);
+      setIsSubmitting(false);
       return;
     }
 
