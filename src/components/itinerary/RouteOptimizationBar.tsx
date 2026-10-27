@@ -52,9 +52,9 @@ export function RouteOptimizationBar({
   };
 
   return (
-    <div className="bg-white rounded-2xl p-4 border border-border-hairline shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+    <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-border-hairline shadow-[0_4px_20px_rgba(24,78,119,0.04)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(24,78,119,0.07)]">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-lime-cream flex items-center justify-center text-yale-blue shrink-0">
+        <div className="w-10 h-10 rounded-2xl bg-lime-cream flex items-center justify-center text-yale-blue shrink-0 shadow-xs">
           <Compass className="w-5 h-5 text-cerulean" />
         </div>
         <div>
@@ -64,7 +64,7 @@ export function RouteOptimizationBar({
               TSP 2-Opt
             </span>
           </div>
-          <p className="text-xs text-text-muted">
+          <p className="text-xs text-text-muted mt-0.5">
             {itemCount > 1
               ? `Tự động sắp xếp ${itemCount} điểm trong ngày theo đường ngắn nhất`
               : 'Thêm từ 2 địa điểm trở lên để hệ thống tính toán tuyến đường'}
@@ -72,13 +72,13 @@ export function RouteOptimizationBar({
         </div>
       </div>
 
-      <div className="flex items-center gap-3 self-end sm:self-auto">
-        <label className="flex items-center gap-2 text-xs font-medium text-yale-blue cursor-pointer select-none">
+      <div className="flex items-center gap-3.5 self-end sm:self-auto">
+        <label className="flex items-center gap-2 text-xs font-semibold text-yale-blue cursor-pointer select-none">
           <input
             type="checkbox"
             checked={autoOptimize}
             onChange={(e) => setAutoOptimize(e.target.checked)}
-            className="w-4 h-4 rounded text-cerulean border-border-hairline focus:ring-cerulean"
+            className="w-4 h-4 rounded-md text-cerulean border-border-hairline focus:ring-cerulean cursor-pointer"
           />
           <span>Tự động tối ưu</span>
         </label>
@@ -87,10 +87,10 @@ export function RouteOptimizationBar({
           type="button"
           disabled={itemCount <= 1 || isLocked || isOptimizing}
           onClick={handleOptimizeNow}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-xs transition-all ${
+          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold shadow-xs transition-all cursor-pointer ${
             itemCount <= 1 || isLocked
               ? 'bg-hover-row text-text-muted cursor-not-allowed opacity-60'
-              : 'bg-cerulean hover:bg-baltic-blue text-white active:scale-95'
+              : 'bg-cerulean hover:bg-baltic-blue text-white shadow-[0_4px_16px_rgba(26,117,159,0.25)] hover:shadow-[0_6px_20px_rgba(26,117,159,0.35)] active:scale-95'
           }`}
         >
           {isOptimizing ? (
