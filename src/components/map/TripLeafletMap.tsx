@@ -73,9 +73,9 @@ export default function TripLeafletMap({
         scrollWheelZoom: interactive ? 'center' : false,
       });
 
-      // Sử dụng CartoDB Positron sạch đẹp, chuẩn thiết kế Tactile Organic Minimalism
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      // Sử dụng OpenStreetMap Tile Server chính thức (100% miễn phí, không yêu cầu API key)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }).addTo(map);
 
