@@ -258,8 +258,6 @@ model Expense {
   splitMethod       SplitMethod     @default(EQUAL) @map("split_method")
   spentAt           DateTime        @default(now()) @map("spent_at") @db.Timestamptz(6)
   receiptImageUrl   String?         @map("receipt_image_url")
-  placeName         String?         @map("place_name") @db.VarChar(200)
-  address           String?
   note              String?
   createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)

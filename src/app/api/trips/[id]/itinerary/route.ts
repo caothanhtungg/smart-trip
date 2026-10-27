@@ -47,36 +47,85 @@ export async function GET(
     // Lọc tham số query (tùy chọn)
     const query = parseQueryParams(req, ItineraryQuerySchema);
 
-    const items = await prisma.itineraryItem.findMany({
-      where: {
-        tripId,
-        ...(query.dayDate
-          ? {
-              dayDate: new Date(`${query.dayDate}T00:00:00Z`),
-            }
-          : {}),
-      },
-      include: {
-        createdByMember: {
-          select: {
-            id: true,
-            displayName: true,
+    let items: any[] = [];
+    try {
+      items = await prisma.itineraryItem.findMany({
+        where: {
+          tripId,
+          ...(query.dayDate
+            ? {
+                dayDate: new Date(`${query.dayDate}T00:00:00Z`),
+              }
+            : {}),
+        },
+        include: {
+          createdByMember: {
+            select: {
+              id: true,
+              displayName: true,
+            },
+          },
+          expenses: {
+            select: {
+              id: true,
+              title: true,
+              amount: true,
+            },
           },
         },
-        expenses: {
-          select: {
-            id: true,
-            title: true,
-            amount: true,
+        orderBy: [
+          { dayDate: "asc" },
+          { sortOrder: "asc" },
+          { createdAt: "asc" },
+        ],
+      });
+    } catch (dbErr: any) {
+      const errStr = String(dbErr?.message || '');
+      if (
+        dbErr?.code === 'P2022' ||
+        errStr.includes('latitude') ||
+        errStr.includes('longitude') ||
+        errStr.includes('is_locked') ||
+        errStr.includes('does not exist')
+      ) {
+        // Fallback for un-migrated database: query basic columns via raw SQL
+        const rawItems = await prisma.$queryRawUnsafe<any[]>(
+          `SELECT i.id, i.trip_id, i.day_date, i.start_time, i.end_time, i.place_name, i.address, i.note, i.sort_order, i.created_by_member_id, i.created_at, i.updated_at,
+                  m.id as member_id, m.display_name as member_name
+           FROM itinerary_items i
+           JOIN trip_members m ON i.created_by_member_id = m.id
+           WHERE i.trip_id = $1::uuid
+           ${query.dayDate ? 'AND i.day_date = $2::date' : ''}
+           ORDER BY i.day_date ASC, i.sort_order ASC, i.created_at ASC`,
+          ...(query.dayDate ? [tripId, query.dayDate] : [tripId])
+        );
+
+        items = rawItems.map((r) => ({
+          id: r.id,
+          tripId: r.trip_id,
+          dayDate: new Date(r.day_date),
+          sortOrder: r.sort_order ?? 0,
+          placeName: r.place_name,
+          address: r.address ?? null,
+          latitude: null,
+          longitude: null,
+          isLocked: false,
+          note: r.note ?? null,
+          startTime: r.start_time,
+          endTime: r.end_time,
+          createdByMemberId: r.created_by_member_id,
+          createdByMember: {
+            id: r.member_id,
+            displayName: r.member_name,
           },
-        },
-      },
-      orderBy: [
-        { dayDate: "asc" },
-        { sortOrder: "asc" },
-        { createdAt: "asc" },
-      ],
-    });
+          createdAt: new Date(r.created_at),
+          updatedAt: new Date(r.updated_at),
+          expenses: [],
+        }));
+      } else {
+        throw dbErr;
+      }
+    }
 
     const formattedItems = items.map((item) => ({
       id: item.id,
@@ -98,7 +147,7 @@ export async function GET(
       },
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
-      expenses: item.expenses.map((e) => ({
+      expenses: (item.expenses || []).map((e: any) => ({
         id: e.id,
         title: e.title,
         amount: e.amount,
