@@ -15,19 +15,36 @@ export default function TripOverviewPage() {
   const { sessionTrip, sessionItinerary, setIsOverviewAddModalOpen } = useTripSession();
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      {/* Left Main Workspace (8 Columns on Desktop) */}
-      <div className="lg:col-span-8 flex flex-col gap-6">
-        {/* 1. Ngân sách chuyến đi */}
-        <TripBudgetCard trip={sessionTrip} />
+    <div className="flex flex-col gap-6 sm:gap-8">
+      {/* 1. Top Bento Financial Strip: Ngân sách & Bộ 3 chỉ số tài chính */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
+        <div className="lg:col-span-4 flex">
+          <div className="w-full">
+            <TripBudgetCard trip={sessionTrip} />
+          </div>
+        </div>
+        <div className="lg:col-span-8 flex">
+          <div className="w-full">
+            <TripStatsOverview trip={sessionTrip} />
+          </div>
+        </div>
+      </div>
 
-        {/* 2. Bộ 3 chỉ số tài chính */}
-        <TripStatsOverview trip={sessionTrip} />
+      {/* 2. Middle Bento Row: Bản đồ trực quan & Thành viên nhóm */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
+        {/* Left: Bản đồ vị trí trực quan & Lộ trình nhóm */}
+        <div className="lg:col-span-8">
+          <TripLiveMapWidget trip={sessionTrip} itineraryItems={sessionItinerary} />
+        </div>
 
-        {/* 3. Bản đồ vị trí trực quan & Lộ trình nhóm */}
-        <TripLiveMapWidget trip={sessionTrip} itineraryItems={sessionItinerary} />
+        {/* Right: Thành viên nhóm (Avatar Stack) */}
+        <aside className="lg:col-span-4 flex flex-col gap-6">
+          <TripMembersCard trip={sessionTrip} />
+        </aside>
+      </div>
 
-        {/* 4. Hoạt động gần đây */}
+      {/* 3. Bottom Bento Row: Hoạt động chi tiêu gần đây */}
+      <div>
         <TripRecentExpenses
           trip={sessionTrip}
           onOpenExpensesTab={() => router.push(`/trips/${sessionTrip.id}/expenses`)}
@@ -40,15 +57,6 @@ export default function TripOverviewPage() {
           }}
         />
       </div>
-
-      {/* Right Sticky Sidebar (4 Columns on Desktop) */}
-      <aside className="lg:col-span-4 flex flex-col gap-6 lg:sticky lg:top-24">
-        {/* Thành viên chuyến đi */}
-        <TripMembersCard trip={sessionTrip} />
-
-        {/* Thông tin chuyến đi (Mã mời) */}
-        <TripInfoSidebar trip={sessionTrip} />
-      </aside>
     </div>
   );
 }
