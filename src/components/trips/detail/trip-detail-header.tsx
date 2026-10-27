@@ -126,10 +126,10 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
               <button
                 type="button"
                 onClick={() => setEditInfoModalOpen(true)}
-                className="h-10 sm:h-11 px-3.5 sm:px-4 rounded-xl bg-white hover:bg-hover-row text-yale-blue border border-border-hairline font-semibold text-sm inline-flex items-center gap-2 shadow-[0_2px_8px_rgba(24,78,119,0.08)] transition-all cursor-pointer"
+                className="h-10 sm:h-10 px-4 rounded-full bg-white hover:bg-hover-row text-yale-blue border border-border-hairline font-semibold text-xs sm:text-sm inline-flex items-center gap-2 shadow-2xs hover:shadow-xs transition-all cursor-pointer active:scale-95"
                 title="Chỉnh sửa thông tin chuyến đi"
               >
-                <Pencil className="w-4 h-4 text-text-muted" />
+                <Pencil className="w-3.5 h-3.5 text-text-muted" />
                 <span className="hidden sm:inline">Chỉnh sửa</span>
               </button>
             )}
@@ -138,7 +138,7 @@ export function TripDetailHeader({ trip }: TripDetailHeaderProps) {
               id="header-invite-btn"
               type="button"
               onClick={() => setInviteModalOpen(true)}
-              className="h-10 sm:h-11 px-4 sm:px-5 rounded-xl bg-white hover:bg-hover-row text-cerulean border border-border-hairline font-semibold text-sm inline-flex items-center gap-2 shadow-[0_2px_8px_rgba(24,78,119,0.08)] transition-all cursor-pointer"
+              className="h-10 sm:h-10 px-4 sm:px-5 rounded-full bg-white hover:bg-hover-row text-cerulean border border-border-hairline font-semibold text-xs sm:text-sm inline-flex items-center gap-2 shadow-2xs hover:shadow-xs transition-all cursor-pointer active:scale-95"
             >
               <QrCode className="w-4 h-4 text-cerulean stroke-[2.2]" />
               <span>Mời bạn bè</span>
