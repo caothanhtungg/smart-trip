@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { TripDatePicker } from "./trip-date-picker";
 import { DestinationQuickPills } from "./destination-quick-pills";
+import { DestinationMapPicker } from "./destination-map-picker";
 import { BudgetPresetChips } from "./budget-preset-chips";
 import { CreateTripPreviewModal } from "./create-trip-preview-modal";
 import { ConfirmCancelModal } from "./confirm-cancel-modal";
@@ -269,30 +270,12 @@ export function CreateTripForm() {
                 Điểm đến <span className="text-xs font-normal text-text-muted">(không bắt buộc)</span>
               </label>
             </div>
-            <div className="relative flex items-center">
-              <Search className="absolute left-3.5 w-5 h-5 text-text-muted pointer-events-none" />
-              <input
-                ref={destinationInputRef}
-                id="trip-destination"
-                type="text"
-                maxLength={150}
-                value={formData.destination}
-                onChange={(e) => handleChangeDestination(e.target.value)}
-                placeholder="Tìm kiếm thành phố, địa danh (vd: Đà Lạt, Lâm Đồng; Quy Nhơn...)"
-                className={`w-full h-12 pl-11 pr-4 rounded-xl bg-white text-yale-blue font-medium text-base border shadow-2xs transition-all duration-150 outline-none placeholder:text-text-muted/60 ${
-                  errors.destination
-                    ? "border-functional-negative ring-2 ring-functional-negative/20"
-                    : "border-border-hairline focus:border-cerulean focus:ring-3 focus:ring-ocean-mist/30"
-                }`}
-                aria-invalid={Boolean(errors.destination)}
-                aria-describedby={errors.destination ? "trip-destination-error" : undefined}
-              />
-            </div>
-            {errors.destination && (
-              <p id="trip-destination-error" className="text-xs font-medium text-functional-negative" role="alert">
-                {errors.destination}
-              </p>
-            )}
+            <DestinationMapPicker
+              inputRef={destinationInputRef}
+              value={formData.destination}
+              onChange={handleChangeDestination}
+              error={errors.destination}
+            />
             {/* Quick Suggestion Pills */}
             <DestinationQuickPills
               currentValue={formData.destination}
