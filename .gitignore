@@ -53,3 +53,4 @@ next-env.d.ts
 /src/generated/
 *.bak
 .agent/
+.superpowers/
