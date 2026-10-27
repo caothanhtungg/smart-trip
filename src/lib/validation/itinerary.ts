@@ -68,6 +68,9 @@ export const CreateItineraryItemSchema = z
       .int("Thứ tự phải là số nguyên không âm.")
       .nonnegative("Thứ tự phải là số nguyên không âm.")
       .optional(),
+    latitude: z.number().min(-90).max(90).nullable().optional(),
+    longitude: z.number().min(-180).max(180).nullable().optional(),
+    isLocked: z.boolean().optional(),
   })
   .strict("Payload chứa trường không được phép.")
   .refine(
@@ -130,6 +133,9 @@ export const UpdateItineraryItemSchema = z
       .int("Thứ tự phải là số nguyên không âm.")
       .nonnegative("Thứ tự phải là số nguyên không âm.")
       .optional(),
+    latitude: z.number().min(-90).max(90).nullable().optional(),
+    longitude: z.number().min(-180).max(180).nullable().optional(),
+    isLocked: z.boolean().optional(),
   })
   .strict("Payload chứa trường không được phép chỉnh sửa.")
   .refine((data) => Object.keys(data).length > 0, {
@@ -165,3 +171,18 @@ export const ItineraryQuerySchema = z
   .strict();
 
 export type ItineraryQueryInput = z.infer<typeof ItineraryQuerySchema>;
+
+/**
+ * Schema xác thực yêu cầu tối ưu lộ trình trong ngày (POST /api/trips/[id]/itinerary/optimize).
+ */
+export const OptimizeItinerarySchema = z
+  .object({
+    dayDate: z
+      .string({ required_error: "Vui lòng chọn ngày cần tối ưu." })
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày không đúng định dạng YYYY-MM-DD.")
+      .refine(isValidCalendarDate, "Ngày không hợp lệ."),
+  })
+  .strict();
+
+export type OptimizeItineraryInput = z.infer<typeof OptimizeItinerarySchema>;

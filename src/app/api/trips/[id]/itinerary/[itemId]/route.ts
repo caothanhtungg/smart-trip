@@ -119,11 +119,17 @@ export async function PATCH(
         startTime?: Date | null;
         endTime?: Date | null;
         sortOrder?: number;
+        latitude?: number | null;
+        longitude?: number | null;
+        isLocked?: boolean;
       } = {};
 
       if (input.placeName !== undefined) updateData.placeName = input.placeName;
       if (input.dayDate !== undefined) updateData.dayDate = new Date(`${input.dayDate}T00:00:00Z`);
       if (input.address !== undefined) updateData.address = input.address;
+      if (input.latitude !== undefined) updateData.latitude = input.latitude;
+      if (input.longitude !== undefined) updateData.longitude = input.longitude;
+      if (input.isLocked !== undefined) updateData.isLocked = input.isLocked;
       if (input.note !== undefined) updateData.note = input.note;
       if (input.startTime !== undefined) updateData.startTime = timeStringToDbTime(input.startTime);
       if (input.endTime !== undefined) updateData.endTime = timeStringToDbTime(input.endTime);
@@ -157,6 +163,9 @@ export async function PATCH(
       sortOrder: updated.sortOrder,
       placeName: updated.placeName,
       address: updated.address,
+      latitude: updated.latitude,
+      longitude: updated.longitude,
+      isLocked: updated.isLocked,
       note: updated.note,
       startTime: dbTimeToTimeString(updated.startTime),
       endTime: dbTimeToTimeString(updated.endTime),
