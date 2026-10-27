@@ -27,6 +27,7 @@ describe('POST /api/trips/[id]/itinerary/optimize', () => {
 
   it('trả về 400 nếu ngày không hợp lệ', async () => {
     vi.mocked(requireTripMembership).mockResolvedValue({
+      session: { id: 'session-1' } as any,
       user: { id: 'user-1' } as any,
       member: { id: 'member-1', role: 'MEMBER' } as any,
       trip: { id: tripId, status: 'ACTIVE', startDate: new Date('2026-10-25'), endDate: new Date('2026-10-30') } as any,
@@ -43,6 +44,7 @@ describe('POST /api/trips/[id]/itinerary/optimize', () => {
 
   it('tối ưu lại thứ tự và cập nhật sortOrder thành công', async () => {
     vi.mocked(requireTripMembership).mockResolvedValue({
+      session: { id: 'session-1' } as any,
       user: { id: 'user-1' } as any,
       member: { id: 'member-1', role: 'MEMBER' } as any,
       trip: { id: tripId, status: 'ACTIVE', startDate: new Date('2026-10-25'), endDate: new Date('2026-10-30') } as any,
