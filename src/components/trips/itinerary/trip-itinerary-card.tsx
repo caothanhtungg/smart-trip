@@ -11,6 +11,7 @@ import {
   Trash2,
   CheckCircle2,
   DollarSign,
+  Lock,
 } from "lucide-react";
 import {
   ItineraryItem,
@@ -123,6 +124,12 @@ export function TripItineraryCard({
               >
                 Buổi {timeTag.toLowerCase()}
               </span>
+              {item.isLocked && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold text-[11px] bg-emerald/15 text-[#2E7D5B] border border-emerald/30">
+                  <Lock className="w-3 h-3" />
+                  <span>Cố định</span>
+                </span>
+              )}
             </div>
             <h3 className="font-bold text-base sm:text-lg text-yale-blue leading-snug">
               {item.placeName}

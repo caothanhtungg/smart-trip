@@ -373,6 +373,9 @@ export interface ItineraryItem {
   address?: string | null;
   lat?: number | null;
   lng?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  isLocked?: boolean;
   startTime?: string | null; // Định dạng "HH:mm"
   endTime?: string | null; // Định dạng "HH:mm"
   note?: string | null;
@@ -386,6 +389,9 @@ export interface CreateItineraryItemFormData {
   dayDate: string; // "YYYY-MM-DD"
   placeName: string;
   address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  isLocked?: boolean;
   startTime: string; // "HH:mm"
   endTime?: string; // "HH:mm"
   note?: string;

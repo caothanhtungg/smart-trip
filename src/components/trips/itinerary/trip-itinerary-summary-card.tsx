@@ -12,6 +12,7 @@ import {
 import { ItineraryItem, TripExpense, TripDetailData } from "@/types/trip";
 import { TripDayInfo } from "@/lib/itinerary/date";
 import { formatVnd } from "@/lib/money/format";
+import InteractiveMap, { MapPoint } from "@/components/map/InteractiveMap";
 
 interface TripItinerarySummaryCardProps {
   trip: TripDetailData;
@@ -70,6 +71,20 @@ export function TripItinerarySummaryCard({
     }
     return { linkedCount: count, totalLinkedAmount: sum };
   }, [dayItems, expenses]);
+
+  const mapPoints: MapPoint[] = React.useMemo(() => {
+    return dayItems
+      .filter((it) => (it.latitude != null && it.longitude != null) || (it.lat != null && it.lng != null))
+      .map((it, idx) => ({
+        id: it.id,
+        title: it.placeName,
+        address: it.address,
+        latitude: (it.latitude ?? it.lat)!,
+        longitude: (it.longitude ?? it.lng)!,
+        sortOrder: it.sortOrder ?? idx,
+        isLocked: it.isLocked,
+      }));
+  }, [dayItems]);
 
   return (
     <div className="space-y-6 sticky top-24">
@@ -132,63 +147,28 @@ export function TripItinerarySummaryCard({
         </div>
       </div>
 
-      {/* 2. Vector Art Illustration Card (Strictly inline SVG, no external requests) */}
-      <div className="bg-surface-card rounded-2xl p-5 border border-divider-border shadow-[0_4px_16px_rgba(24,78,119,0.04)] overflow-hidden">
-        <div className="relative w-full h-36 rounded-xl overflow-hidden bg-gradient-to-b from-[#ebf5ff] to-[#f4f9ec] flex items-center justify-center border border-divider-border/60">
-          <svg
-            className="w-full h-full object-cover"
-            viewBox="0 0 320 144"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            {/* Background Sky & Hills */}
-            <rect width="320" height="144" fill="#F4F9EC" />
-            <path
-              d="M0 80 Q 70 40 140 70 T 280 60 L 320 85 L 320 144 L 0 144 Z"
-              fill="#D9ED92"
-              opacity="0.6"
+      {/* 2. Interactive Route Map Card */}
+      <div className="bg-surface-card rounded-2xl p-4 border border-divider-border shadow-[0_4px_16px_rgba(24,78,119,0.04)] overflow-hidden">
+        {mapPoints.length > 0 ? (
+          <div className="relative w-full h-56 rounded-xl overflow-hidden border border-divider-border/60">
+            <InteractiveMap
+              points={mapPoints}
+              showRoute={true}
+              zoom={13}
+              className="w-full h-full rounded-xl"
             />
-            <path
-              d="M0 100 Q 90 75 190 95 T 320 90 L 320 144 L 0 144 Z"
-              fill="#B5E48C"
-              opacity="0.5"
-            />
-            {/* Lake / Water Path */}
-            <path
-              d="M0 120 C 60 110, 120 135, 180 125 C 240 115, 280 130, 320 122 L 320 144 L 0 144 Z"
-              fill="#52B69A"
-              opacity="0.3"
-            />
-            {/* Pine Trees Silhouettes */}
-            <polygon points="40,85 32,105 48,105" fill="#184E77" opacity="0.4" />
-            <polygon points="52,80 43,103 61,103" fill="#1A759F" opacity="0.4" />
-            <polygon points="260,82 252,104 268,104" fill="#184E77" opacity="0.35" />
-            <polygon points="275,76 265,102 285,102" fill="#1A759F" opacity="0.4" />
-            {/* Road ribbon */}
-            <path
-              d="M-10 130 Q 110 90 200 115 T 330 110"
-              stroke="#FFFFFF"
-              strokeWidth="5"
-              strokeLinecap="round"
-            />
-            <path
-              d="M-10 130 Q 110 90 200 115 T 330 110"
-              stroke="#1A759F"
-              strokeWidth="1.5"
-              strokeDasharray="4 3"
-            />
-            {/* Pin Marker */}
-            <circle cx="160" cy="80" r="14" fill="#1A759F" fillOpacity="0.18" />
-            <circle cx="160" cy="80" r="8" fill="#1A759F" />
-            <circle cx="160" cy="80" r="3" fill="#FFFFFF" />
-          </svg>
-
-          {/* Overlay Badge */}
-          <div className="absolute bottom-2.5 left-3 px-2.5 py-1 rounded-md bg-white/90 backdrop-blur-sm border border-divider-border text-[11px] font-semibold text-yale-blue shadow-sm">
-            {trip.destination || "Hành trình"}
+            <div className="absolute top-2.5 left-2.5 z-10 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur-xs border border-divider-border text-[11px] font-bold text-yale-blue shadow-2xs flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-cerulean animate-ping" />
+              <span>Bản đồ lộ trình ({mapPoints.length} điểm)</span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="relative w-full h-36 rounded-xl overflow-hidden bg-gradient-to-b from-[#ebf5ff] to-[#f4f9ec] flex flex-col items-center justify-center border border-divider-border/60 text-center p-4">
+            <MapPin className="w-8 h-8 text-cerulean mb-1 opacity-70" />
+            <span className="text-xs font-bold text-yale-blue">Chưa có tọa độ bản đồ</span>
+            <span className="text-[11px] text-text-muted mt-0.5">Thêm địa điểm để xem lộ trình trên bản đồ</span>
+          </div>
+        )}
 
         {/* Travel Tips */}
         <div className="mt-4 pt-3 border-t border-divider-border/80">
@@ -203,7 +183,7 @@ export function TripItinerarySummaryCard({
             </li>
             <li className="flex items-start gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-functional-positive shrink-0 mt-0.5" />
-              <span>Bấm &ldquo;+ Chi tiêu&rdquo; để gắn ngay hóa đơn vào địa điểm.</span>
+              <span>Bấm &ldquo;Tối ưu ngay&rdquo; để tự động xếp đường đi ngắn nhất.</span>
             </li>
           </ul>
         </div>

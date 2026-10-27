@@ -9,6 +9,7 @@ import { TripItineraryTimeline } from "./trip-itinerary-timeline";
 import { TripItinerarySummaryCard } from "./trip-itinerary-summary-card";
 import { TripItineraryFormModal } from "./trip-itinerary-form-modal";
 import { TripDeleteItineraryModal } from "./trip-delete-itinerary-modal";
+import { RouteOptimizationBar } from "@/components/itinerary/RouteOptimizationBar";
 
 export function TripItineraryTab() {
   const {
@@ -138,7 +139,14 @@ export function TripItineraryTab() {
         /* Main Two-Column Layout Grid (8 - 4) */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* LEFT COLUMN: 8 Columns (Schedule & Timeline) */}
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-8 space-y-5">
+            <RouteOptimizationBar
+              tripId={sessionTrip.id}
+              dayDate={selectedDate}
+              itemCount={sessionItinerary.filter((it) => it.dayDate === selectedDate).length}
+              onOptimized={refetchItinerary}
+              isLocked={sessionTrip.status !== "ACTIVE"}
+            />
             <TripItineraryTimeline
               trip={sessionTrip}
               tripDays={tripDays}

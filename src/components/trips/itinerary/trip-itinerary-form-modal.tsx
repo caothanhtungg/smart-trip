@@ -97,6 +97,15 @@ function TripItineraryFormDialog({
     initialItem ? initialItem.endTime || "" : "11:00"
   );
   const [note, setNote] = React.useState<string>(initialItem ? initialItem.note || "" : "");
+  const [latitude, setLatitude] = React.useState<number | null>(
+    initialItem ? initialItem.latitude ?? initialItem.lat ?? null : null
+  );
+  const [longitude, setLongitude] = React.useState<number | null>(
+    initialItem ? initialItem.longitude ?? initialItem.lng ?? null : null
+  );
+  const [isLocked, setIsLocked] = React.useState<boolean>(
+    initialItem ? !!initialItem.isLocked : false
+  );
   const [errors, setErrors] = React.useState<ItineraryValidationErrors>({});
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -141,6 +150,9 @@ function TripItineraryFormDialog({
       dayDate,
       placeName: placeName.trim(),
       address: address.trim() || undefined,
+      latitude,
+      longitude,
+      isLocked,
       startTime,
       endTime: endTime.trim() || undefined,
       note: note.trim() || undefined,
@@ -293,6 +305,19 @@ function TripItineraryFormDialog({
                     placeholder="Số đường, phường, quận/huyện..."
                     className="w-full h-10 px-3 rounded-xl border border-divider-border text-xs sm:text-sm text-on-surface bg-bg-canvas/30 focus:outline-none focus:bg-white focus:border-cerulean focus:ring-2 focus:ring-cerulean/20 transition-all"
                   />
+                </div>
+
+                {/* Lock Starting Point Toggle */}
+                <div className="flex items-center gap-2 px-1">
+                  <label className="flex items-center gap-2 text-xs font-medium text-yale-blue cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isLocked}
+                      onChange={(e) => setIsLocked(e.target.checked)}
+                      className="w-4 h-4 rounded text-cerulean border-divider-border focus:ring-cerulean"
+                    />
+                    <span>Khóa điểm này làm mốc cố định (không bị tự động tối ưu đảo thứ tự)</span>
+                  </label>
                 </div>
 
                 {/* Vector Map Illustration Thumbnail */}
