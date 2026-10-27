@@ -86,7 +86,30 @@ export default function TripLeafletMap({
       }
     }
 
+    const handleFocusMap = (e: Event) => {
+      const customEvent = e as CustomEvent<{ latitude: number; longitude: number; name?: string }>;
+      if (!customEvent.detail || !mapInstanceRef.current) return;
+      const { latitude, longitude, name } = customEvent.detail;
+      if (typeof latitude === 'number' && typeof longitude === 'number') {
+        const map = mapInstanceRef.current;
+        map.flyTo([latitude, longitude], 15, { duration: 1.2 });
+        mapContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        L.popup()
+          .setLatLng([latitude, longitude])
+          .setContent(
+            `<div style="font-family: inherit; font-size: 13px; font-weight: 600; color: #184E77; padding: 2px;">📍 ${
+              name || 'Địa điểm gợi ý'
+            }</div>`
+          )
+          .openOn(map);
+      }
+    };
+
+    window.addEventListener('smart-trip:focus-map', handleFocusMap);
+
     return () => {
+      window.removeEventListener('smart-trip:focus-map', handleFocusMap);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
