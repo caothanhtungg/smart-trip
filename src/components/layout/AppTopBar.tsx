@@ -8,6 +8,7 @@ import {
   X,
   Bell,
   SlidersHorizontal,
+  Ticket,
 } from "lucide-react";
 import { useUserProfile } from "@/lib/user/user-context";
 import { useAppShell } from "./app-shell-context";
@@ -26,6 +27,7 @@ export interface AppTopBarProps {
   activeFilter?: string;
   onFilterChange?: (filterKey: string) => void;
   onCreateTrip?: () => void;
+  onOpenInviteModal?: () => void;
   showFilters?: boolean;
 }
 
@@ -37,6 +39,7 @@ export function AppTopBar({
   activeFilter = "all",
   onFilterChange,
   onCreateTrip,
+  onOpenInviteModal,
   showFilters = false,
 }: AppTopBarProps) {
   const { openMobileSidebar } = useAppShell();
@@ -164,6 +167,18 @@ export function AppTopBar({
               onClose={() => setNotificationsOpen(false)}
             />
           </div>
+
+          {/* Secondary Action: Nhập mã mời */}
+          {onOpenInviteModal && (
+            <button
+              type="button"
+              onClick={onOpenInviteModal}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-text-body bg-white hover:bg-hover-row border border-[#E9ECEF] transition-all cursor-pointer shadow-2xs"
+            >
+              <Ticket className="w-4 h-4 text-text-muted" />
+              <span className="hidden sm:inline">Nhập mã mời</span>
+            </button>
+          )}
 
           {/* Main Action Button (CTA) */}
           {onCreateTrip && (

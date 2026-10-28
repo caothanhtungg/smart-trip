@@ -118,53 +118,11 @@ function TripsContent() {
         activeFilter={activeTab}
         onFilterChange={(val) => setActiveTab(val as TripFilterTab)}
         onCreateTrip={() => router.push("/trips/new")}
+        onOpenInviteModal={() => setInviteModalOpen(true)}
         showFilters={!isDiscoveryView}
       />
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1600px] mx-auto">
-        {/* View Switcher Bar (Khám phá & Bản đồ vs Chuyến đi của tôi) */}
-        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-[#E9ECEF]">
-          <div className="flex items-center gap-1.5 p-1 bg-[#F1F3F5] rounded-2xl border border-[#E9ECEF]">
-            <button
-              type="button"
-              onClick={() => router.push("/trips?view=discovery")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                isDiscoveryView
-                  ? "bg-white text-yale-blue shadow-xs"
-                  : "text-text-muted hover:text-yale-blue"
-              }`}
-            >
-              <MapIcon className="w-4 h-4 text-[#E05833]" />
-              <span>Khám phá & Bản đồ</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => router.push("/trips")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                !isDiscoveryView
-                  ? "bg-white text-yale-blue shadow-xs"
-                  : "text-text-muted hover:text-yale-blue"
-              }`}
-            >
-              <Briefcase className="w-4 h-4 text-[#184E77]" />
-              <span>Chuyến đi của tôi ({cardViews.length})</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setInviteModalOpen(true)}
-              className="h-9 px-3 text-xs font-semibold flex items-center gap-1.5 rounded-xl"
-            >
-              <Ticket className="w-3.5 h-3.5" />
-              <span>Nhập mã mời</span>
-            </Button>
-          </div>
-        </div>
-
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-5 sm:py-6 max-w-[1600px] mx-auto">
         {/* View Content: Discovery Split-View OR Standard Trips Grid */}
         {isDiscoveryView ? (
           <DiscoverySplitView
