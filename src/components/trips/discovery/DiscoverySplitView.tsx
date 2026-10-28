@@ -295,7 +295,7 @@ export function DiscoverySplitView({
                           <span>{trip.memberCount} người</span>
                         </span>
                         <span className="font-semibold text-yale-blue">
-                          {formatVnd(trip.budgetAmount)}
+                          {trip.durationText}
                         </span>
                       </div>
                     </div>

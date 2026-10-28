@@ -317,26 +317,8 @@ function TripsContent() {
                           ? "Các chuyến đi đã kết thúc và đối soát công nợ hoàn tất sẽ được lưu trữ tại đây."
                           : "Khám phá danh lam thắng cảnh hoặc tạo chuyến đi mới để bắt đầu lên kế hoạch và phân chia chi phí cùng nhóm bạn."
                       }
-                      action={
-                        <div className="flex flex-col sm:flex-row items-center gap-3">
-                          <Button
-                            variant="secondary"
-                            onClick={() => router.push("/trips?view=discovery")}
-                            className="rounded-xl h-11 px-5"
-                          >
-                            <MapIcon className="w-4 h-4 mr-2 text-[#E05833]" />
-                            <span>Khám phá điểm đến</span>
-                          </Button>
-                          <Button
-                            variant="primary"
-                            onClick={() => router.push("/trips/new")}
-                            className="rounded-xl h-11 px-6 shadow-sm"
-                          >
-                            <Plus className="w-4 h-4 mr-2" />
-                            <span>Tạo chuyến đi đầu tiên</span>
-                          </Button>
-                        </div>
-                      }
+                      actionLabel="Tạo chuyến đi đầu tiên"
+                      onAction={() => router.push("/trips/new")}
                     />
                   )}
                 </div>
@@ -358,7 +340,7 @@ function TripsContent() {
           isOpen={Boolean(selectedTripModal)}
           onClose={() => setSelectedTripModal(null)}
           title={selectedTripModal.name}
-          size="sm"
+          maxWidth="sm"
         >
           <div className="space-y-4">
             <p className="text-sm text-text-muted">
@@ -400,7 +382,7 @@ function TripsContent() {
         isOpen={settlementNoticeOpen}
         onClose={() => setSettlementNoticeOpen(false)}
         title="Chi tiết công nợ tổng hợp"
-        size="md"
+        maxWidth="md"
       >
         <div className="space-y-4 text-sm text-text-body">
           <p className="text-text-muted leading-relaxed">
