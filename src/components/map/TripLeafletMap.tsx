@@ -5,6 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import { RoadsidePoi } from '@/lib/types/roadside';
+import { getDestinationPhoto } from '@/lib/geo/destination-photos';
 
 export interface MapPoint {
   id: string;
@@ -14,6 +15,7 @@ export interface MapPoint {
   longitude: number;
   sortOrder?: number;
   isLocked?: boolean;
+  photoUrl?: string | null;
   weather?: {
     tempC: number;
     condition: 'sunny' | 'cloudy' | 'rainy' | 'storm';
@@ -211,13 +213,26 @@ export default function TripLeafletMap({
 
       const marker = L.marker([point.latitude, point.longitude], { icon: customIcon }).addTo(markersGroup);
 
-      // Popup thông tin điểm đến & thời tiết
+      // Popup thông tin điểm đến & thời tiết kèm hình ảnh minh họa
+      const photo = point.photoUrl || getDestinationPhoto(point.title);
       const popupHtml = `
-        <div style="font-family: 'Be Vietnam Pro', sans-serif; min-width: 180px; padding: 4px;">
-          <div style="font-weight: 700; font-size: 14px; color: #184E77; margin-bottom: 2px;">
+        <div style="font-family: 'Be Vietnam Pro', sans-serif; min-width: 200px; max-width: 240px; padding: 2px;">
+          ${photo ? `
+            <div style="
+              width: 100%;
+              height: 96px;
+              border-radius: 8px;
+              margin-bottom: 8px;
+              background-image: url('${photo}');
+              background-size: cover;
+              background-position: center;
+              box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+            "></div>
+          ` : ''}
+          <div style="font-weight: 700; font-size: 14px; color: #184E77; margin-bottom: 2px; line-height: 1.3;">
             ${point.title}
           </div>
-          ${point.address ? `<div style="font-size: 12px; color: #64748B; margin-bottom: 6px;">${point.address}</div>` : ''}
+          ${point.address ? `<div style="font-size: 11px; color: #64748B; margin-bottom: 6px; line-height: 1.3;">${point.address}</div>` : ''}
           ${weather ? `
             <div style="
               display: inline-flex;
