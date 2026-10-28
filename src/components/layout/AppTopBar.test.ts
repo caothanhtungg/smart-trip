@@ -39,3 +39,4 @@ describe("AppTopBar Search & Filter Logic", () => {
     expect(keys).toContain("completed");
   });
 });
+

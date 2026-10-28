@@ -43,3 +43,4 @@ describe("AppSidebar Navigation Logic & Contracts", () => {
     expect(card.actionLabel).toBeDefined();
   });
 });
+

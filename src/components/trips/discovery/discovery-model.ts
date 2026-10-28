@@ -31,3 +31,4 @@ export function filterDestinationsByCategory(
   }
   return destinations.filter((d) => d.category === category);
 }
+

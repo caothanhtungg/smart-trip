@@ -35,3 +35,4 @@ export function matchesSearchQuery(
 
   return cleanName.includes(cleanQuery) || cleanDestination.includes(cleanQuery);
 }
+

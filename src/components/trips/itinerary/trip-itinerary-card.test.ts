@@ -41,3 +41,4 @@ describe("TripItineraryCard Photo & Layout Data Contracts", () => {
     expect(sampleItem.isLocked).toBe(true);
   });
 });
+

@@ -53,3 +53,4 @@ describe("DiscoverySplitView & DiscoveryMap Data Model", () => {
     expect(tabKeys).toContain("city");
   });
 });
+

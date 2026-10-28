@@ -85,3 +85,4 @@ export function getSidebarFeaturePrompt(): {
     actionLabel: "Khám phá ngay",
   };
 }
+

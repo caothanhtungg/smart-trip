@@ -210,3 +210,4 @@ export function AppSidebar({ isMobileOpen, onCloseMobile }: AppSidebarProps) {
     </>
   );
 }
+
