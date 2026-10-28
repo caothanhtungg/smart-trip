@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Compass,
   ArrowRight,
@@ -29,17 +29,29 @@ import {
 
 export function CreateTripForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const destParam = searchParams.get("destination");
   const { toast } = useToast();
   const { addTrip } = useTripsStore();
 
   // Form State
   const [formData, setFormData] = React.useState<CreateTripFormData>({
-    name: "",
-    destination: "",
+    name: destParam ? `Khám phá ${destParam}` : "",
+    destination: destParam || "",
     startDate: "",
     endDate: "",
     budgetAmount: null,
   });
+
+  React.useEffect(() => {
+    if (destParam && !formData.destination) {
+      setFormData((prev) => ({
+        ...prev,
+        destination: destParam,
+        name: prev.name || `Khám phá ${destParam}`,
+      }));
+    }
+  }, [destParam, formData.destination]);
 
   const [errors, setErrors] = React.useState<CreateTripValidationErrors>({});
   const [previewModalOpen, setPreviewModalOpen] = React.useState(false);
