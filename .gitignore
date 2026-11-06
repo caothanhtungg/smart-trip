@@ -73,3 +73,10 @@ docs/superpowers/
 AGENTS.md
 CLAUDE.md
 docs/AI_IMPLEMENTATION_WORKFLOW.md
+
+# Local project artifacts and internal reports; not published with application source.
+stitch_smart_trip_dashboard_design/
+docs/testing/
+docs/phase-*.md
+docs/erd-changes-proposal.md
+docs/release-1-staging-runbook.md

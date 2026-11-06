@@ -50,7 +50,6 @@ Các màn hình trong thiết kế Google Stitch chứa một số chi tiết n�
 - `sodothietke/release1-usecase.drawio`: Use Case Diagram, gồm 34 use case trong 5 nhóm.
 - `sodothietke/release1-erd.dbml`: ERD Release 1 cho PostgreSQL, 11 bảng nghiệp vụ và 9 enum.
 - `sodothietke/release1-sequence.md`: 5 Sequence Diagram cùng quy tắc nghiệp vụ và test quan trọng.
-- `stitch_smart_trip_dashboard_design/`: tài nguyên giao diện xuất từ Google Stitch; theo báo cáo hiện có, có 17 giao diện HTML/CSS độc lập, 2 đặc tả Design System và các tài nguyên liên quan.
 
 Không sửa/xóa/ghi đè các tài liệu nguồn này khi chưa có sự đồng ý của người dùng.
 
@@ -296,7 +295,6 @@ Trước khi thêm trạng thái hoặc modal, đối chiếu bảng UI trong b�
 ## 12. Quy tắc bảo vệ tài liệu nguồn
 
 - Không sửa các tài liệu nguồn trong `sodothietke/` (ERD, use case, sequence) khi chưa có yêu cầu rõ của người dùng. Nếu thấy cần đổi, hãy đề xuất và chờ duyệt.
-- Các file trong `stitch_smart_trip_dashboard_design/` là tài nguyên tham chiếu; không xóa hoặc ghi đè.
 
 ## 14. Quy tắc mã nguồn
 

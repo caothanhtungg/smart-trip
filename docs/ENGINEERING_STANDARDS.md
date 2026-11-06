@@ -4,7 +4,7 @@ This document defines the shared quality bar for the project codebase. Update it
 
 ## 1. Source of truth and change control
 - `PROJECT_CONTEXT.md` summarizes project context; original files under `sodothietke/` remain authoritative for the detailed use cases, ERD, and sequence flows.
-- Google Stitch exports and approved design specifications are the visual reference.
+- Approved design specifications are the visual reference.
 - Never silently reconcile conflicting requirements. List the conflict, impact, and options, then ask the product owner.
 - Keep changes small, reviewable, and tied to one agreed objective.
 
