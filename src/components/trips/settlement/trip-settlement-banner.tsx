@@ -6,7 +6,7 @@ import {
   Lock,
   Sparkles,
   Unlock,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   AlertCircle,
 } from "lucide-react";
@@ -38,67 +38,75 @@ export function TripSettlementBanner({
   const isCompleted = status === "COMPLETED";
 
   return (
-    <section className="w-full bg-[#EAF4CC] border border-divider-border rounded-[20px] p-[20px_24px] shadow-sm transition-all">
+    <section className="w-full bg-surface-card border border-border-hairline rounded-2xl p-4 sm:p-5 shadow-xs transition-all">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         {/* Left Side: Icon & Titles */}
-        <div className="flex items-start md:items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-yale-blue text-surface-card flex items-center justify-center shrink-0 shadow-sm mt-0.5 md:mt-0">
+        <div className="flex items-start sm:items-center gap-3.5">
+          <div
+            className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-2xs mt-0.5 sm:mt-0 ${
+              isCompleted
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                : isPreview
+                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                : "bg-cerulean/10 text-cerulean dark:text-sky-400 border border-cerulean/20"
+            }`}
+          >
             {isCompleted ? (
-              <CheckCircle className="w-6 h-6 text-lime-cream" />
+              <CheckCircle2 className="w-5 h-5" />
             ) : isPreview ? (
-              <Clock className="w-6 h-6 text-lime-cream" />
+              <Clock className="w-5 h-5" />
             ) : (
-              <GitMerge className="w-6 h-6 text-lime-cream" />
+              <GitMerge className="w-5 h-5" />
             )}
           </div>
 
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-headline-h2 text-xl md:text-2xl font-bold text-yale-blue">
+              <h2 className="text-base sm:text-lg font-bold text-yale-blue">
                 {isCompleted
-                  ? "Toàn bộ công nợ đã được thanh toán hoàn tất!"
+                  ? "Toàn bộ công nợ đã hoàn tất"
                   : isPreview
                   ? "Bảng công nợ tạm tính (Chưa chốt sổ)"
-                  : `Đã rút gọn công nợ bằng thuật toán tham lam (${transfersCount} giao dịch)`}
+                  : `Đã rút gọn công nợ (${transfersCount} giao dịch)`}
               </h2>
 
               {isPreview ? (
-                <span className="px-2.5 py-0.5 rounded-full bg-surface-card text-yale-blue font-label-semibold text-xs border border-divider-border flex items-center gap-1 shadow-xs">
-                  <Clock className="w-3.5 h-3.5 text-functional-warning" />
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold text-[11px] border border-amber-500/20 flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   Tạm tính • Tự động cập nhật
                 </span>
               ) : isSettling ? (
-                <span className="px-2.5 py-0.5 rounded-full bg-surface-card text-yale-blue font-label-semibold text-xs border border-divider-border flex items-center gap-1 shadow-xs">
-                  <Sparkles className="w-3.5 h-3.5 text-cerulean" />
-                  Đang quyết toán • Đã khóa chi tiêu
+                <span className="px-2.5 py-0.5 rounded-full bg-cerulean/10 text-cerulean dark:text-sky-300 font-semibold text-[11px] border border-cerulean/20 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-cerulean dark:text-sky-400" />
+                  Đang quyết toán
                 </span>
               ) : (
-                <span className="px-2.5 py-0.5 rounded-full bg-lime-cream text-yale-blue font-label-semibold text-xs border border-emerald/30 flex items-center gap-1 shadow-xs">
-                  <CheckCircle className="w-3.5 h-3.5 text-functional-positive" />
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px] border border-emerald-500/20 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                   Đã tất toán 100%
                 </span>
               )}
             </div>
 
-            <p className="font-body-default text-text-muted text-xs md:text-sm max-w-2xl leading-relaxed">
+            <p className="text-text-muted text-xs sm:text-sm leading-relaxed max-w-2xl">
               {isCompleted
                 ? "Tất cả các thành viên đã hoàn thành nghĩa vụ thanh toán và người nhận đã đối soát thành công."
                 : isPreview
                 ? "Số liệu phản ánh các khoản chi hiện có trong chuyến đi. Chỉ Trưởng nhóm mới có quyền chốt sổ để các thành viên bắt đầu thanh toán."
-                : "Hệ thống tự động bù trừ nợ đa chiều bằng thuật toán tham lam, giúp giảm thiểu tối đa các giao dịch chuyển tiền rời rạc giữa các thành viên."}
+                : "Hệ thống tự động bù trừ nợ đa chiều, giúp giảm thiểu tối đa các giao dịch chuyển tiền rời rạc giữa các thành viên."}
             </p>
           </div>
         </div>
 
         {/* Right Side Action Buttons */}
-        <div className="flex items-center gap-2.5 self-end md:self-center shrink-0 flex-wrap">
+        <div className="flex items-center gap-2 self-end sm:self-center shrink-0 flex-wrap">
           {/* View Simplified Debt Graph button */}
           <button
             type="button"
             onClick={onViewGraphClick}
-            className="h-[40px] px-3.5 rounded-xl bg-surface-card hover:bg-hover-row text-yale-blue font-label-semibold text-xs flex items-center gap-1.5 transition-colors border border-divider-border shadow-xs"
+            className="h-9 px-3.5 rounded-xl bg-surface-container hover:bg-hover-row text-yale-blue font-semibold text-xs flex items-center gap-1.5 transition-colors border border-border-hairline shadow-2xs cursor-pointer"
           >
-            <GitMerge className="w-4 h-4 text-cerulean" />
+            <GitMerge className="w-3.5 h-3.5 text-cerulean" />
             <span>Xem sơ đồ bù trừ</span>
           </button>
 
@@ -107,9 +115,9 @@ export function TripSettlementBanner({
             <button
               type="button"
               onClick={onLockClick}
-              className="h-[40px] px-4 rounded-xl bg-yale-blue hover:bg-baltic-blue text-white font-label-semibold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+              className="h-9 px-4 rounded-xl bg-yale-blue hover:bg-baltic-blue dark:bg-cerulean dark:hover:bg-baltic-blue text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
             >
-              <Lock className="w-4 h-4 text-lime-cream" />
+              <Lock className="w-3.5 h-3.5 text-lime-cream" />
               <span>Chốt sổ công nợ</span>
             </button>
           )}
@@ -121,13 +129,13 @@ export function TripSettlementBanner({
                 type="button"
                 disabled={!canReopen}
                 onClick={onReopenClick}
-                className={`h-[40px] px-4 rounded-xl font-label-semibold text-xs flex items-center gap-1.5 transition-colors border shadow-xs ${
+                className={`h-9 px-4 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-colors border shadow-2xs ${
                   canReopen
-                    ? "bg-surface-card hover:bg-hover-row text-cerulean border-cerulean"
-                    : "bg-surface-card/60 text-text-muted border-divider-border cursor-not-allowed opacity-75"
+                    ? "bg-surface-card hover:bg-hover-row text-cerulean border-cerulean/40 cursor-pointer"
+                    : "bg-surface-container/60 text-text-muted border-border-hairline cursor-not-allowed opacity-70"
                 }`}
               >
-                <Unlock className="w-4 h-4" />
+                <Unlock className="w-3.5 h-3.5" />
                 <span>Mở lại sổ</span>
               </button>
 

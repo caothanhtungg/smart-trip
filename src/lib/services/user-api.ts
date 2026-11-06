@@ -23,6 +23,7 @@ export interface CurrentUserProfileDto {
 export interface UpdateUserProfileInput {
   name?: string;
   displayName?: string;
+  avatarUrl?: string | null;
   bankBin?: string | null;
   bankAccountNo?: string | null;
   bankAccountName?: string | null;

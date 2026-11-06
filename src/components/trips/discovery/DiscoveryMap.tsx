@@ -26,7 +26,7 @@ const InteractiveMap = dynamic(
           Đang tải bản đồ khám phá danh lam thắng cảnh...
         </span>
         <span className="text-xs text-text-muted">
-          Đang nạp 50+ điểm đến du lịch Việt Nam
+          Đang nạp danh lam thắng cảnh Việt Nam
         </span>
       </div>
     ),
@@ -74,7 +74,7 @@ export function DiscoveryMap({
   };
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative isolate z-0 ${className}`}>
       <InteractiveMap
         points={mapPoints}
         center={mapCenter}
@@ -111,7 +111,7 @@ export function DiscoveryMap({
                 {selectedDestination.description}
               </p>
               <div className="mt-2.5 flex items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold text-[#184E77]">
+                <span className="text-[11px] font-semibold text-[#184E77] truncate min-w-0">
                   {selectedDestination.estimatedBudget}
                 </span>
                 {onCreateTripToDestination && (

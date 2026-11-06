@@ -2,525 +2,345 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
+  ArrowRight,
   CheckCircle2,
   Calendar,
   Receipt,
   QrCode,
   UserPlus,
-  ArrowRight,
-  Clock,
-  Pin,
-  Map,
-  Sparkles,
-  Users,
-  ShieldCheck,
 } from "lucide-react";
-import { useToast } from "@/components/ui/toast";
+import { motion } from "motion/react";
+import { spring, scale, transition, ReducedMotionConfig } from "@animate-ui/react/utils/motion";
+import { RotatingText, RotatingTextContainer } from "@animate-ui/react/primitives/texts/rotating";
+import { Magnetic } from "@animate-ui/react/primitives/effects/magnetic";
 import { LandingHeader } from "@/components/landing/landing-header";
 import { LandingFooter } from "@/components/landing/landing-footer";
-import { HeroIllustration } from "@/components/landing/hero-illustration";
+import { LandingMarquee } from "@/components/landing/landing-marquee";
+import { BentoFeatures } from "@/components/landing/bento-features";
+import { TripScenarios } from "@/components/landing/trip-scenarios";
+import { LandingFAQ } from "@/components/landing/landing-faq";
+import { LandingCtaBanner } from "@/components/landing/landing-cta-banner";
+import { TravelInspiration } from "@/components/landing/travel-inspiration";
+import { TravelPrepStrip } from "@/components/landing/travel-prep-strip";
+import { TravelStoryBanner } from "@/components/landing/travel-story-banner";
+
+const STEPS = [
+  {
+    num: "01",
+    numBg: "bg-lime-cream text-yale-blue dark:bg-emerald-950/60 dark:text-emerald-400 dark:border dark:border-emerald-500/30",
+    title: "Lập nhóm & mời bạn",
+    desc: "Tạo chuyến đi trong 30 giây, gửi link hoặc mã QR mời bạn bè. Ai chưa có tài khoản vẫn tham gia chia tiền bình thường.",
+    tag: "Link & QR mời tức thì",
+    tagColor: "text-functional-positive dark:text-emerald-400",
+    icon: UserPlus,
+  },
+  {
+    num: "02",
+    numBg: "bg-emerald/20 text-yale-blue dark:bg-sky-950/60 dark:text-sky-400 dark:border dark:border-sky-500/30",
+    title: "Lên lịch trình ngày",
+    desc: "Sắp xếp thứ tự các điểm đến sáng, trưa, tối logic. Gắn trực tiếp ghi chú di chuyển và điểm check-in hấp dẫn.",
+    tag: "Lộ trình thông minh",
+    tagColor: "text-cerulean dark:text-sky-400",
+    icon: Calendar,
+  },
+  {
+    num: "03",
+    numBg: "bg-lime-cream/80 text-yale-blue dark:bg-teal-950/60 dark:text-teal-400 dark:border dark:border-teal-500/30",
+    title: "Ghi chi tiêu & hóa đơn",
+    desc: "Lưu trữ ảnh hóa đơn gốc, nhập khoản chi và linh hoạt chọn chia đều hoặc chia đích danh từng món ăn cho người tham gia.",
+    tag: "Đính kèm ảnh hóa đơn",
+    tagColor: "text-functional-positive dark:text-emerald-400",
+    icon: Receipt,
+  },
+  {
+    num: "04",
+    numBg: "bg-cerulean text-white dark:bg-sky-600 dark:text-white",
+    title: "Chốt sổ & VietQR",
+    desc: "Hệ thống tự động rút gọn các giao dịch chéo nợ, tạo mã VietQR Napas 24/7 khớp chuẩn 100% từng đồng để chuyển khoản tức thì.",
+    tag: "VietQR chuẩn EMVCo",
+    tagColor: "text-cerulean dark:text-sky-400",
+    icon: QrCode,
+  },
+];
 
 export default function LandingPage() {
-  const { toast } = useToast();
-
   return (
-    <div className="min-h-screen bg-bg-canvas flex flex-col font-sans antialiased text-text-body">
-      {/* 1. TOP NAVIGATION BAR */}
-      <LandingHeader />
+    <ReducedMotionConfig>
+      <div className="min-h-screen bg-bg-canvas flex flex-col font-sans antialiased text-text-body selection:bg-lime-cream selection:text-yale-blue overflow-x-hidden w-full max-w-[100vw]">
+        {/* 1. TOP NAVIGATION BAR WITH GLOBAL SCROLL PROGRESS */}
+        <LandingHeader />
 
-      {/* 2. MAIN BODY */}
-      <main className="w-full pt-[72px] flex-1 bg-bg-canvas">
-        {/* --- SECTION 1: HERO SECTION --- */}
-        <section className="w-full bg-gradient-to-b from-lime-cream via-lime-cream/35 to-bg-canvas px-4 sm:px-6 pt-10 pb-16 lg:py-20">
-          <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-            {/* Left Column: Heading & CTAs */}
-            <div className="lg:col-span-7 flex flex-col items-start">
-              {/* Product Badge Pill */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-border-hairline shadow-[0_4px_16px_rgba(24,78,119,0.06)] mb-6">
-                <Sparkles className="w-4 h-4 text-cerulean" />
-                <span className="text-xs sm:text-sm font-semibold text-yale-blue tracking-tight">
-                  Ứng dụng du lịch nhóm thông minh thế hệ mới
-                </span>
-              </div>
-
-              {/* Main Headline */}
-              <h1 className="text-3xl sm:text-5xl lg:text-5xl font-bold text-yale-blue tracking-tight leading-[1.15] max-w-xl text-left">
-                Đi chung, chia gọn.
-              </h1>
-
-              {/* Subtitle */}
-              <p className="text-base sm:text-lg text-text-muted mt-4 max-w-[520px] leading-relaxed">
-                Lên lịch trình, ghi chi tiêu theo địa điểm và trả nợ bằng QR chỉ trong một nơi.
-              </p>
-
-              {/* Action Buttons Row */}
-              <div className="mt-8 flex flex-wrap items-center gap-4 w-full sm:w-auto">
-                <Link
-                  href="/login"
-                  className="h-[52px] px-7 text-base font-semibold shadow-[0_4px_16px_rgba(24,78,119,0.14)] flex items-center gap-3 cursor-pointer rounded-xl bg-cerulean text-white hover:bg-baltic-blue transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
-                >
-                  {/* Google Icon SVG */}
-                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="white"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="white"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                      fill="white"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                      fill="white"
-                    />
-                  </svg>
-                  <span>Tiếp tục với Google</span>
-                </Link>
-
-                <a
-                  href="#cach-hoat-dong"
-                  className="inline-flex items-center justify-center h-[52px] px-6 rounded-[12px] bg-white text-cerulean font-semibold text-base hover:bg-hover-row border border-border-hairline transition-all shadow-[0_4px_16px_rgba(24,78,119,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
-                >
-                  Xem cách hoạt động
-                </a>
-              </div>
-
-              {/* Trust Indicators */}
-              <div className="mt-8 flex flex-wrap items-center gap-y-2 gap-x-4 text-text-muted text-sm">
-                <span className="inline-flex items-center gap-1.5 text-functional-positive font-semibold">
-                  <CheckCircle2 className="w-4 h-4 stroke-[2.2]" />
-                  Miễn phí hoàn toàn
-                </span>
-                <span className="text-text-muted/40">•</span>
-                <span className="inline-flex items-center gap-1.5 text-functional-positive font-semibold">
-                  <CheckCircle2 className="w-4 h-4 stroke-[2.2]" />
-                  Không cần tải app
-                </span>
-                <span className="text-text-muted/40">•</span>
-                <span className="inline-flex items-center gap-1.5 text-functional-positive font-semibold">
-                  <CheckCircle2 className="w-4 h-4 stroke-[2.2]" />
-                  Hỗ trợ mọi ngân hàng Việt Nam
-                </span>
-              </div>
-            </div>
-
-            {/* Right Column: Hero Illustration Container */}
-            <div className="lg:col-span-5 relative flex justify-center">
-              <div className="relative w-full max-w-[480px] aspect-square rounded-[28px] p-6 bg-white/85 border border-border-hairline shadow-[0_8px_24px_rgba(24,78,119,0.12)] backdrop-blur-sm flex items-center justify-center overflow-hidden">
-                {/* Decorative radial glows */}
-                <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-mint-green/20 blur-2xl pointer-events-none" />
-                <div className="absolute -left-12 -bottom-12 w-48 h-48 rounded-full bg-ocean-mist/20 blur-2xl pointer-events-none" />
-
-                {/* Handcrafted Vector Hero Illustration from Stitch */}
-                <HeroIllustration className="relative z-10 w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(24,78,119,0.08)]" />
-
-                {/* Floating Micro Badge: Live Bill Scan */}
-                <div className="absolute bottom-4 left-4 z-20 bg-white border border-border-hairline rounded-xl p-3 shadow-[0_8px_24px_rgba(24,78,119,0.12)] flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-functional-positive/10 flex items-center justify-center text-functional-positive">
-                    <QrCode className="w-5 h-5 stroke-[2]" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm text-yale-blue">Quét VietQR 1 chạm</p>
-                    <p className="text-xs text-text-muted">Chính xác đến từng ₫</p>
-                  </div>
-                </div>
-
-                {/* Floating Micro Badge: Realtime Sync */}
-                <div className="absolute top-4 right-4 z-20 bg-lime-cream text-yale-blue font-bold text-xs px-3.5 py-1.5 rounded-full shadow-[0_4px_16px_rgba(24,78,119,0.08)] flex items-center gap-1.5 border border-border-hairline">
-                  <span className="w-2 h-2 rounded-full bg-emerald-fill animate-pulse" />
-                  Đồng bộ thời gian thực
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* --- SECTION 2: 4 BƯỚC CHO MỘT CHUYẾN ĐI TRỌN VẸN --- */}
-        <section
-          id="cach-hoat-dong"
-          className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 py-16 lg:py-20 scroll-mt-20"
-        >
-          <div className="text-center max-w-2xl mx-auto flex flex-col items-center">
-            <span className="px-3.5 py-1 rounded-full bg-cerulean/10 text-cerulean font-semibold text-xs sm:text-sm">
-              Quy trình đơn giản
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-bold text-yale-blue tracking-tight mt-3">
-              4 bước cho một chuyến đi trọn vẹn
-            </h2>
-            <p className="text-sm sm:text-base text-text-muted mt-3">
-              Chỉ mất chưa đầy 2 phút để khởi tạo và đồng bộ chi tiêu cùng bạn bè.
-            </p>
-          </div>
-
-          {/* 4 Numbered Steps Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mt-12">
-            {/* Step 01 */}
-            <div className="bg-white rounded-[20px] p-6 border border-border-hairline shadow-[0_4px_16px_rgba(24,78,119,0.06)] hover:shadow-[0_8px_24px_rgba(24,78,119,0.12)] transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-lime-cream flex items-center justify-center font-bold text-yale-blue text-lg">
-                  01
-                </div>
-                <h3 className="text-lg font-bold text-yale-blue mt-5">
-                  Lập nhóm
-                </h3>
-                <p className="text-sm text-text-muted mt-2.5 leading-relaxed">
-                  Tạo chuyến đi, mời bạn bè qua link hoặc mã QR. Thành viên chưa có tài khoản vẫn tham gia chia tiền bình thường.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-border-hairline flex items-center gap-2 text-functional-positive font-semibold text-xs">
-                <UserPlus className="w-4 h-4 stroke-[2]" />
-                <span>Link mời tức thì</span>
-              </div>
-            </div>
-
-            {/* Step 02 */}
-            <div className="bg-white rounded-[20px] p-6 border border-border-hairline shadow-[0_4px_16px_rgba(24,78,119,0.06)] hover:shadow-[0_8px_24px_rgba(24,78,119,0.12)] transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-mint-green/40 flex items-center justify-center font-bold text-yale-blue text-lg">
-                  02
-                </div>
-                <h3 className="text-lg font-bold text-yale-blue mt-5">
-                  Lên lịch trình
-                </h3>
-                <p className="text-sm text-text-muted mt-2.5 leading-relaxed">
-                  Xếp lịch trình từng ngày trực quan, đính kèm địa điểm ghé thăm và dự toán ngân sách chuyến đi rõ ràng.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-border-hairline flex items-center gap-2 text-cerulean font-semibold text-xs">
-                <Calendar className="w-4 h-4 stroke-[2]" />
-                <span>Lộ trình thông minh</span>
-              </div>
-            </div>
-
-            {/* Step 03 */}
-            <div className="bg-white rounded-[20px] p-6 border border-border-hairline shadow-[0_4px_16px_rgba(24,78,119,0.06)] hover:shadow-[0_8px_24px_rgba(24,78,119,0.12)] transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-light-green/50 flex items-center justify-center font-bold text-yale-blue text-lg">
-                  03
-                </div>
-                <h3 className="text-lg font-bold text-yale-blue mt-5">
-                  Ghi chi tiêu
-                </h3>
-                <p className="text-sm text-text-muted mt-2.5 leading-relaxed">
-                  Lưu trữ hóa đơn hoặc nhập nhanh khoản chi, linh hoạt chọn chia đều hoặc chia chi tiết theo từng món ăn.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-border-hairline flex items-center gap-2 text-tropical-teal font-semibold text-xs">
-                <Receipt className="w-4 h-4 stroke-[2]" />
-                <span>Đính kèm ảnh hóa đơn</span>
-              </div>
-            </div>
-
-            {/* Step 04 */}
-            <div className="bg-white rounded-[20px] p-6 border border-border-hairline shadow-[0_4px_16px_rgba(24,78,119,0.06)] hover:shadow-[0_8px_24px_rgba(24,78,119,0.12)] transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-lime-cream flex items-center justify-center font-bold text-yale-blue text-lg">
-                  04
-                </div>
-                <h3 className="text-lg font-bold text-yale-blue mt-5">
-                  Chốt sổ và trả nợ
-                </h3>
-                <p className="text-sm text-text-muted mt-2.5 leading-relaxed">
-                  Thuật toán tự động tối ưu rút gọn nợ chéo, tạo mã QR ngân hàng chính xác đến từng đồng để thanh toán trong 3 giây.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-border-hairline flex items-center gap-2 text-baltic-blue font-semibold text-xs">
-                <QrCode className="w-4 h-4 stroke-[2]" />
-                <span>VietQR chính xác 100%</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* --- SECTION 3: TÍNH NĂNG NỔI BẬT --- */}
-        <section
-          id="tinh-nang"
-          className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 py-12 lg:py-16 scroll-mt-20"
-        >
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10">
-            <div>
-              <span className="px-3.5 py-1 rounded-full bg-cerulean/10 text-cerulean font-semibold text-xs sm:text-sm">
-                Giải pháp toàn diện
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-bold text-yale-blue tracking-tight mt-3">
-                Mọi công cụ bạn cần cho chuyến đi không lo toan
-              </h2>
-            </div>
-            <p className="text-text-muted text-sm sm:text-base mt-2 md:mt-0 max-w-sm">
-              Thiết kế tối ưu theo thói quen du lịch và thanh toán tiện lợi của người Việt.
-            </p>
-          </div>
-
-          {/* Feature Card 1: Lịch trình trực quan */}
-          <div className="bg-white rounded-[20px] p-6 md:p-8 mb-8 border border-border-hairline shadow-[0_4px_16px_rgba(24,78,119,0.06)] hover:shadow-[0_8px_24px_rgba(24,78,119,0.12)] transition-all">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div className="lg:col-span-7 flex flex-col items-start">
-                <span className="px-3 py-1 rounded-full bg-lime-cream/80 text-yale-blue font-semibold text-xs tracking-wide uppercase">
-                  Lịch trình trực quan
-                </span>
-                <h3 className="text-xl sm:text-2xl font-bold text-yale-blue mt-3">
-                  Đọc hiểu lộ trình theo ngày
-                </h3>
-                <p className="text-sm sm:text-base text-text-muted mt-3 leading-relaxed">
-                  Sắp xếp từng điểm đến sáng - trưa - tối logic trên timeline. Đồng bộ lịch trình thời gian thực giữa các thành viên, hiển thị rõ dự kiến thời gian di chuyển và ghi chú check-in.
-                </p>
-                {/* Interactive chips */}
-                <div className="mt-6 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-bg-canvas text-yale-blue font-semibold text-xs">
-                    <Clock className="w-3.5 h-3.5 text-cerulean" />
-                    Lịch trình 3N2Đ
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-bg-canvas text-yale-blue font-semibold text-xs">
-                    <Pin className="w-3.5 h-3.5 text-ocean-mist" />
-                    8 địa điểm
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-bg-canvas text-yale-blue font-semibold text-xs">
-                    <Map className="w-3.5 h-3.5 text-functional-positive" />
-                    Bản đồ lộ trình tích hợp
-                  </span>
-                </div>
-              </div>
-
-              {/* Visual Preview: Schedule Widget */}
-              <div className="lg:col-span-5 bg-bg-canvas rounded-2xl p-5 border border-border-hairline">
-                <div className="flex items-center justify-between pb-3 border-b border-border-hairline">
-                  <span className="font-semibold text-sm text-yale-blue">Ngày 1: Khám phá Phố cổ</span>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-white text-cerulean font-semibold shadow-sm border border-border-hairline">
-                    4 điểm đến
-                  </span>
-                </div>
-                <div className="space-y-3 mt-3">
-                  <div className="bg-white rounded-xl p-3 shadow-sm border border-border-hairline flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-lg bg-lime-cream text-yale-blue flex items-center justify-center font-bold text-xs">
-                        08:30
-                      </span>
-                      <div>
-                        <p className="font-semibold text-sm text-yale-blue">Cà phê Giảng Yên Phụ</p>
-                        <p className="text-xs text-text-muted">Ghi chú: Thử cà phê trứng</p>
-                      </div>
-                    </div>
-                    <CheckCircle2 className="w-4 h-4 text-cerulean" />
-                  </div>
-
-                  <div className="bg-white rounded-xl p-3 shadow-sm border border-border-hairline flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-lg bg-mint-green/50 text-yale-blue flex items-center justify-center font-bold text-xs">
-                        11:30
-                      </span>
-                      <div>
-                        <p className="font-semibold text-sm text-yale-blue">Bún chả Hương Liên</p>
-                        <p className="text-xs text-text-muted">Đã đặt trước bàn 6 người</p>
-                      </div>
-                    </div>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-fill" />
-                  </div>
-
-                  <div className="bg-white rounded-xl p-3 shadow-sm border border-border-hairline flex items-center justify-between opacity-80">
-                    <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-lg bg-cerulean/10 text-yale-blue flex items-center justify-center font-bold text-xs">
-                        15:00
-                      </span>
-                      <div>
-                        <p className="font-semibold text-sm text-yale-blue">Hoàng Thành Thăng Long</p>
-                        <p className="text-xs text-text-muted">Vé tham quan nhóm</p>
-                      </div>
-                    </div>
-                    <Clock className="w-4 h-4 text-text-muted" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Feature Card 2: Chia theo món linh hoạt */}
-          <div className="bg-white rounded-[20px] p-6 md:p-8 mb-8 border border-border-hairline shadow-[0_4px_16px_rgba(24,78,119,0.06)] hover:shadow-[0_8px_24px_rgba(24,78,119,0.12)] transition-all">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              {/* Visual Preview: Itemized Split Calculator */}
-              <div className="lg:col-span-5 order-2 lg:order-1 bg-bg-canvas rounded-2xl p-5 border border-border-hairline">
-                <div className="flex items-center justify-between pb-3 border-b border-border-hairline">
-                  <div>
-                    <span className="font-semibold text-sm text-yale-blue block">Hóa đơn: Lẩu Bò Nhúng Quế</span>
-                    <span className="text-xs text-functional-positive font-semibold">Chuẩn khớp 100% • 3 thành viên</span>
-                  </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-functional-warning-bg text-functional-warning font-semibold">
-                    Chia theo món
-                  </span>
-                </div>
-                <div className="space-y-2 mt-3">
-                  <div className="bg-white rounded-xl p-3 shadow-sm border border-border-hairline flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-full bg-lime-cream text-yale-blue font-bold text-xs flex items-center justify-center">
-                        N
-                      </span>
-                      <span className="text-xs text-yale-blue font-medium">Nam (3 món + nước ngọt)</span>
-                    </div>
-                    <span className="font-bold text-sm text-yale-blue tabular-nums">145.000 ₫</span>
-                  </div>
-
-                  <div className="bg-white rounded-xl p-3 shadow-sm border border-border-hairline flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-full bg-light-green text-yale-blue font-bold text-xs flex items-center justify-center">
-                        L
-                      </span>
-                      <span className="text-xs text-yale-blue font-medium">Linh (Ăn chay + trà đào)</span>
-                    </div>
-                    <span className="font-bold text-sm text-yale-blue tabular-nums">85.000 ₫</span>
-                  </div>
-
-                  <div className="bg-white rounded-xl p-3 shadow-sm border border-border-hairline flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-full bg-mint-green text-yale-blue font-bold text-xs flex items-center justify-center">
-                        H
-                      </span>
-                      <span className="text-xs text-yale-blue font-medium">Hoàng (Lẩu bò + bia craft)</span>
-                    </div>
-                    <span className="font-bold text-sm text-yale-blue tabular-nums">210.000 ₫</span>
-                  </div>
-
-                  {/* Summary note - strictly avoids unverified VAT claims */}
-                  <div className="bg-cerulean/5 rounded-xl p-2.5 flex items-center justify-between text-xs text-text-muted">
-                    <span>Tự động phân bổ đúng phần từng người</span>
-                    <span className="font-bold text-yale-blue tabular-nums">Tổng: 440.000 ₫</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Text Description */}
-              <div className="lg:col-span-7 order-1 lg:order-2 flex flex-col items-start">
-                <span className="px-3 py-1 rounded-full bg-lime-cream/80 text-yale-blue font-semibold text-xs tracking-wide uppercase">
-                  Chia tiền linh hoạt
-                </span>
-                <h3 className="text-xl sm:text-2xl font-bold text-yale-blue mt-3">
-                  Chia theo món, không lệch một đồng
-                </h3>
-                <p className="text-sm sm:text-base text-text-muted mt-3 leading-relaxed">
-                  Ai ăn gì trả nấy hoặc chia đều tùy chọn. Người không dùng món nào thì không phải chịu tiền oan. Phân bổ minh bạch, công bằng cho tất cả thành viên trong đoàn.
-                </p>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-bg-canvas text-yale-blue font-semibold text-xs">
-                    <Receipt className="w-3.5 h-3.5 text-functional-positive" />
-                    Hóa đơn Lẩu Bò
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-bg-canvas text-yale-blue font-semibold text-xs">
-                    <ShieldCheck className="w-3.5 h-3.5 text-cerulean" />
-                    Chuẩn khớp 100%
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-bg-canvas text-yale-blue font-semibold text-xs">
-                    <Users className="w-3.5 h-3.5 text-ocean-mist" />
-                    Chia theo từng người
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Feature Card 3: Rút gọn nợ & VietQR */}
-          <div className="bg-white rounded-[20px] p-6 md:p-8 border border-border-hairline shadow-[0_4px_16px_rgba(24,78,119,0.06)] hover:shadow-[0_8px_24px_rgba(24,78,119,0.12)] transition-all">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div className="lg:col-span-7 flex flex-col items-start">
-                <span className="px-3 py-1 rounded-full bg-lime-cream/80 text-yale-blue font-semibold text-xs tracking-wide uppercase">
-                  Thuật toán tinh gọn
-                </span>
-                <h3 className="text-xl sm:text-2xl font-bold text-yale-blue mt-3">
-                  Rút gọn nợ và QR chuyển khoản
-                </h3>
-                <p className="text-sm sm:text-base text-text-muted mt-3 leading-relaxed">
-                  Thay vì hàng chục giao dịch chuyển qua lại hỗn loạn, Smart Trip tự động giải quyết các vòng nợ lặp: 12 khoản nợ chéo chỉ còn 3 lệnh chuyển tiền duy nhất. Tạo mã VietQR có sẵn số tiền và nội dung để thanh toán tức thì.
-                </p>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-bg-canvas text-yale-blue font-semibold text-xs">
-                    <Sparkles className="w-3.5 h-3.5 text-tropical-teal" />
-                    Rút gọn nợ: 12 nợ → 3 lệnh
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-bg-canvas text-yale-blue font-semibold text-xs">
-                    <QrCode className="w-3.5 h-3.5 text-functional-positive" />
-                    VietQR 1 chạm
-                  </span>
-                </div>
-              </div>
-
-              {/* Visual Preview: Debt Settlement Mockup */}
-              <div className="lg:col-span-5 bg-bg-canvas rounded-2xl p-5 border border-border-hairline">
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-border-hairline flex items-center gap-4">
-                  {/* Mini VietQR Card */}
-                  <div className="w-20 h-20 bg-yale-blue rounded-xl p-2 flex flex-col items-center justify-center text-white shrink-0">
-                    <QrCode className="w-8 h-8 text-mint-green stroke-[1.8]" />
-                    <span className="text-[9px] font-bold tracking-widest mt-1">VIETQR</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 text-xs text-text-muted">
-                      <span>Chuyển cho:</span>
-                      <span className="font-semibold text-yale-blue truncate">Nguyễn Mai Linh</span>
-                    </div>
-                    <div className="text-xl sm:text-2xl font-bold text-cerulean tabular-nums mt-0.5">
-                      325.000 ₫
-                    </div>
-                    <div className="text-[11px] text-text-muted truncate mt-0.5">
-                      Nội dung:{" "}
-                      <span className="font-mono text-yale-blue font-semibold">SMARTTRIP DULICHQN</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Optimization stat badges */}
-                <div className="mt-3 grid grid-cols-2 gap-2 text-center">
-                  <div className="bg-white border border-border-hairline p-2.5 rounded-xl">
-                    <span className="text-xs text-text-muted block">Giao dịch gốc</span>
-                    <span className="font-bold text-functional-negative text-sm">12 lượt chuyển</span>
-                  </div>
-                  <div className="bg-functional-positive/10 border border-functional-positive/20 p-2.5 rounded-xl">
-                    <span className="text-xs text-functional-positive block">Sau tối ưu hóa</span>
-                    <span className="font-bold text-functional-positive text-sm">Chỉ 3 lệnh gọn gàng</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* --- SECTION 4: FINAL CALL-TO-ACTION BAND --- */}
-        <section className="w-full px-4 sm:px-6 pb-20 pt-8">
-          <div className="max-w-[1200px] mx-auto bg-yale-blue rounded-3xl py-14 px-6 sm:px-12 md:px-16 text-center text-white shadow-[0_8px_24px_rgba(24,78,119,0.12)] relative overflow-hidden">
-            {/* Ambient Coastal Glows */}
-            <div className="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-cerulean/20 blur-3xl pointer-events-none" />
-            <div className="absolute -left-24 -bottom-24 w-96 h-96 rounded-full bg-emerald-fill/20 blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center">
-              <h2 className="text-2xl sm:text-4xl font-bold text-white tracking-tight leading-tight">
-                Sẵn sàng cho chuyến du lịch tiếp theo?
-              </h2>
-              <p className="text-sm sm:text-base text-white/80 mt-4 leading-relaxed">
-                Tạo chuyến đi đầu tiên cùng bạn bè ngay hôm nay. Hoàn toàn miễn phí, không yêu cầu thẻ tín dụng.
-              </p>
-              <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
-                <Link
-                  href="/login"
-                  className="bg-emerald-fill hover:bg-ocean-mist text-yale-blue font-bold text-base py-4 px-8 rounded-xl transition-all shadow-[0_4px_16px_rgba(24,78,119,0.12)] active:scale-[0.99] cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist"
-                >
-                  <span>Bắt đầu miễn phí ngay</span>
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-              </div>
-              <button
-                type="button"
-                onClick={() => toast("Tính năng hỗ trợ nhóm doanh nghiệp sẽ ra mắt trong bản mở rộng!", "info")}
-                className="mt-6 text-sm text-lime-cream hover:underline font-medium transition-all cursor-pointer"
+        {/* 2. MAIN BODY */}
+        <main className="w-full max-w-[100vw] flex-1 overflow-x-hidden">
+          {/* --- SECTION 1: HERO SECTION (FULL-BLEED SCENIC PANORAMA - PHONG CÁCH ẢNH 2) --- */}
+          <section
+            className="w-full max-w-[100vw] px-4 sm:px-6 pt-28 sm:pt-36 lg:pt-44 pb-20 lg:pb-36 overflow-hidden relative isolate bg-bg-canvas min-h-[620px] lg:min-h-[760px] flex items-center"
+          >
+            {/* Full-bleed Panoramic Background Travel Video - 100% Natural, No Scrim */}
+            <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                className="w-full h-full object-cover object-center scale-102"
               >
-                Liên hệ hỗ trợ nhóm doanh nghiệp
-              </button>
+                <source src="/videos/hero-travel.mp4" type="video/mp4" />
+                {/* Fallback image if video is not supported */}
+                <Image
+                  src="https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=2000&q=85"
+                  alt="Chuyến đi dã ngoại cắm trại cùng nhóm bạn"
+                  fill
+                  priority
+                  sizes="100vw"
+                  className="object-cover object-center"
+                />
+              </video>
             </div>
-          </div>
-        </section>
-      </main>
 
-      {/* 3. FOOTER */}
-      <LandingFooter />
-    </div>
+            <div className="max-w-[1240px] mx-auto w-full min-w-0 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Left Column: Heading, Rotating Text, Subtitle & CTAs (Spacious & Clean) */}
+              <div className="lg:col-span-8 flex flex-col items-start text-left w-full min-w-0">
+                {/* Product Badge Pill */}
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={transition.panelIn}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-[#141C2E]/90 border border-white/80 dark:border-[#24314A] shadow-[0_4px_16px_rgba(0,0,0,0.15)] mb-6 max-w-full backdrop-blur-md"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald animate-pulse shrink-0" />
+                  <span className="text-xs sm:text-sm font-bold text-yale-blue dark:text-slate-200 tracking-tight truncate">
+                    Ứng dụng du lịch nhóm thông minh thế hệ mới
+                  </span>
+                </motion.div>
+
+                {/* Main Headline with White High Contrast & Animate UI Rotating Text */}
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)] tracking-tight leading-[1.2] sm:leading-[1.12] break-words w-full">
+                  Đi chung, chia gọn.
+                  <span className="block text-lime-cream drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] mt-2">
+                    Hết lo{" "}
+                    <RotatingTextContainer
+                      text={["nợ nần", "tính toán", "chia lẻ", "đòi nợ"]}
+                      align="start"
+                      duration={2600}
+                      className="inline-block overflow-hidden align-bottom"
+                    >
+                      <RotatingText className="text-lime-cream drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] underline decoration-lime-cream dark:decoration-sky-500/60 decoration-wavy decoration-2" />
+                    </RotatingTextContainer>{" "}
+                    sau chuyến đi.
+                  </span>
+                </h1>
+
+                {/* Subtitle */}
+                <p className="text-base sm:text-lg text-white/90 drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] mt-6 max-w-[580px] leading-relaxed font-medium">
+                  Lên lịch trình theo từng chặng, chia tiền linh hoạt theo món hoặc chia đều, và tất toán công nợ 1-chạm bằng mã VietQR Napas 24/7 tức thì.
+                </p>
+
+                {/* Action Buttons Row with Animate UI Magnetic Physics */}
+                <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 w-full sm:w-auto">
+                  <Magnetic strength={0.3} range={80} className="w-full sm:w-auto">
+                    <motion.div
+                      whileTap={{ scale: scale.press }}
+                      whileHover={{ y: -2 }}
+                      transition={spring.press}
+                      className="w-full sm:w-auto"
+                    >
+                      <Link
+                        href="/login"
+                        className="w-full sm:w-auto h-14 px-8 text-base font-bold shadow-[0_8px_24px_rgba(0,0,0,0.25)] flex items-center justify-center gap-3 cursor-pointer rounded-2xl bg-cerulean hover:bg-baltic-blue dark:bg-sky-600 dark:hover:bg-sky-500 text-white hover:shadow-[0_12px_28px_rgba(0,0,0,0.35)] transition-colors group"
+                      >
+                        {/* Google Icon SVG */}
+                        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                          <path
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                            fill="white"
+                          />
+                          <path
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                            fill="white"
+                          />
+                          <path
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                            fill="white"
+                          />
+                          <path
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                            fill="white"
+                          />
+                        </svg>
+                        <span>Bắt đầu với Google</span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </Link>
+                    </motion.div>
+                  </Magnetic>
+
+                  <motion.div
+                    whileTap={{ scale: scale.press }}
+                    whileHover={{ y: -2 }}
+                    transition={spring.press}
+                    className="w-full sm:w-auto"
+                  >
+                    <a
+                      href="#cach-hoat-dong"
+                      className="w-full sm:w-auto h-14 px-6 rounded-2xl bg-white/90 dark:bg-[#141C2E]/90 text-yale-blue dark:text-slate-200 hover:bg-hover-row dark:hover:bg-[#1E2A42] border border-white/80 dark:border-[#24314A] transition-colors shadow-sm flex items-center justify-center cursor-pointer backdrop-blur-md font-semibold"
+                    >
+                      Xem cách hoạt động
+                    </a>
+                  </motion.div>
+                </div>
+
+                {/* Trust Indicators */}
+                <div className="mt-8 flex flex-wrap items-center gap-y-2 gap-x-3 text-white/90 drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)] text-xs sm:text-sm font-medium">
+                  <span className="inline-flex items-center gap-1.5 text-lime-cream font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+                    <CheckCircle2 className="w-4 h-4 stroke-[2.2] shrink-0" />
+                    Miễn phí hoàn toàn
+                  </span>
+                  <span className="text-white/60 hidden sm:inline">•</span>
+                  <span className="inline-flex items-center gap-1.5 text-lime-cream font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+                    <CheckCircle2 className="w-4 h-4 stroke-[2.2] shrink-0" />
+                    Không cần tải app
+                  </span>
+                  <span className="text-white/60 hidden sm:inline">•</span>
+                  <span className="inline-flex items-center gap-1.5 text-lime-cream font-bold drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+                    <CheckCircle2 className="w-4 h-4 stroke-[2.2] shrink-0" />
+                    Mọi ngân hàng Napas 24/7
+                  </span>
+                </div>
+              </div>
+
+              {/* Right Column: COMPLETELY OPEN & EMPTY (Chuẩn Ảnh 2 - Bầu trời & Phong cảnh tự do) */}
+              <div className="hidden lg:block lg:col-span-4 min-h-[300px] pointer-events-none" />
+            </div>
+
+            {/* Micro-Card góc dưới bên phải (Chuẩn y hệt Ảnh 2 Ecoriz: Thẻ kính nhỏ xíu gọn gàng) */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...transition.panelIn, delay: 0.3 }}
+              className="absolute bottom-6 sm:bottom-10 right-4 sm:right-8 lg:right-12 z-20 hidden md:flex items-center gap-3.5 p-3.5 pr-5 rounded-2xl bg-white/90 dark:bg-[#141C2E]/90 border border-white/80 dark:border-[#24314A] shadow-[0_16px_40px_rgba(0,0,0,0.25)] backdrop-blur-md"
+            >
+              <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-sm border border-white/50">
+                <Image
+                  src="https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=200&q=80"
+                  alt="Vịnh Hạ Long"
+                  fill
+                  sizes="48px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-1.5">
+                    <span className="w-5 h-5 rounded-full bg-lime-cream text-yale-blue text-[9px] font-black flex items-center justify-center border border-white shadow-xs">L</span>
+                    <span className="w-5 h-5 rounded-full bg-emerald text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">T</span>
+                    <span className="w-5 h-5 rounded-full bg-cerulean text-white text-[9px] font-black flex items-center justify-center border border-white shadow-xs">M</span>
+                  </div>
+                  <span className="text-xs font-black text-yale-blue dark:text-white">100% Khớp</span>
+                </div>
+                <p className="text-[11px] text-text-muted dark:text-slate-400 mt-0.5 truncate max-w-[210px] font-medium">
+                  Đối soát VietQR Napas 24/7 tức thì
+                </p>
+              </div>
+            </motion.div>
+          </section>
+
+          {/* --- SECTION 2: DẢI CHUYỂN ĐỘNG TICKER NGÂN HÀNG & ĐỊA DANH --- */}
+          <LandingMarquee />
+
+          {/* --- SECTION 3: CHUẨN BỊ CHO CHUYẾN ĐI (EDITORIAL MINIMALISM - ẢNH 2) --- */}
+          <TravelPrepStrip />
+
+          {/* --- SECTION 4: CẢM HỨNG DU LỊCH & ĐIỂM ĐẾN NỔI BẬT (LONELY PLANET STYLE - ẢNH 2) --- */}
+          <TravelInspiration />
+
+          {/* --- SECTION 5: BENTO GRID TÍNH NĂNG ĐỘT PHÁ --- */}
+          <BentoFeatures />
+
+          {/* --- SECTION 6: KHOẢNH KHẮC ĐỒNG HÀNH (CINEMATIC TRAVEL BANNER - ẢNH 2) --- */}
+          <TravelStoryBanner />
+
+          {/* --- SECTION 7: 4 BƯỚC CHO MỘT CHUYẾN ĐI TRỌN VẸN --- */}
+          <section
+            id="cach-hoat-dong"
+            className="w-full py-20 lg:py-28 bg-[#F0F6E8] dark:bg-[#0A0F1D] border-b border-border-hairline dark:border-[#1E2A42] scroll-mt-20"
+          >
+            <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={transition.panelIn}
+                className="text-center max-w-2xl mx-auto flex flex-col items-center mb-16"
+              >
+                <span className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#141C2E] border border-border-hairline dark:border-[#24314A] text-cerulean dark:text-sky-400 font-bold text-xs uppercase tracking-wider shadow-sm">
+                  Quy trình tinh giản
+                </span>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-yale-blue dark:text-white tracking-tight mt-4">
+                  4 bước cho một chuyến đi thảnh thơi
+                </h2>
+                <p className="text-base sm:text-lg text-text-muted dark:text-slate-300 mt-3">
+                  Chỉ mất chưa đầy 2 phút để khởi tạo và đồng bộ chi tiêu cùng bạn bè.
+                </p>
+              </motion.div>
+
+              {/* 4 Steps Grid with Staggered Viewport Entrance */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {STEPS.map((step, idx) => {
+                  const StepIcon = step.icon;
+                  return (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 30, filter: "blur(3px)" }}
+                      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      viewport={{ once: true, margin: "-40px" }}
+                      transition={{ ...transition.panelIn, delay: idx * 0.08 }}
+                      whileHover={{ y: -4 }}
+                      className="bg-white dark:bg-[#141C2E] rounded-[24px] p-7 border border-border-hairline dark:border-[#24314A] shadow-[0_8px_30px_rgba(24,78,119,0.05)] dark:shadow-none hover:shadow-[0_16px_40px_rgba(24,78,119,0.1)] dark:hover:border-sky-500/30 transition-all flex flex-col justify-between group"
+                    >
+                      <div>
+                        <div
+                          className={`w-12 h-12 rounded-2xl flex items-center justify-center font-extrabold text-lg shadow-sm group-hover:scale-105 transition-transform ${step.numBg}`}
+                        >
+                          {step.num}
+                        </div>
+                        <h3 className="text-xl font-bold text-yale-blue dark:text-white mt-5">
+                          {step.title}
+                        </h3>
+                        <p className="text-sm text-text-muted dark:text-slate-300 mt-2.5 leading-relaxed">
+                          {step.desc}
+                        </p>
+                      </div>
+                      <div
+                        className={`mt-8 pt-4 border-t border-border-hairline dark:border-[#24314A] flex items-center gap-2 font-bold text-xs ${step.tagColor}`}
+                      >
+                        <StepIcon className="w-4 h-4 stroke-[2]" />
+                        <span>{step.tag}</span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* --- SECTION 8: KỊCH BẢN CHUYẾN ĐI (CAROUSEL / TABS) --- */}
+          <div id="kich-ban" className="scroll-mt-20">
+            <TripScenarios />
+          </div>
+
+          {/* --- SECTION 9: CÂU HỎI THƯỜNG GẶP (FAQ ACCORDION) --- */}
+          <LandingFAQ />
+
+          {/* --- SECTION 10: CALL TO ACTION BANNER (BOTTOM) --- */}
+          <LandingCtaBanner />
+        </main>
+
+        {/* 3. FOOTER */}
+        <LandingFooter />
+      </div>
+    </ReducedMotionConfig>
   );
 }

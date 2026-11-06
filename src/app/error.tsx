@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -9,12 +8,7 @@ interface ErrorProps {
   reset: () => void;
 }
 
-export default function ErrorBoundary({ error, reset }: ErrorProps) {
-  useEffect(() => {
-    // Ghi nhận lỗi cho việc theo dõi sự cố
-    console.error("Ứng dụng gặp lỗi không mong muốn:", error);
-  }, [error]);
-
+export default function ErrorBoundary({ reset }: ErrorProps) {
   return (
     <main className="min-h-[70vh] flex items-center justify-center px-4 py-16">
       <div className="max-w-md w-full text-center bg-white rounded-2xl p-8 border border-border-hairline shadow-sm">

@@ -43,7 +43,7 @@ export function TripSettlementGraphModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-yale-blue/45 backdrop-blur-[4px] animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-yale-blue/45 backdrop-blur-[4px] animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="graph-modal-title"
@@ -110,7 +110,7 @@ export function TripSettlementGraphModal({
               </p>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-[#EAF4CC] border border-divider-border flex flex-col justify-between">
+            <div className="p-3.5 rounded-xl bg-surface-container border border-border-hairline flex flex-col justify-between">
               <span className="text-[11px] font-semibold text-yale-blue/70 uppercase">
                 Sau khi rút gọn
               </span>

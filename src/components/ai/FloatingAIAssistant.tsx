@@ -6,7 +6,7 @@ import { AISuggestionItem } from '@/lib/types/ai-assistant';
 import TripAIAssistantDrawer from './TripAIAssistantDrawer';
 
 export interface FloatingAIAssistantProps {
-  tripId: string;
+  tripId?: string;
   tripTitle?: string;
   destination?: string;
   onAddToItinerary?: (suggestion: AISuggestionItem) => void;

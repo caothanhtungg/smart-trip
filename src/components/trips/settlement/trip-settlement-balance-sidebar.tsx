@@ -230,7 +230,7 @@ export function TripSettlementBalanceSidebar({
 
         {/* Verification Badge */}
         <div className="mt-4 pt-3 border-t border-divider-border/60">
-          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#EAF4CC]/80 border border-divider-border text-functional-positive">
+          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-surface-container border border-border-hairline text-functional-positive">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-functional-positive" />
             <div className="text-[11px] leading-tight">
               <span className="font-semibold text-yale-blue block">

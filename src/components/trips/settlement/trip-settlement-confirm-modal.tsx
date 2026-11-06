@@ -110,7 +110,7 @@ export function TripSettlementConfirmModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-yale-blue/45 backdrop-blur-[4px] animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-yale-blue/45 backdrop-blur-[4px] animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
@@ -192,11 +192,10 @@ export function TripSettlementConfirmModal({
                 setIsSubmitting(false);
               }
             }}
-            className={`px-5 py-2.5 rounded-xl font-label-semibold text-sm transition-all shadow-sm flex items-center gap-2 ${
-              isDestructive
-                ? "bg-functional-negative hover:bg-red-700 text-white disabled:opacity-60"
-                : "bg-cerulean hover:bg-baltic-blue text-white disabled:opacity-60"
-            }`}
+            className={`px-5 py-2.5 rounded-xl font-label-semibold text-sm transition-all shadow-sm flex items-center gap-2 ${isDestructive
+              ? "bg-functional-negative hover:bg-red-700 text-white disabled:opacity-60"
+              : "bg-cerulean hover:bg-baltic-blue text-white disabled:opacity-60"
+              }`}
           >
             {(isSubmitting || isLoading) && (
               <Loader2 className="w-4 h-4 animate-spin text-white" />

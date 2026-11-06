@@ -102,7 +102,7 @@ export function TripItineraryTimeline({
             className="shrink-0 inline-flex items-center gap-1.5 px-4 h-10 sm:h-11 bg-cerulean hover:bg-baltic-blue text-on-primary font-semibold text-xs sm:text-sm rounded-xl shadow-[0_4px_14px_rgba(26,117,159,0.25)] transition-all transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-cerulean/40"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Thêm địa điểm</span>
+            <span>Thêm địa điểm</span>
           </button>
         )}
       </div>
@@ -117,37 +117,42 @@ export function TripItineraryTimeline({
 
       {/* Timeline Section */}
       {dayItems.length > 0 ? (
-        <div className="relative pl-6 sm:pl-7 pt-2">
-          {/* Continuous Vertical Timeline Line */}
-          <div className="absolute left-3 sm:left-3.5 top-6 bottom-10 w-[2px] bg-divider-border -translate-x-1/2" />
-
-          {/* List of stops */}
-          {dayItems.map((item, idx) => (
-            <TripItineraryCard
-              key={item.id}
-              item={item}
-              index={idx}
-              conflict={conflictMap.get(item.id)}
-              tripStatus={trip.status}
-              currentMember={currentMember}
-              isHost={isHost}
-              expenses={expenses}
-              onEdit={onEditItem}
-              onDelete={onDeleteItem}
-              onAddExpense={onAddExpenseForItem}
-            />
-          ))}
+        <div className="space-y-3">
+          {/* Ordered Semantic List of Timeline Stops */}
+          <ol
+            className="relative pl-7 sm:pl-9 pt-2 list-none m-0 p-0"
+            role="list"
+            aria-label={`Danh sách ${dayItems.length} địa điểm trong ngày`}
+          >
+            {dayItems.map((item, idx) => (
+              <TripItineraryCard
+                key={item.id}
+                item={item}
+                index={idx}
+                totalItems={dayItems.length}
+                isLast={idx === dayItems.length - 1}
+                conflict={conflictMap.get(item.id)}
+                tripStatus={trip.status}
+                currentMember={currentMember}
+                isHost={isHost}
+                expenses={expenses}
+                onEdit={onEditItem}
+                onDelete={onDeleteItem}
+                onAddExpense={onAddExpenseForItem}
+              />
+            ))}
+          </ol>
 
           {/* Add next stop button at bottom */}
           {canAdd && (
-            <div className="relative pt-2">
+            <div className="relative pl-7 sm:pl-9 pt-1">
               <button
                 type="button"
                 onClick={() => onOpenAddModal(selectedDate)}
-                className="w-full py-3 px-4 rounded-2xl border-2 border-dashed border-divider-border hover:border-cerulean hover:bg-hover-row text-cerulean font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all focus:outline-none focus:ring-2 focus:ring-cerulean/30"
+                className="w-full py-3 px-4 rounded-2xl border-2 border-dashed border-divider-border hover:border-cerulean hover:bg-hover-row text-cerulean font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all focus:outline-none focus:ring-2 focus:ring-cerulean/30 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Thêm điểm dừng tiếp theo vào {currentDayInfo?.dayLabel || "ngày này"}</span>
+                <span>Thêm điểm dừng tiếp theo vào {currentDayInfo?.dayLabel || "ngày này"}</span>
               </button>
             </div>
           )}

@@ -11,6 +11,22 @@ describe("UpdateCurrentUserProfileSchema", () => {
     }
   });
 
+  it("accepts valid avatarUrl string or null to remove avatar", () => {
+    const inputWithAvatar = { avatarUrl: "data:image/jpeg;base64,/9j/4AAQSkZJRg==" };
+    const res1 = UpdateCurrentUserProfileSchema.safeParse(inputWithAvatar);
+    expect(res1.success).toBe(true);
+    if (res1.success) {
+      expect(res1.data.avatarUrl).toBe("data:image/jpeg;base64,/9j/4AAQSkZJRg==");
+    }
+
+    const inputNullAvatar = { avatarUrl: null };
+    const res2 = UpdateCurrentUserProfileSchema.safeParse(inputNullAvatar);
+    expect(res2.success).toBe(true);
+    if (res2.success) {
+      expect(res2.data.avatarUrl).toBeNull();
+    }
+  });
+
   it("accepts valid full bank update and normalizes bankAccountName", () => {
     const input = {
       bankBin: "970436",

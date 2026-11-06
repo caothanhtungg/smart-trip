@@ -43,6 +43,14 @@ review-bundle*.txt
 *.bundle.txt
 *.log
 
+# Local UI review screenshots generated at the repository root.
+# Keep product assets inside public/ tracked normally.
+/review_*.png
+/verified_*.png
+/trip_cards_dark.png
+/shot.png
+/sidebar_updated_*.png
+
 # vercel
 .vercel
 
@@ -53,4 +61,5 @@ next-env.d.ts
 /src/generated/
 *.bak
 .agent/
+.agents/
 .superpowers/

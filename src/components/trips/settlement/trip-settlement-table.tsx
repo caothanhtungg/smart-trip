@@ -52,11 +52,10 @@ export function TripSettlementTable({
             Ai trả ai bao nhiêu
           </h2>
           <span
-            className={`px-2.5 py-0.5 rounded-full font-label-semibold text-xs border ${
-              unpaidCount > 0
+            className={`px-2.5 py-0.5 rounded-full font-label-semibold text-xs border ${unpaidCount > 0
                 ? "bg-functional-warning-bg text-functional-warning border-functional-warning/20"
                 : "bg-lime-cream text-yale-blue border-emerald/30"
-            }`}
+              }`}
           >
             {unpaidCount > 0
               ? `${unpaidCount} giao dịch cần xử lý`
@@ -105,21 +104,19 @@ export function TripSettlementTable({
                   return (
                     <tr
                       key={t.id}
-                      className={`h-16 transition-colors ${
-                        isDebtor || isCreditor
+                      className={`h-16 transition-colors ${isDebtor || isCreditor
                           ? "bg-surface-container-low/30 hover:bg-hover-row/70"
                           : "hover:bg-hover-row/60"
-                      }`}
+                        }`}
                     >
                       {/* Payer (Người trả) */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
                           <div
-                            className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                              debtorIsNoAccount
+                            className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${debtorIsNoAccount
                                 ? "bg-surface-container-highest text-yale-blue"
                                 : "bg-light-green text-yale-blue"
-                            }`}
+                              }`}
                           >
                             {fromName.slice(0, 1).toUpperCase()}
                           </div>
@@ -138,8 +135,8 @@ export function TripSettlementTable({
                               {debtorIsNoAccount
                                 ? "Chưa có tài khoản"
                                 : fromMember?.role === "HOST"
-                                ? "Trưởng nhóm"
-                                : "Thành viên"}
+                                  ? "Trưởng nhóm"
+                                  : "Thành viên"}
                             </span>
                           </div>
                         </div>
@@ -154,11 +151,10 @@ export function TripSettlementTable({
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
                           <div
-                            className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                              creditorIsNoAccount
+                            className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${creditorIsNoAccount
                                 ? "bg-surface-container-highest text-yale-blue"
                                 : "bg-mint-green text-yale-blue"
-                            }`}
+                              }`}
                           >
                             {toName.slice(0, 1).toUpperCase()}
                           </div>
@@ -177,8 +173,8 @@ export function TripSettlementTable({
                               {creditorIsNoAccount
                                 ? "Chưa có tài khoản"
                                 : toMember?.role === "HOST"
-                                ? "Trưởng nhóm"
-                                : "Thành viên"}
+                                  ? "Trưởng nhóm"
+                                  : "Thành viên"}
                             </span>
                           </div>
                         </div>
@@ -187,13 +183,12 @@ export function TripSettlementTable({
                       {/* Amount */}
                       <td className="py-3 px-4 text-right">
                         <span
-                          className={`font-headline-h3 font-bold tabular-nums text-base ${
-                            isDebtor
+                          className={`font-headline-h3 font-bold tabular-nums text-base ${isDebtor
                               ? "text-functional-negative"
                               : isCreditor
-                              ? "text-functional-positive"
-                              : "text-yale-blue"
-                          }`}
+                                ? "text-functional-positive"
+                                : "text-yale-blue"
+                            }`}
                         >
                           {formatVnd(t.amount)}
                         </span>
@@ -227,9 +222,15 @@ export function TripSettlementTable({
                             Chờ chốt sổ
                           </span>
                         ) : t.status === "COMPLETED" ? (
-                          <span className="inline-block text-xs font-semibold text-text-muted bg-surface-container-low px-2.5 py-1 rounded-md border border-divider-border/60">
-                            Đã đối soát
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => onPayClick(t)}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-yale-blue bg-surface-container-low hover:bg-surface-container px-2.5 py-1.5 rounded-lg border border-divider-border/60 transition-all cursor-pointer shadow-2xs"
+                            title="Xem chi tiết & tiến trình giao dịch"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-functional-positive" />
+                            <span>Đã đối soát</span>
+                          </button>
                         ) : t.status === "PAID" ? (
                           <div className="flex items-center justify-end gap-2">
                             {/* Creditor confirms money received */}
@@ -258,9 +259,15 @@ export function TripSettlementTable({
                             )}
 
                             {!isCreditor && (!isHost || !creditorIsNoAccount) && (
-                              <span className="text-xs text-text-muted italic">
-                                Chờ đối soát
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => onPayClick(t)}
+                                className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-yale-blue italic underline decoration-dotted transition-colors cursor-pointer"
+                                title="Xem chi tiết & tiến trình giao dịch"
+                              >
+                                <Clock className="w-3.5 h-3.5 text-ocean-mist" />
+                                <span>Chờ đối soát</span>
+                              </button>
                             )}
                           </div>
                         ) : (
@@ -333,11 +340,10 @@ export function TripSettlementTable({
               return (
                 <div
                   key={t.id}
-                  className={`p-4 rounded-2xl border transition-all space-y-3 ${
-                    isDebtor || isCreditor
+                  className={`p-4 rounded-2xl border transition-all space-y-3 ${isDebtor || isCreditor
                       ? "bg-surface-container-low/40 border-cerulean/30 shadow-xs"
                       : "bg-surface-card border-divider-border"
-                  }`}
+                    }`}
                 >
                   {/* Top route row */}
                   <div className="flex items-center justify-between text-xs">
@@ -358,13 +364,12 @@ export function TripSettlementTable({
                     </div>
 
                     <span
-                      className={`text-sm font-bold tabular-nums ${
-                        isDebtor
+                      className={`text-sm font-bold tabular-nums ${isDebtor
                           ? "text-functional-negative"
                           : isCreditor
-                          ? "text-functional-positive"
-                          : "text-yale-blue"
-                      }`}
+                            ? "text-functional-positive"
+                            : "text-yale-blue"
+                        }`}
                     >
                       {formatVnd(t.amount)}
                     </span>
@@ -396,7 +401,15 @@ export function TripSettlementTable({
                       {isPreview ? (
                         <span className="text-xs text-text-muted italic">Chờ chốt sổ</span>
                       ) : t.status === "COMPLETED" ? (
-                        <span className="text-xs text-text-muted font-medium">Đã đối soát</span>
+                        <button
+                          type="button"
+                          onClick={() => onPayClick(t)}
+                          className="text-xs text-text-muted hover:text-yale-blue font-semibold inline-flex items-center gap-1.5 bg-surface-container-low px-2.5 py-1.5 rounded-lg border border-divider-border cursor-pointer"
+                          title="Xem chi tiết & tiến trình giao dịch"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-functional-positive" />
+                          <span>Đã đối soát</span>
+                        </button>
                       ) : t.status === "PAID" ? (
                         isCreditor ? (
                           <button
@@ -417,7 +430,15 @@ export function TripSettlementTable({
                             <span>Nhận hộ</span>
                           </button>
                         ) : (
-                          <span className="text-xs text-text-muted italic">Chờ đối soát</span>
+                          <button
+                            type="button"
+                            onClick={() => onPayClick(t)}
+                            className="text-xs text-text-muted hover:text-yale-blue italic underline decoration-dotted inline-flex items-center gap-1 cursor-pointer"
+                            title="Xem chi tiết & tiến trình giao dịch"
+                          >
+                            <Clock className="w-3 h-3 text-ocean-mist" />
+                            <span>Chờ đối soát</span>
+                          </button>
                         )
                       ) : (
                         /* UNPAID */

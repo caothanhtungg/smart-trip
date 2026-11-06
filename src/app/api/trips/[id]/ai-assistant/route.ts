@@ -1,4 +1,5 @@
 import {
+  apiError,
   apiSuccess,
   handleApiError,
   parseJsonBody,
@@ -9,6 +10,10 @@ import { prisma } from '@/lib/db/prisma';
 import { AIAssistantRequestSchema } from '@/lib/validation/ai-assistant';
 import { generateTravelSuggestions } from '@/lib/ai/travel-assistant-service';
 import { AITripContext } from '@/lib/types/ai-assistant';
+import { checkPostgresRateLimit } from '@/lib/api/rate-limit';
+
+export const TRIP_AI_RATE_LIMIT = 30;
+export const TRIP_AI_RATE_LIMIT_WINDOW_SECONDS = 60;
 
 interface RouteContext {
   params: Promise<{ id: string }> | { id: string };
@@ -30,10 +35,28 @@ export async function POST(
       throw new NotFoundError('Không tìm thấy chuyến đi.');
     }
 
-    // Xác thực người dùng và quyền thành viên
-    const { trip } = await requireTripMembership(tripId);
+    // Xác thực người dùng và quyền thành viên trước khi dùng quota AI.
+    const { trip, user } = await requireTripMembership(tripId, { customHeaders: req.headers });
 
     const input = await parseJsonBody(req, AIAssistantRequestSchema);
+    const rateLimit = await checkPostgresRateLimit({
+      key: `ai:trip:user:${user.id}:trip:${tripId}`,
+      limit: TRIP_AI_RATE_LIMIT,
+      windowSeconds: TRIP_AI_RATE_LIMIT_WINDOW_SECONDS,
+    });
+    if (!rateLimit.allowed) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((rateLimit.resetAt.getTime() - Date.now()) / 1000));
+      return apiError("Bạn đã gửi quá nhiều câu hỏi AI cho chuyến đi này. Vui lòng thử lại sau.", {
+        status: 429,
+        code: "TOO_MANY_REQUESTS",
+        headers: {
+          "Retry-After": String(retryAfterSeconds),
+          "X-RateLimit-Limit": String(rateLimit.limit),
+          "X-RateLimit-Remaining": String(rateLimit.remaining),
+          "X-RateLimit-Reset": String(Math.ceil(rateLimit.resetAt.getTime() / 1000)),
+        },
+      });
+    }
 
     // Lấy số lượng thành viên trong chuyến đi
     const memberCount = await prisma.tripMember.count({

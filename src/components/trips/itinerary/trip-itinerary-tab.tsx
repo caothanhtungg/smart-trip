@@ -55,6 +55,18 @@ export function TripItineraryTab() {
   const [editingItem, setEditingItem] = React.useState<ItineraryItem | null>(null);
   const [deletingItem, setDeletingItem] = React.useState<ItineraryItem | null>(null);
 
+  // Auto-open modal if URL has ?add=1 or ?add=true
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("add") === "1" || params.get("add") === "true") {
+        queueMicrotask(() => {
+          setIsAddModalOpen(true);
+        });
+      }
+    }
+  }, []);
+
   const currentMember = sessionTrip.members.find((m) => m.id === currentMemberId);
   const isHost = currentMember?.role === "HOST" || !!currentMember?.isHost;
 

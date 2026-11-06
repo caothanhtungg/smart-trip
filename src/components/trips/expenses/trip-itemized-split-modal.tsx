@@ -819,7 +819,7 @@ export function TripItemizedSplitModal(props: TripItemizedSplitModalProps) {
   if (!props.isOpen) return null;
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-start justify-center p-3 sm:p-6"
+      className="fixed inset-0 z-[100] overflow-y-auto bg-black/60 backdrop-blur-sm flex items-start justify-center p-3 sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="itemized-split-title"

@@ -511,10 +511,8 @@ export function TripSessionProvider({
         if (activeTripIdRef.current === tripId) {
           setSessionClaims(claims);
         }
-      } catch (err) {
-        if (process.env.NODE_ENV !== "test") {
-          console.warn("[Claims] Không thể tải danh sách claims:", err);
-        }
+      } catch {
+        // UI giữ trạng thái claims hiện có; lỗi chi tiết đã được API chuẩn hóa.
       }
     },
     [isHost]
@@ -530,10 +528,8 @@ export function TripSessionProvider({
         if (isMounted && activeTripIdRef.current === initialTrip.id) {
           setSessionClaims(claims);
         }
-      } catch (err) {
-        if (process.env.NODE_ENV !== "test") {
-          console.warn("[Claims] Không thể tải danh sách claims:", err);
-        }
+      } catch {
+        // UI giữ trạng thái claims hiện có; lỗi chi tiết đã được API chuẩn hóa.
       }
     })();
 

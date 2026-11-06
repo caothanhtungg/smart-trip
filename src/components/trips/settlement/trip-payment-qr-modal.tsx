@@ -6,6 +6,7 @@ import {
   Banknote,
   Check,
   CheckCircle,
+  Clock,
   Copy,
   Download,
   Info,
@@ -22,6 +23,7 @@ import {
   type ApiTransferPaymentInfoDto,
 } from "@/lib/services/settlement-api";
 import { MOCK_MEMBER_BANK_INFO } from "@/lib/mock/settlement";
+import { TripTransferTimeline } from "./trip-transfer-timeline";
 
 interface TripPaymentQrModalProps {
   isOpen: boolean;
@@ -94,9 +96,10 @@ export function TripPaymentQrModal({
   // Determine if bank transfer is available
   const hasBankInfo = !!paymentInfo || (!tripId && !!(transfer && MOCK_MEMBER_BANK_INFO[transfer.toMemberId]));
 
-  const method: PaymentMethod = hasNoBank || !hasBankInfo
-    ? "CASH"
-    : userSelectedMethod ?? "BANK_TRANSFER";
+  const initialMethod: PaymentMethod = transfer?.paymentMethod || (hasNoBank || !hasBankInfo ? "CASH" : "BANK_TRANSFER");
+  const method: PaymentMethod = userSelectedMethod ?? initialMethod;
+
+
 
   // Fetch real payment info when modal opens
   React.useEffect(() => {
@@ -173,7 +176,7 @@ export function TripPaymentQrModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-yale-blue/45 backdrop-blur-[4px] animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-yale-blue/45 backdrop-blur-[4px] animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="payment-modal-title"
@@ -190,7 +193,7 @@ export function TripPaymentQrModal({
                 id="payment-modal-title"
                 className="font-headline-h2 text-headline-h2 text-yale-blue tracking-tight text-xl font-bold"
               >
-                {isProxy
+                {transfer.status === "COMPLETED" ? `Chi tiết giao dịch: ${fromName} ➔ ${toName}` : transfer.status === "PAID" ? `Chi tiết thanh toán cho ${toName}` : isProxy
                   ? `Trả hộ cho ${fromName}`
                   : `Thanh toán cho ${toName}`}
               </h2>
@@ -215,11 +218,10 @@ export function TripPaymentQrModal({
               type="button"
               disabled={hasNoBank || (!isLoadingPaymentInfo && !hasBankInfo)}
               onClick={() => setUserSelectedMethod("BANK_TRANSFER")}
-              className={`flex-1 py-2 px-4 rounded-full font-label-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                method === "BANK_TRANSFER"
+              className={`flex-1 py-2 px-4 rounded-full font-label-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${method === "BANK_TRANSFER"
                   ? "bg-cerulean text-white shadow-sm"
                   : "text-text-muted hover:text-yale-blue disabled:opacity-40 disabled:hover:text-text-muted disabled:cursor-not-allowed"
-              }`}
+                }`}
             >
               <QrCode className="w-4 h-4" />
               <span>Chuyển khoản VietQR</span>
@@ -227,11 +229,10 @@ export function TripPaymentQrModal({
             <button
               type="button"
               onClick={() => setUserSelectedMethod("CASH")}
-              className={`flex-1 py-2 px-4 rounded-full font-label-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                method === "CASH"
+              className={`flex-1 py-2 px-4 rounded-full font-label-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${method === "CASH"
                   ? "bg-cerulean text-white shadow-sm"
                   : "text-text-muted hover:text-yale-blue"
-              }`}
+                }`}
             >
               <Banknote className="w-4 h-4" />
               <span>Tiền mặt</span>
@@ -436,6 +437,40 @@ export function TripPaymentQrModal({
             </div>
           )}
 
+          {/* Tiến trình giao dịch & đối soát công nợ (Vertical Timeline Mini) */}
+          <div className="bg-bg-canvas border border-divider-border rounded-[18px] p-4 space-y-3 shadow-2xs">
+            <div className="flex items-center justify-between pb-2.5 border-b border-divider-border/60">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-lime-cream text-yale-blue">
+                  <Clock className="w-3.5 h-3.5 text-yale-blue" />
+                </span>
+                <h4 className="font-bold text-xs sm:text-sm text-yale-blue tracking-tight">
+                  Tiến trình giao dịch công nợ
+                </h4>
+              </div>
+              <span
+                className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs border ${transfer.status === "COMPLETED"
+                    ? "bg-lime-cream text-yale-blue border-emerald/30"
+                    : transfer.status === "PAID"
+                      ? "bg-ocean-mist/15 text-yale-blue border-ocean-mist/30"
+                      : "bg-functional-warning-bg text-functional-negative border-functional-warning/20"
+                  }`}
+              >
+                {transfer.status === "COMPLETED"
+                  ? "Đã hoàn tất"
+                  : transfer.status === "PAID"
+                    ? "Chờ người nhận đối soát"
+                    : "Chờ thanh toán"}
+              </span>
+            </div>
+
+            <TripTransferTimeline
+              transfer={transfer}
+              members={members}
+              selectedMethod={method}
+            />
+          </div>
+
           {/* Secure settlement disclaimer */}
           <div className="bg-functional-positive/10 border border-functional-positive/20 rounded-[12px] p-3 text-xs text-yale-blue flex items-start gap-2.5">
             <ShieldCheck className="w-4 h-4 text-functional-positive shrink-0 mt-0.5" />
@@ -465,16 +500,36 @@ export function TripPaymentQrModal({
             >
               Đóng
             </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="px-5 py-2.5 bg-cerulean hover:bg-baltic-blue active:scale-[0.98] text-white font-label-semibold text-xs rounded-xl shadow-sm flex items-center gap-2 transition-all cursor-pointer"
-            >
-              <CheckCircle className="w-4 h-4" />
-              <span>
-                {isProxy ? "Xác nhận đã trả hộ" : "Tôi đã thanh toán"}
-              </span>
-            </button>
+            {transfer.status === "COMPLETED" ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 bg-lime-cream text-yale-blue border border-emerald/30 font-label-semibold text-xs rounded-xl shadow-2xs flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <CheckCircle className="w-4 h-4 text-functional-positive" />
+                <span>Đã tất toán xong</span>
+              </button>
+            ) : transfer.status === "PAID" && !isProxy ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 bg-ocean-mist/20 text-yale-blue border border-ocean-mist/30 font-label-semibold text-xs rounded-xl shadow-2xs flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <Clock className="w-4 h-4 text-ocean-mist" />
+                <span>Đang chờ đối soát</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className="px-5 py-2.5 bg-cerulean hover:bg-baltic-blue active:scale-[0.98] text-white font-label-semibold text-xs rounded-xl shadow-sm flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>
+                  {isProxy ? "Xác nhận đã trả hộ" : "Tôi đã thanh toán"}
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </div>

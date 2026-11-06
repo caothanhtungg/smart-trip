@@ -2,17 +2,37 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { motion, type Variants } from "motion/react";
 import {
-  ChevronRight,
-  Home,
   Shield,
   Smartphone,
   Lock,
+  ArrowLeft,
 } from "lucide-react";
 import { ProfileSidebar } from "./profile-sidebar";
 import { ProfilePersonalSection } from "./profile-personal-section";
 import { ProfileBankSection } from "./profile-bank-section";
 import { useToast } from "@/components/ui/toast";
+
+const profileContainerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const profileItemVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as const },
+  },
+};
 
 export function ProfileView() {
   const { toast } = useToast();
@@ -31,34 +51,31 @@ export function ProfileView() {
   };
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-10">
-      {/* Page Header & Breadcrumb */}
-      <div className="flex flex-col gap-2 mb-8">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-1.5 text-text-muted text-xs sm:text-sm font-medium"
+    <motion.div
+      variants={profileContainerVariants}
+      initial="hidden"
+      animate="visible"
+      className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-10"
+    >
+      {/* Top Back Navigation to Trips */}
+      <motion.div variants={profileItemVariants} className="mb-4">
+        <Link
+          href="/trips"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-text-muted hover:text-cerulean transition-colors group"
         >
-          <Link
-            href="/trips"
-            className="hover:text-cerulean transition-colors flex items-center gap-1"
-          >
-            <Home className="w-4 h-4" />
-            <span>Trang chủ</span>
-          </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-text-muted/60" />
-          <span className="hover:text-cerulean transition-colors cursor-pointer">
-            Cài đặt tài khoản
-          </span>
-          <ChevronRight className="w-3.5 h-3.5 text-text-muted/60" />
-          <span className="text-yale-blue font-bold">Hồ sơ của tôi</span>
-        </nav>
+          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+          <span>Quay lại Chuyến đi của tôi</span>
+        </Link>
+      </motion.div>
 
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pt-2">
+      {/* Page Header */}
+      <motion.div variants={profileItemVariants} className="flex flex-col gap-2 mb-6 sm:mb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-yale-blue tracking-tight">
               Hồ sơ của tôi
             </h1>
-            <p className="text-sm text-text-muted mt-1 leading-relaxed">
+            <p className="text-xs sm:text-sm text-text-muted mt-1 leading-relaxed">
               Quản lý thông tin cá nhân và phương thức nhận tiền chia sẻ chi phí trong các chuyến đi
             </p>
           </div>
@@ -67,11 +84,11 @@ export function ProfileView() {
           <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 bg-surface-card rounded-full border border-divider-border shadow-xs self-start md:self-auto">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald animate-pulse" />
             <span className="text-xs font-semibold text-yale-blue">
-              Ví chuyến đi: Đã đồng bộ VietQR
+              Tài khoản nhận tiền: Đã đồng bộ VietQR
             </span>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* 12-Column Responsive Workspace Layout */}
       <div className="grid grid-cols-12 gap-6 lg:gap-8 items-start">
@@ -82,15 +99,20 @@ export function ProfileView() {
         />
 
         {/* RIGHT MAIN CONTENT (9 columns) */}
-        <div className="col-span-12 lg:col-span-9 flex flex-col gap-8">
+        <div className="col-span-12 lg:col-span-9 flex flex-col gap-6 sm:gap-8">
           {/* SECTION 1: Personal Information */}
-          <ProfilePersonalSection />
+          <motion.div variants={profileItemVariants}>
+            <ProfilePersonalSection />
+          </motion.div>
 
           {/* SECTION 2: Receiving Bank Account & VietQR */}
-          <ProfileBankSection />
+          <motion.div variants={profileItemVariants}>
+            <ProfileBankSection />
+          </motion.div>
 
           {/* SECTION 3: Notification & Security Quick Overview */}
-          <section
+          <motion.section
+            variants={profileItemVariants}
             className="bg-surface-card rounded-[20px] p-6 sm:p-8 shadow-[0_4px_16px_rgba(24,78,119,0.06)] border border-divider-border flex flex-col gap-6"
             id="thong-bao-bao-mat"
           >
@@ -173,9 +195,9 @@ export function ProfileView() {
                 </button>
               </div>
             </div>
-          </section>
+          </motion.section>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

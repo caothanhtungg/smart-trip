@@ -6,7 +6,6 @@ import {
   Navigation,
   MapPin,
   Loader2,
-  Calendar,
   Fuel,
   Wrench,
   Clock,
@@ -223,7 +222,7 @@ export function TripLiveMapWidget({ trip, itineraryItems = [] }: TripLiveMapWidg
       )}
 
       {/* Map View */}
-      <div className="relative w-full rounded-2xl overflow-hidden border border-border-hairline shadow-xs">
+      <div className="relative isolate z-0 w-full rounded-2xl overflow-hidden border border-border-hairline shadow-xs">
         <InteractiveMap
           points={mapPoints}
           center={defaultCenter}

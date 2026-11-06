@@ -29,38 +29,28 @@ export function WeatherBadge({
   warningMessage: propWarningMessage,
   className = '',
 }: WeatherBadgeProps) {
-  const [weather, setWeather] = useState<WeatherInfo | null>(() => {
-    if (propTempC !== undefined || propLabelVi) {
-      return {
-        tempC: propTempC ?? 25,
-        condition: propCondition,
-        labelVi: propLabelVi || 'Trời nhiều mây',
-        rainProb: 0,
-        isOutdoorWarning: propOutdoorWarning,
-        warningMessage: propWarningMessage,
-      };
-    }
-    return null;
-  });
+  const propDerivedWeather: WeatherInfo | null = (propTempC !== undefined || propLabelVi) ? {
+    tempC: propTempC ?? 25,
+    condition: propCondition,
+    labelVi: propLabelVi || 'Trời nhiều mây',
+    rainProb: 0,
+    isOutdoorWarning: propOutdoorWarning,
+    warningMessage: propWarningMessage,
+  } : null;
+
+  const cacheKey = (lat != null && lng != null && dateStr)
+    ? `${lat.toFixed(3)},${lng.toFixed(3)}_${dateStr.slice(0, 10)}`
+    : null;
+  const cachedWeather = cacheKey ? (weatherCache.get(cacheKey) ?? null) : null;
+
+  const [asyncWeather, setAsyncWeather] = useState<WeatherInfo | null>(null);
+  const weather = propDerivedWeather ?? cachedWeather ?? asyncWeather;
 
   useEffect(() => {
-    if (propTempC !== undefined || propLabelVi) {
-      setWeather({
-        tempC: propTempC ?? 25,
-        condition: propCondition,
-        labelVi: propLabelVi || 'Trời nhiều mây',
-        rainProb: 0,
-        isOutdoorWarning: propOutdoorWarning,
-        warningMessage: propWarningMessage,
-      });
-      return;
-    }
+    if (propTempC !== undefined || propLabelVi) return;
+    if (lat == null || lng == null || !dateStr || !cacheKey) return;
 
-    if (lat == null || lng == null || !dateStr) return;
-
-    const cacheKey = `${lat.toFixed(3)},${lng.toFixed(3)}_${dateStr.slice(0, 10)}`;
     if (weatherCache.has(cacheKey)) {
-      setWeather(weatherCache.get(cacheKey)!);
       return;
     }
 
@@ -69,17 +59,17 @@ export function WeatherBadge({
       .then((data) => {
         if (isMounted && data) {
           weatherCache.set(cacheKey, data);
-          setWeather(data);
+          setAsyncWeather(data);
         }
       })
       .catch(() => {
-        // Im silent on error
+        // Fallback silently if offline or network error
       });
 
     return () => {
       isMounted = false;
     };
-  }, [lat, lng, dateStr, propTempC, propCondition, propLabelVi, propOutdoorWarning, propWarningMessage]);
+  }, [lat, lng, dateStr, cacheKey, propTempC, propLabelVi]);
 
   if (!weather) {
     return null;

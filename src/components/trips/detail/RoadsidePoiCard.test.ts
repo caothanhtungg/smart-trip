@@ -34,11 +34,11 @@ describe('RoadsidePoiCard Component Logic', () => {
 
   it('dispatches smart-trip:focus-map custom event on window', () => {
     const dispatchMock = vi.fn();
-    (globalThis as any).window = {
+    const globalContext = globalThis as unknown as { window?: { dispatchEvent: (evt: unknown) => boolean } };
+    globalContext.window = {
       dispatchEvent: dispatchMock,
     };
-
-    (globalThis as any).window.dispatchEvent({
+    globalContext.window.dispatchEvent({
       type: 'smart-trip:focus-map',
       detail: {
         latitude: mockGasPoi.latitude,

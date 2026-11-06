@@ -17,6 +17,7 @@ export interface UserProfile {
 export interface UpdateProfileFormData {
   fullName: string;
   displayName: string;
+  avatarUrl?: string | null;
 }
 
 export interface UpdateBankFormData {

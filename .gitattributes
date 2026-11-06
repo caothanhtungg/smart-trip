@@ -1,0 +1,30 @@
+# Normalize text files to LF in the repository and on checkout across platforms.
+* text=auto eol=lf
+
+# Keep source, configuration, and documentation files explicitly textual.
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Do not apply text normalization to binary assets.
+*.png -text
+*.jpg -text
+*.jpeg -text
+*.gif -text
+*.webp -text
+*.avif -text
+*.ico -text
+*.mp4 -text
+*.webm -text
+*.pdf -text
+*.woff -text
+*.woff2 -text

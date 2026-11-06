@@ -78,7 +78,7 @@ export function TripDebtReminderModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-yale-blue/45 backdrop-blur-[4px] animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-yale-blue/45 backdrop-blur-[4px] animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="reminder-modal-title"
@@ -146,11 +146,10 @@ export function TripDebtReminderModal({
                   setTone("POLITE");
                   setCustomMessage(null);
                 }}
-                className={`text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${
-                  tone === "POLITE"
-                    ? "border-cerulean bg-surface-container-low shadow-xs ring-1 ring-cerulean"
-                    : "border-divider-border bg-surface-card hover:bg-hover-row"
-                }`}
+                className={`text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${tone === "POLITE"
+                  ? "border-cerulean bg-surface-container-low shadow-xs ring-1 ring-cerulean"
+                  : "border-divider-border bg-surface-card hover:bg-hover-row"
+                  }`}
               >
                 <div className="flex items-center justify-between w-full mb-1">
                   <span className="text-xl">🤝</span>
@@ -175,11 +174,10 @@ export function TripDebtReminderModal({
                   setTone("CASUAL");
                   setCustomMessage(null);
                 }}
-                className={`text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${
-                  tone === "CASUAL"
-                    ? "border-cerulean bg-surface-container-low shadow-xs ring-1 ring-cerulean"
-                    : "border-divider-border bg-surface-card hover:bg-hover-row"
-                }`}
+                className={`text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${tone === "CASUAL"
+                  ? "border-cerulean bg-surface-container-low shadow-xs ring-1 ring-cerulean"
+                  : "border-divider-border bg-surface-card hover:bg-hover-row"
+                  }`}
               >
                 <div className="flex items-center justify-between w-full mb-1">
                   <span className="text-xl">🥳</span>
@@ -204,11 +202,10 @@ export function TripDebtReminderModal({
                   setTone("SHORT_QR");
                   setCustomMessage(null);
                 }}
-                className={`text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${
-                  tone === "SHORT_QR"
-                    ? "border-cerulean bg-surface-container-low shadow-xs ring-1 ring-cerulean"
-                    : "border-divider-border bg-surface-card hover:bg-hover-row"
-                }`}
+                className={`text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${tone === "SHORT_QR"
+                  ? "border-cerulean bg-surface-container-low shadow-xs ring-1 ring-cerulean"
+                  : "border-divider-border bg-surface-card hover:bg-hover-row"
+                  }`}
               >
                 <div className="flex items-center justify-between w-full mb-1">
                   <span className="text-xl">⚡</span>
@@ -241,8 +238,8 @@ export function TripDebtReminderModal({
                 {tone === "POLITE"
                   ? "Phong cách: Lịch sự"
                   : tone === "CASUAL"
-                  ? "Phong cách: Vui vẻ"
-                  : "Phong cách: Súc tích"}
+                    ? "Phong cách: Vui vẻ"
+                    : "Phong cách: Súc tích"}
               </span>
             </div>
 

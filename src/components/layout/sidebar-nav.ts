@@ -6,33 +6,49 @@ export interface SidebarNavItem {
   badge?: string;
 }
 
-export const SIDEBAR_NAV_ITEMS: readonly SidebarNavItem[] = [
+export interface SidebarNavGroup {
+  id: string;
+  title?: string;
+  items: readonly SidebarNavItem[];
+}
+
+export const SIDEBAR_NAV_GROUPS: readonly SidebarNavGroup[] = [
   {
-    id: "discovery",
-    label: "Khám phá & Bản đồ",
-    href: "/trips?view=discovery",
-    iconName: "Compass",
-    badge: "Hot",
+    id: "planning",
+    title: "KẾ HOẠCH & CHUYẾN ĐI",
+    items: [
+      {
+        id: "discovery",
+        label: "Khám phá & Bản đồ",
+        href: "/trips?view=discovery",
+        iconName: "Compass",
+        badge: "Hot",
+      },
+      {
+        id: "trips",
+        label: "Chuyến đi của tôi",
+        href: "/trips",
+        iconName: "Briefcase",
+      },
+    ],
   },
   {
-    id: "trips",
-    label: "Chuyến đi của tôi",
-    href: "/trips",
-    iconName: "Briefcase",
-  },
-  {
-    id: "profile",
-    label: "Hồ sơ cá nhân",
-    href: "/profile",
-    iconName: "User",
-  },
-  {
-    id: "guides",
-    label: "Cẩm nang du lịch",
-    href: "/guides",
-    iconName: "BookOpen",
+    id: "resources",
+    title: "CẨM NANG KHÁM PHÁ",
+    items: [
+      {
+        id: "guides",
+        label: "Cẩm nang du lịch",
+        href: "/guides",
+        iconName: "BookOpen",
+      },
+    ],
   },
 ] as const;
+
+export const SIDEBAR_NAV_ITEMS: readonly SidebarNavItem[] = SIDEBAR_NAV_GROUPS.flatMap(
+  (group) => group.items
+);
 
 /**
  * Determines whether a given sidebar navigation item should be marked active.
@@ -85,4 +101,3 @@ export function getSidebarFeaturePrompt(): {
     actionLabel: "Khám phá ngay",
   };
 }
-

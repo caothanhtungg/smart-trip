@@ -53,11 +53,11 @@ export function parseGeminiResponse(rawText: string): AIAssistantResponse | null
     }
 
     const suggestions: AISuggestionItem[] = Array.isArray(parsed.suggestions)
-      ? parsed.suggestions.map((item: any, index: number) => ({
+      ? parsed.suggestions.map((item: Record<string, unknown>, index: number) => ({
           id: String(item.id || `sugg-${Date.now()}-${index}`),
           name: String(item.name || 'Địa điểm đề xuất'),
-          category: ['homestay', 'transport', 'food', 'attraction', 'other'].includes(item.category)
-            ? item.category
+          category: typeof item.category === 'string' && ['homestay', 'transport', 'food', 'attraction', 'other'].includes(item.category)
+            ? (item.category as AISuggestionItem['category'])
             : 'other',
           description: String(item.description || ''),
           estimatedCostMin: typeof item.estimatedCostMin === 'number' ? item.estimatedCostMin : undefined,
@@ -126,7 +126,6 @@ export async function generateTravelSuggestions(
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      console.warn(`[AI Assistant] Gemini API error status ${res.status}, falling back to local engine.`);
       return queryLocalTravelEngine(query, tripContext);
     }
 
@@ -139,8 +138,7 @@ export async function generateTravelSuggestions(
 
     const parsed = parseGeminiResponse(candidateText);
     return parsed || queryLocalTravelEngine(query, tripContext);
-  } catch (error) {
-    console.warn('[AI Assistant] Gemini request failed or timed out, falling back to local engine:', error);
+  } catch {
     return queryLocalTravelEngine(query, tripContext);
   }
 }

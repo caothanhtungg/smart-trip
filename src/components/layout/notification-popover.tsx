@@ -58,17 +58,17 @@ export function NotificationPopover({ isOpen, onClose }: NotificationPopoverProp
   return (
     <div
       ref={popoverRef}
-      className="absolute right-0 top-12 w-[360px] sm:w-[400px] bg-surface-card rounded-2xl border border-divider-border shadow-[0_12px_36px_rgba(24,78,119,0.18)] z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+      className="absolute right-0 top-12 w-[340px] sm:w-[380px] bg-white dark:bg-[#1C2541] rounded-2xl border border-divider-border dark:border-[#2D3A54] shadow-[0_12px_36px_rgba(24,78,119,0.18)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.5)] z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
       role="dialog"
       aria-label="Thông báo hệ thống"
     >
       {/* Header */}
-      <div className="px-4 py-3.5 border-b border-divider-border/80 flex items-center justify-between bg-surface-card">
+      <div className="px-4 py-3.5 border-b border-divider-border/80 dark:border-[#2D3A54] flex items-center justify-between bg-white dark:bg-[#1C2541]">
         <div className="flex items-center gap-2">
-          <Bell className="w-5 h-5 text-cerulean" />
-          <h3 className="font-title-md text-title-md text-yale-blue">Thông báo</h3>
+          <Bell className="w-5 h-5 text-cerulean dark:text-sky-400" />
+          <h3 className="font-bold text-sm sm:text-base text-yale-blue dark:text-white">Thông báo</h3>
           {unreadNotificationCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-cerulean text-on-primary text-xs font-semibold">
+            <span className="px-2 py-0.5 rounded-full bg-cerulean dark:bg-sky-500 text-white text-xs font-semibold">
               {unreadNotificationCount} mới
             </span>
           )}
@@ -78,7 +78,7 @@ export function NotificationPopover({ isOpen, onClose }: NotificationPopoverProp
             <button
               type="button"
               onClick={markAllNotificationsAsRead}
-              className="text-xs font-medium text-cerulean hover:text-baltic-blue px-2 py-1 rounded-lg hover:bg-hover-row transition-colors flex items-center gap-1 cursor-pointer"
+              className="text-xs font-medium text-cerulean dark:text-sky-400 hover:text-baltic-blue px-2 py-1 rounded-lg hover:bg-hover-row dark:hover:bg-[#243050] transition-colors flex items-center gap-1 cursor-pointer"
               title="Đánh dấu tất cả đã đọc"
             >
               <CheckCheck className="w-3.5 h-3.5" />
@@ -88,7 +88,7 @@ export function NotificationPopover({ isOpen, onClose }: NotificationPopoverProp
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-yale-blue hover:bg-hover-row transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-yale-blue dark:hover:text-white hover:bg-hover-row dark:hover:bg-[#243050] transition-colors cursor-pointer"
             aria-label="Đóng"
           >
             <X className="w-4 h-4" />
@@ -96,20 +96,19 @@ export function NotificationPopover({ isOpen, onClose }: NotificationPopoverProp
         </div>
       </div>
 
-      {/* Demo notice banner */}
-      <div className="px-4 py-2 bg-functional-warning-bg/60 border-b border-divider-border/60 flex items-start gap-2">
-        <Info className="w-4 h-4 text-functional-warning shrink-0 mt-0.5" />
-        <p className="text-[11px] text-yale-blue leading-tight">
-          <strong>Dữ liệu thông báo mô phỏng (Demo Release 1):</strong> Không phải thông báo
-          thời gian thực từ máy chủ. Cập nhật trạng thái tức thì trong phiên làm việc.
-        </p>
-      </div>
-
-      {/* Notification list */}
-      <div className="max-h-[360px] overflow-y-auto divide-y divide-divider-border/50">
+      {/* Notification list or Empty State */}
+      <div className="max-h-[360px] overflow-y-auto divide-y divide-divider-border/50 dark:divide-[#2D3A54]">
         {notifications.length === 0 ? (
-          <div className="py-8 text-center text-text-muted text-sm">
-            Bạn không có thông báo nào
+          <div className="py-10 px-6 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-2xl bg-hover-row dark:bg-[#243050] flex items-center justify-center text-text-muted dark:text-slate-400 mb-3">
+              <Bell className="w-6 h-6 text-text-muted dark:text-slate-400 stroke-[1.8]" />
+            </div>
+            <h4 className="text-sm font-bold text-yale-blue dark:text-white mb-1">
+              Chưa có thông báo nào
+            </h4>
+            <p className="text-xs text-text-muted dark:text-slate-400 max-w-[240px] leading-relaxed">
+              Bạn sẽ nhận được thông báo khi có khoản chi mới hoặc nhắc nợ trong chuyến đi.
+            </p>
           </div>
         ) : (
           notifications.map((item) => {
@@ -118,17 +117,19 @@ export function NotificationPopover({ isOpen, onClose }: NotificationPopoverProp
               <div
                 key={item.id}
                 className={`p-3.5 transition-colors flex items-start gap-3 relative ${
-                  isUnread ? "bg-hover-row/60" : "hover:bg-hover-row/30"
+                  isUnread
+                    ? "bg-hover-row/60 dark:bg-[#243050]/60"
+                    : "hover:bg-hover-row/30 dark:hover:bg-[#243050]/30"
                 }`}
               >
                 {/* Icon based on type */}
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                     item.type === "CLAIM"
-                      ? "bg-cerulean/15 text-cerulean"
+                      ? "bg-cerulean/15 text-cerulean dark:text-sky-400"
                       : item.type === "PAYMENT"
-                      ? "bg-functional-warning-bg text-functional-warning"
-                      : "bg-emerald/20 text-functional-positive"
+                      ? "bg-functional-warning-bg text-functional-warning dark:bg-amber-500/15 dark:text-amber-400"
+                      : "bg-emerald/20 text-functional-positive dark:text-emerald-400"
                   }`}
                 >
                   {item.type === "CLAIM" && <UserCheck className="w-4 h-4" />}
@@ -140,18 +141,18 @@ export function NotificationPopover({ isOpen, onClose }: NotificationPopoverProp
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1 mb-0.5">
-                    <h4 className="text-xs font-semibold text-yale-blue truncate">
+                    <h4 className="text-xs font-semibold text-yale-blue dark:text-white truncate">
                       {item.title}
                     </h4>
                     {isUnread && (
-                      <span className="w-2 h-2 rounded-full bg-cerulean shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-cerulean dark:bg-sky-400 shrink-0" />
                     )}
                   </div>
-                  <p className="text-xs text-text-muted line-clamp-2 leading-relaxed mb-1.5">
+                  <p className="text-xs text-text-muted dark:text-slate-300 line-clamp-2 leading-relaxed mb-1.5">
                     {item.description}
                   </p>
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-text-muted/80 flex items-center gap-1">
+                    <span className="text-text-muted/80 dark:text-slate-400 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {item.timestamp}
                     </span>
@@ -160,7 +161,7 @@ export function NotificationPopover({ isOpen, onClose }: NotificationPopoverProp
                         <button
                           type="button"
                           onClick={() => markNotificationAsRead(item.id)}
-                          className="text-[11px] text-text-muted hover:text-cerulean cursor-pointer"
+                          className="text-[11px] text-text-muted dark:text-slate-400 hover:text-cerulean dark:hover:text-sky-400 cursor-pointer"
                         >
                           Đánh dấu đã đọc
                         </button>
@@ -172,7 +173,7 @@ export function NotificationPopover({ isOpen, onClose }: NotificationPopoverProp
                             markNotificationAsRead(item.id);
                             onClose();
                           }}
-                          className="text-[11px] font-medium text-cerulean hover:underline cursor-pointer"
+                          className="text-[11px] font-medium text-cerulean dark:text-sky-400 hover:underline cursor-pointer"
                         >
                           Xem chi tiết →
                         </Link>
@@ -187,9 +188,9 @@ export function NotificationPopover({ isOpen, onClose }: NotificationPopoverProp
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2.5 bg-surface-container-low border-t border-divider-border/80 text-center">
-        <span className="text-[11px] text-text-muted">
-          Smart Trip Release 1 • Trung tâm thông báo
+      <div className="px-4 py-2.5 bg-hover-row/40 dark:bg-[#131B2E] border-t border-divider-border/80 dark:border-[#2D3A54] text-center">
+        <span className="text-[11px] text-text-muted dark:text-slate-400">
+          Trung tâm thông báo
         </span>
       </div>
     </div>

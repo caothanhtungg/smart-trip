@@ -2,23 +2,24 @@
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { motion, type Variants } from "motion/react";
+import { spring } from "@animate-ui/react/utils/motion";
 import {
-  Compass,
   MapPin,
   Map as MapIcon,
   List,
-  Sparkles,
   CloudSun,
   Plus,
-  ArrowRight,
   Maximize2,
-  Calendar,
-  Users,
+  Star,
 } from "lucide-react";
 import {
   POPULAR_DISCOVERY_DESTINATIONS,
   DiscoveryDestination,
 } from "@/lib/geo/destination-photos";
+import {
+  getDestinationRatingSummary,
+} from "@/lib/reviews/destination-review-service";
 import {
   DISCOVERY_CATEGORY_TABS,
   DiscoveryCategory,
@@ -26,20 +27,31 @@ import {
 } from "./discovery-model";
 import { DiscoveryMap } from "./DiscoveryMap";
 import { DestinationGalleryModal } from "@/components/itinerary/DestinationGalleryModal";
-import { TripCardView } from "@/types/trip";
-import { formatVnd } from "@/lib/money/format";
-
 interface DiscoverySplitViewProps {
-  trips?: TripCardView[];
-  onCreateTrip?: () => void;
   userLocation?: [number, number] | null;
 }
 
-export function DiscoverySplitView({
-  trips = [],
-  onCreateTrip,
-  userLocation,
-}: DiscoverySplitViewProps) {
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.06,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as const },
+  },
+};
+
+export function DiscoverySplitView({ userLocation }: DiscoverySplitViewProps) {
   const router = useRouter();
 
   // Active Category Filter
@@ -102,13 +114,19 @@ export function DiscoverySplitView({
         {/* Main Split-View Layout */}
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Pane: Content, Filters & Horizontal Destination Cards */}
-          <div
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
             className={`lg:col-span-6 xl:col-span-5 flex flex-col gap-6 ${
               mobileTab === "map" ? "hidden lg:flex" : "flex"
             }`}
           >
             {/* Realtime Weather & Destination Recommendation Hero Card */}
-            <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-[#184E77] via-[#1A759F] to-[#1E6091] text-white shadow-md relative overflow-hidden">
+            <motion.div
+              variants={itemVariants}
+              className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-[#184E77] via-[#1A759F] to-[#1E6091] text-white shadow-md relative overflow-hidden"
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-white/20 text-[#D9ED92] backdrop-blur-xs">
                   <CloudSun className="w-3.5 h-3.5" />
@@ -122,52 +140,68 @@ export function DiscoverySplitView({
                 Thời tiết lý tưởng cho các hành trình trải nghiệm
               </h3>
               <p className="text-xs text-white/85 leading-relaxed mt-1">
-                Các điểm đến Đà Nẵng, Phú Quốc, Ninh Bình đang có nắng nhẹ,
-                thuận lợi cho chụp ảnh và hoạt động ngoài trời.
+                Các điểm đến Tràng An – Tam Cốc, Phong Nha – Kẻ Bàng, Vịnh Hạ Long, Sa Pa, Cao nguyên đá Hà Giang, Thánh địa Mỹ Sơn, Cố đô Huế, Chùa Thiên Mụ, Phố cổ Hội An, Cát Bà – Vịnh Lan Hạ, Thác Bản Giốc, Đảo Ngọc Phú Quốc, Đà Lạt ngàn hoa, Quần đảo Côn Đảo, Mũi Né – Phan Thiết, Mai Châu bản Thái, Núi Bà Đen Tây Ninh, Bà Nà Hills Đà Nẵng, Tam Đảo Vĩnh Phúc, VQG Ba Vì Hà Nội, Núi Hàm Lợn Sóc Sơn, Bãi biển Sầm Sơn Thanh Hóa, Chùa Tam Chúc Hà Nam, Làng gốm Bát Tràng Hà Nội, Eo Gió Quy Nhơn, Vịnh Nha Trang đang có nắng đẹp,
+                thuận lợi cho chèo kayak, ngắm vịnh và hoạt động ngoài trời.
               </p>
-            </div>
+            </motion.div>
 
             {/* Category Filter Pills (Dream Destini Style) */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            <motion.div
+              variants={itemVariants}
+              className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
               {DISCOVERY_CATEGORY_TABS.map((tab) => {
                 const isActive = activeCategory === tab.key;
                 return (
-                  <button
+                  <motion.button
                     key={tab.key}
                     type="button"
                     onClick={() => setActiveCategory(tab.key)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    whileHover={{ scale: 1.05, y: -1 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={spring.press}
+                    className={`relative px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer select-none ${
                       isActive
-                        ? "bg-[#E05833] text-white shadow-xs"
-                        : "bg-white text-text-body border border-[#E9ECEF] hover:bg-hover-row hover:border-[#184E77]/20"
+                        ? "text-white shadow-xs"
+                        : "bg-white dark:bg-[#1E293B] text-text-body dark:text-slate-200 border border-[#E9ECEF] dark:border-[#2D3A54] hover:bg-hover-row dark:hover:bg-[#28354E] hover:border-[#E05833]/40 hover:text-[#E05833] dark:hover:text-[#F38A6B]"
                     }`}
                   >
-                    {tab.label}
-                  </button>
+                    {isActive && (
+                      <motion.div
+                        layoutId="discovery-category-pill"
+                        className="absolute inset-0 bg-[#E05833] rounded-full shadow-xs"
+                        transition={spring.selection}
+                      />
+                    )}
+                    <span className="relative z-10">{tab.label}</span>
+                  </motion.button>
                 );
               })}
-            </div>
+            </motion.div>
 
             {/* Destination Horizontal Cards List */}
             <div className="flex flex-col gap-3.5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-yale-blue uppercase tracking-wider">
+              <motion.div variants={itemVariants} className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-yale-blue dark:text-slate-100 uppercase tracking-wider">
                   Địa danh đề xuất ({filteredDestinations.length})
                 </h3>
-                <span className="text-xs text-text-muted">
+                <span className="text-xs text-text-muted dark:text-slate-400">
                   Nhấn vào ảnh để xem bộ sưu tập
                 </span>
-              </div>
+              </motion.div>
 
               {filteredDestinations.map((destination) => {
                 const isSelected = selectedDestination?.id === destination.id;
                 return (
-                  <div
+                  <motion.div
                     key={destination.id}
+                    variants={itemVariants}
+                    whileHover={{ y: -2, transition: { duration: 0.2 } }}
                     className={`group bg-white rounded-2xl p-3 sm:p-3.5 border transition-all duration-200 flex flex-col sm:flex-row gap-3.5 ${
                       isSelected
-                        ? "border-[#E05833] shadow-md ring-2 ring-[#E05833]/15"
-                        : "border-[#E9ECEF] hover:border-[#E05833]/40 hover:shadow-sm"
+                        ? "border-[#E05833] shadow-md ring-2 ring-[#E05833]/15 bg-white dark:bg-[#1E293B]"
+                        : "border-[#E9ECEF] dark:border-[#2D3A54] hover:border-[#E05833]/40 hover:shadow-sm bg-white dark:bg-[#1E293B]"
                     }`}
                   >
                     {/* Left: Thumbnail with Quick Zoom */}
@@ -194,25 +228,38 @@ export function DiscoverySplitView({
                     {/* Right: Content & Quick Actions */}
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
                       <div>
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h4
-                              onClick={() => setSelectedDestination(destination)}
-                              className="font-bold text-sm sm:text-base text-yale-blue group-hover:text-[#E05833] transition-colors cursor-pointer truncate"
-                            >
-                              {destination.name}
-                            </h4>
-                            <p className="text-xs text-text-muted flex items-center gap-1 mt-0.5">
-                              <MapPin className="w-3 h-3 text-[#1A759F]" />
-                              <span>{destination.province}</span>
-                            </p>
-                          </div>
-                          <span className="text-xs font-semibold text-[#184E77] whitespace-nowrap">
+                        {/* Title & Rating */}
+                        <div className="flex items-center justify-between gap-2">
+                          <h4
+                            onClick={() => setSelectedDestination(destination)}
+                            className="font-bold text-sm sm:text-base text-yale-blue dark:text-white group-hover:text-[#E05833] dark:group-hover:text-[#E05833] transition-colors cursor-pointer truncate"
+                          >
+                            {destination.name}
+                          </h4>
+                          {(() => {
+                            const rating = getDestinationRatingSummary(destination.id || destination.name);
+                            return rating.totalReviews > 0 ? (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 shrink-0">
+                                <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-500" />
+                                {rating.averageRating}
+                                <span className="text-amber-600/80 font-normal">({rating.totalReviews})</span>
+                              </span>
+                            ) : null;
+                          })()}
+                        </div>
+
+                        {/* Location & Estimated Budget Meta Row */}
+                        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 mt-1">
+                          <p className="text-xs text-text-muted dark:text-slate-400 flex items-center gap-1 min-w-0">
+                            <MapPin className="w-3 h-3 text-[#1A759F] shrink-0" />
+                            <span className="truncate">{destination.province}</span>
+                          </p>
+                          <span className="inline-flex items-center text-[11px] font-semibold text-[#184E77] dark:text-sky-300 bg-hover-row/80 dark:bg-[#131B2E] px-2 py-0.5 rounded-md max-w-full truncate">
                             {destination.estimatedBudget}
                           </span>
                         </div>
 
-                        <p className="text-xs text-text-body line-clamp-2 mt-1.5 leading-relaxed">
+                        <p className="text-xs text-text-body dark:text-slate-300 line-clamp-2 mt-1.5 leading-relaxed">
                           {destination.description}
                         </p>
 
@@ -220,7 +267,7 @@ export function DiscoverySplitView({
                           {destination.photo.tags.slice(0, 3).map((tag) => (
                             <span
                               key={tag}
-                              className="px-1.5 py-0.5 rounded text-[10px] bg-[#F1F3F5] text-text-muted"
+                              className="px-1.5 py-0.5 rounded text-[10px] bg-[#F1F3F5] dark:bg-[#131B2E] text-text-muted dark:text-slate-400"
                             >
                               #{tag}
                             </span>
@@ -229,14 +276,14 @@ export function DiscoverySplitView({
                       </div>
 
                       {/* Action buttons */}
-                      <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-[#E9ECEF]">
+                      <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-[#E9ECEF] dark:border-[#2D3A54]">
                         <button
                           type="button"
                           onClick={() => {
                             setSelectedDestination(destination);
                             setMobileTab("map");
                           }}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#1A759F] hover:text-[#184E77] transition-colors"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#1A759F] dark:text-sky-400 hover:text-[#184E77] dark:hover:text-sky-300 transition-colors"
                         >
                           <MapIcon className="w-3.5 h-3.5" />
                           <span>Xem trên bản đồ</span>
@@ -252,61 +299,17 @@ export function DiscoverySplitView({
                         </button>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
-
-            {/* My Existing Trips Section (if any) */}
-            {trips.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-[#E9ECEF] flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-yale-blue uppercase tracking-wider">
-                    Chuyến đi của bạn ({trips.length})
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/trips")}
-                    className="text-xs font-semibold text-[#1A759F] hover:text-[#184E77] flex items-center gap-1"
-                  >
-                    <span>Xem tất cả</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {trips.slice(0, 4).map((trip) => (
-                    <div
-                      key={trip.id}
-                      onClick={() => router.push(`/trips/${trip.id}`)}
-                      className="p-3 bg-white rounded-xl border border-[#E9ECEF] hover:border-[#184E77]/40 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between gap-2"
-                    >
-                      <div>
-                        <h5 className="text-xs font-bold text-yale-blue truncate">
-                          {trip.name}
-                        </h5>
-                        <p className="text-[11px] text-text-muted truncate mt-0.5">
-                          {trip.destination}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-text-muted pt-2 border-t border-[#E9ECEF]/70">
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3 text-[#52B69A]" />
-                          <span>{trip.memberCount} người</span>
-                        </span>
-                        <span className="font-semibold text-yale-blue">
-                          {trip.durationText}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          </motion.div>
 
           {/* Right Pane: Big Interactive Discovery Map */}
-          <div
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             className={`lg:col-span-6 xl:col-span-7 h-[500px] lg:h-[calc(100vh-140px)] lg:sticky lg:top-24 ${
               mobileTab === "list" ? "hidden lg:block" : "block"
             }`}
@@ -319,7 +322,7 @@ export function DiscoverySplitView({
               userLocation={userLocation}
               className="w-full h-full rounded-3xl"
             />
-          </div>
+          </motion.div>
         </div>
       </div>
 

@@ -163,7 +163,7 @@ export function TripItinerarySummaryCard({
 
       {/* 2. Interactive Route Map Card */}
       <div className="bg-white rounded-2xl sm:rounded-3xl p-5 border border-border-hairline shadow-[0_4px_20px_rgba(24,78,119,0.04)] overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgba(24,78,119,0.07)]">
-        <div className="relative w-full h-56 rounded-2xl overflow-hidden border border-border-hairline">
+        <div className="relative isolate z-0 w-full h-56 rounded-2xl overflow-hidden border border-border-hairline">
           <InteractiveMap
             points={mapPoints}
             center={defaultCenter}

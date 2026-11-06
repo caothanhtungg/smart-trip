@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculateHaversineDistance, optimizeDayRoute } from './distance';
-import { parseWmoWeatherCode, evaluateOutdoorSafety } from './weather';
+import {  evaluateOutdoorSafety } from './weather';
 import { validateCoordinates } from '../types/itinerary-coordinates';
 
 describe('Geo & Weather Integration Workflow', () => {

@@ -101,7 +101,7 @@ describe('Travel Assistant Service', () => {
       const res = await generateTravelSuggestions(
         'Gợi ý khách sạn Sa Pa cao cấp',
         { destination: 'Sa Pa' },
-        mockFetch as any
+        mockFetch as unknown as typeof fetch
       );
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -121,7 +121,7 @@ describe('Travel Assistant Service', () => {
       const res = await generateTravelSuggestions(
         'Tìm nhà xe đi Sa Pa',
         { destination: 'Sa Pa' },
-        mockFetch as any
+        mockFetch as unknown as typeof fetch
       );
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -138,7 +138,7 @@ describe('Travel Assistant Service', () => {
       const res = await generateTravelSuggestions(
         'Món ngon Đà Nẵng',
         { destination: 'Đà Nẵng' },
-        mockFetch as any
+        mockFetch as unknown as typeof fetch
       );
 
       expect(mockFetch).toHaveBeenCalledTimes(1);

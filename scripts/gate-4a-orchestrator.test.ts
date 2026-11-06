@@ -9,11 +9,9 @@ import {
   formatGate4aOperationId,
   GATE4A_OPERATIONS_INVENTORY,
   runGate4aOrchestration,
-  type Gate4aOrchestratorOptions,
 } from "./gate-4a-orchestrator";
 import type {
   BootstrapTestSessionResult,
-  SanitizedBootstrapMetadata,
 } from "./test-session-helper";
 import type { SafeFetchOptions, SafeFetchResponse } from "./smoke-runner";
 

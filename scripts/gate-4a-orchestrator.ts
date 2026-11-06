@@ -30,7 +30,6 @@ import {
   bootstrapTestSessions,
   toSanitizedMetadata,
   validateRunId,
-  isValidUUIDv4,
   type BootstrapTestSessionResult,
   type SanitizedBootstrapMetadata,
 } from "./test-session-helper";

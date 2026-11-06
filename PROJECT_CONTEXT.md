@@ -16,6 +16,13 @@ Release 1 tập trung vào:
 - Chốt sổ công nợ, rút gọn số giao dịch cần chuyển, tạo thông tin VietQR, đánh dấu thanh toán và xác nhận đã nhận.
 - Tham gia bằng link/mã/QR và luồng yêu cầu nhận diện một thành viên chưa có tài khoản.
 
+### Release 1 Extended — đã duyệt
+> **Nguồn phê duyệt:** Người dùng xác nhận ngày 05/11/2026. Đây là phần mở rộng được duyệt của Release 1, không mặc định mở rộng sang các tính năng liên quan khác.
+
+- **Dự báo thời tiết:** dùng Open-Meteo cho thông tin dự báo tại điểm đến theo phạm vi triển khai hiện tại.
+- **Tối ưu lộ trình:** dùng thuật toán TSP 2-Opt cho lịch trình theo phạm vi triển khai hiện tại.
+- Không cam kết dữ liệu giao thông thời gian thực, ETA thời gian thực, tối ưu đa phương tiện, hoặc bất kỳ khả năng thời tiết/lộ trình nâng cao nào chưa được duyệt riêng.
+
 ### Ngoài phạm vi Release 1
 Không tự thêm các tính năng sau nếu chưa được người dùng duyệt:
 - Đăng nhập bằng email/mật khẩu.
@@ -24,20 +31,16 @@ Không tự thêm các tính năng sau nếu chưa được người dùng duy�
 - Chọn ngôn ngữ (UI cố định tiếng Việt).
 - Đa tiền tệ (chỉ VND).
 - Chế độ tối (dark mode).
-- Tối ưu lộ trình, bản đồ lộ trình.
-- Dự báo thời tiết.
 - Biểu đồ thống kê.
 - Mọi câu quảng cáo về số lượng người dùng.
 - “Ví chuyến đi” (Trip Wallet).
 - OCR hóa đơn tự động (Release 1 chỉ lưu ảnh hóa đơn).
 - Xuất Excel.
 
-### Dành cho Release sau (Tạm ẩn khỏi giao diện Release 1)
-Các khối giao diện sau thuộc Release 2 và 3, đã có component mẫu nhưng được gỡ/tạm ẩn khỏi trang Tổng quan chuyến đi (`/trips/[id]`), giữ file component nhưng không render:
-- **Dự báo thời tiết** (thẻ thời tiết trong thông tin phụ chuyến đi — thuộc Release 2).
-- **Điểm đến tiếp theo & Bản đồ lộ trình** (widget bản đồ trong thông tin phụ — thuộc Release 2).
-- **Biểu đồ tròn phân bổ chi tiêu** (`TripExpenseDonutChart` — đã lưu component, không render ở Release 1 — thuộc Release 3).
-- **Chuông thông báo** (nút chuông thông báo trên Header — ẩn khỏi giao diện Release 1, bảo lưu code component cho Release sau; không tạo bảng `notifications` trong cơ sở dữ liệu).
+### Dành cho Release sau (Tạm ẩn khỏi giao diện Release 1 Extended)
+Các khối giao diện sau chưa thuộc phạm vi Release 1 Extended. Đã có component mẫu nhưng được gỡ/tạm ẩn khỏi trang Tổng quan chuyến đi (`/trips/[id]`), giữ file component nhưng không render:
+- **Biểu đồ tròn phân bổ chi tiêu** (`TripExpenseDonutChart` — đã lưu component, không render ở Release 1 Extended — thuộc Release 3).
+- **Chuông thông báo** (nút chuông thông báo trên Header — ẩn khỏi giao diện Release 1 Extended, bảo lưu code component cho Release sau; không tạo bảng `notifications` trong cơ sở dữ liệu).
 
 ### Lưu ý khi chuyển Stitch sang React
 Các màn hình trong thiết kế Google Stitch chứa một số chi tiết nằm ngoài phạm vi Release 1 (các mục ngoài phạm vi ở trên, cùng các nhãn/tính năng như "Thuật toán Simplex", "Chính xác tuyệt đối 100%", "VietQR PRO", "Google Places", "Ví chuyến đi", "Mã PIN"). Khi chuyển đổi thiết kế sang component React, **bắt buộc phải loại bỏ** các chi tiết này để giữ giao diện chuẩn xác với phạm vi Release 1.

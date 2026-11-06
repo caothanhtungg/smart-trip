@@ -19,49 +19,18 @@ import {
   type CurrentUserProfileDto,
 } from "@/lib/services/user-api";
 
-const INITIAL_PROFILE: UserProfile = {
-  id: "usr-current",
-  fullName: "Nguyễn Phương Lan",
-  displayName: "Lan",
-  email: "lan.tran98@gmail.com",
+const EMPTY_PROFILE: UserProfile = {
+  id: "",
+  fullName: "",
+  displayName: "",
+  email: "",
   avatarUrl: null,
-  bankInfo: {
-    bankBin: "970407",
-    bankName: "Techcombank",
-    accountNumber: "19036542890011",
-    accountHolder: "NGUYEN PHUONG LAN",
-  },
+  bankInfo: null,
 };
 
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: "notif-1",
-    title: "Yêu cầu nhận diện thành viên",
-    description: "Bảo Minh muốn nhận diện vào thành viên Minh Béo trong chuyến 'Phú Quốc cùng team'",
-    timestamp: "10 phút trước",
-    isRead: false,
-    type: "CLAIM",
-    linkUrl: "/trips/trip-phuquoc-team/members",
-  },
-  {
-    id: "notif-2",
-    title: "Nhắc nợ chi phí",
-    description: "Tuấn Huy đã gửi nhắc nợ khoản 'Bánh ướt lòng gà Long' (212.000 ₫)",
-    timestamp: "1 giờ trước",
-    isRead: false,
-    type: "PAYMENT",
-    linkUrl: "/trips/trip-dalat-3n2d/settlement",
-  },
-  {
-    id: "notif-3",
-    title: "Chốt sổ công nợ",
-    description: "Chuyến đi 'Đà Lạt 3N2Đ' đã chuyển sang giai đoạn quyết toán công nợ",
-    timestamp: "Hôm qua",
-    isRead: true,
-    type: "SETTLEMENT",
-    linkUrl: "/trips/trip-dalat-3n2d/settlement",
-  },
-];
+const INITIAL_PROFILE = EMPTY_PROFILE;
+
+const INITIAL_NOTIFICATIONS: NotificationItem[] = [];
 
 interface UserProfileContextValue {
   profile: UserProfile;
@@ -71,6 +40,10 @@ interface UserProfileContextValue {
   updateProfile: (data: UpdateProfileFormData) => Promise<{
     success: boolean;
     errors?: ProfileValidationErrors;
+    message?: string;
+  }>;
+  updateAvatar: (avatarUrl: string | null) => Promise<{
+    success: boolean;
     message?: string;
   }>;
   updateBankInfo: (data: UpdateBankFormData) => Promise<{
@@ -184,6 +157,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       const updatedDto = await updateMyProfileApi({
         name: data.fullName.trim(),
         displayName: data.displayName.trim(),
+        ...(data.avatarUrl !== undefined ? { avatarUrl: data.avatarUrl } : {}),
       });
 
       setProfile(mapDtoToUserProfile(updatedDto));
@@ -202,6 +176,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
           ...prev,
           fullName: data.fullName.trim(),
           displayName: data.displayName.trim(),
+        ...(data.avatarUrl !== undefined ? { avatarUrl: data.avatarUrl } : {}),
         }));
         return { success: true };
       }
@@ -209,6 +184,30 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       return {
         success: false,
         message: err instanceof Error ? err.message : "Cập nhật thông tin thất bại.",
+      };
+    }
+  };
+
+  const updateAvatar = async (
+    avatarUrl: string | null
+  ): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const updatedDto = await updateMyProfileApi({
+        avatarUrl,
+      });
+      setProfile(mapDtoToUserProfile(updatedDto));
+      return { success: true };
+    } catch (err) {
+      if (err instanceof UserApiError && err.status === 401) {
+        setProfile((prev) => ({
+          ...prev,
+          avatarUrl,
+        }));
+        return { success: true };
+      }
+      return {
+        success: false,
+        message: err instanceof Error ? err.message : "Cập nhật ảnh đại diện thất bại.",
       };
     }
   };
@@ -303,6 +302,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         profileError,
         refetchProfile,
         updateProfile,
+        updateAvatar,
         updateBankInfo,
         removeBankInfo,
         notifications,

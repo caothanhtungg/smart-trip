@@ -35,7 +35,13 @@ export async function searchPlaces(query: string): Promise<PlaceSearchResult[]> 
       return [];
     }
 
-    return data.map((item: any) => {
+    interface NominatimItem {
+      place_id?: number | string;
+      display_name?: string;
+      lat: string;
+      lon: string;
+    }
+    return (data as NominatimItem[]).map((item) => {
       const parts = (item.display_name || '').split(',');
       const shortName = parts[0]?.trim() || trimmed;
       const fullAddress = item.display_name || '';

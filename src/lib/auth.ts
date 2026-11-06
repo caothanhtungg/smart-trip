@@ -6,6 +6,30 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  emailAndPassword: {
+    enabled: true,
+  },
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+      requireLocalEmailVerified: false,
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          return {
+            data: {
+              ...user,
+              emailVerified: true,
+            },
+          };
+        },
+      },
+    },
+  },
   user: {
     additionalFields: {
       displayName: {
@@ -31,7 +55,20 @@ export const auth = betterAuth({
       },
     },
   },
+  session: {
+    // Phiên tuyệt đối hết hạn sau 7 ngày, kể cả khi người dùng còn hoạt động.
+    expiresIn: 60 * 60 * 24 * 7,
+    disableSessionRefresh: true,
+  },
   advanced: {
+    // Secure được Better Auth áp dụng ở production; SameSite/Lax cho OAuth callback
+    // và HttpOnly ngăn JavaScript phía client đọc session token.
+    useSecureCookies: process.env.NODE_ENV === "production",
+    defaultCookieAttributes: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    },
     database: {
       generateId: "uuid",
     },

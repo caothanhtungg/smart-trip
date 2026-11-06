@@ -1,12 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, RefreshCw, UserCheck, Users } from "lucide-react";
+import { AlertTriangle, RefreshCw, UserCheck } from "lucide-react";
 import { useTripSession } from "@/components/trips/detail/trip-session-context";
 import { calculateMemberBalances, canReopenSettlement } from "@/lib/money/settlement";
 import { SettlementTransfer } from "@/types/settlement";
 import { MOCK_MEMBER_BANK_INFO } from "@/lib/mock/settlement";
-import { SPECIAL_LABELS } from "@/lib/labels";
 import { TripSettlementBanner } from "./trip-settlement-banner";
 import { TripSettlementTable } from "./trip-settlement-table";
 import { TripSettlementBalanceSidebar } from "./trip-settlement-balance-sidebar";
@@ -25,7 +24,6 @@ export function TripSettlementTab() {
     sessionStatus,
     sessionTransfers,
     currentMemberId,
-    setCurrentMemberId,
     isHost,
     handleLockSettlement,
     handleReopenSettlement,
@@ -177,49 +175,6 @@ export function TripSettlementTab() {
 
   return (
     <div className="w-full flex flex-col gap-6">
-      {/* DEMO ROLE SWITCHER BAR */}
-      <div className="w-full p-3 bg-surface-card rounded-2xl border border-divider-border/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs">
-          <Users className="w-4 h-4 text-cerulean shrink-0" />
-          <span className="font-semibold text-yale-blue">
-            Góc nhìn thành viên (Demo Switcher):
-          </span>
-          <span className="text-text-muted hidden md:inline">
-            Chọn thành viên để kiểm tra giao diện và phân quyền
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          {sessionTrip.members.map((m) => {
-            const isSelected = m.id === currentMemberId;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => setCurrentMemberId(m.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                  isSelected
-                    ? "bg-cerulean text-white shadow-xs"
-                    : "bg-surface-container-low text-text-muted hover:text-yale-blue hover:bg-hover-row"
-                }`}
-              >
-                <span>{m.name}</span>
-                {m.role === "HOST" && (
-                  <span className="text-[10px] bg-lime-cream text-yale-blue px-1.5 py-0.2 rounded-full font-bold">
-                    Host
-                  </span>
-                )}
-                {m.isNoAccount && (
-                  <span className="text-[10px] bg-amber-100 text-amber-800 px-1 rounded font-normal">
-                    {SPECIAL_LABELS.NO_ACCOUNT}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* SKELETON LOADING STATE */}
       {isSettlementLoading ? (
         <div

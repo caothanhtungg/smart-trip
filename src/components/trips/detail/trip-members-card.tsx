@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Users, UserPlus, Info } from "lucide-react";
+import { Users, UserPlus } from "lucide-react";
 import { TripDetailData } from "@/types/trip";
 import { formatMoney, getInitials } from "@/lib/utils";
-import { getMemberRoleLabel, SPECIAL_LABELS } from "@/lib/labels";
+import { getMemberRoleLabel } from "@/lib/labels";
+import { AvatarGroup } from "@/components/ui/avatar";
 import { TripInviteShareModal } from "./trip-invite-share-modal";
 import { useTripSession } from "./trip-session-context";
 
@@ -43,9 +44,6 @@ export function TripMembersCard({ trip }: TripMembersCardProps) {
     }
   };
 
-  const previewMembers = sortedMembers.slice(0, 5);
-  const remainingCount = Math.max(0, sortedMembers.length - 5);
-
   return (
     <section className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(24,78,119,0.04)] border border-border-hairline transition-all duration-300 hover:shadow-[0_8px_30px_rgba(24,78,119,0.07)]">
       {/* Header */}
@@ -68,27 +66,19 @@ export function TripMembersCard({ trip }: TripMembersCardProps) {
       {/* Avatar Stack Row (Airy & Modern) */}
       <div className="pt-4 pb-2">
         <div className="flex items-center justify-between gap-3">
-          {/* Overlapping Avatars */}
-          <div className="flex items-center -space-x-2.5 overflow-hidden py-1">
-            {previewMembers.map((member, idx) => (
-              <div
-                key={member.id}
-                className={`inline-block h-10 w-10 rounded-full ring-2 ring-white text-xs font-bold flex items-center justify-center shadow-xs select-none transition-transform hover:scale-110 hover:z-20 ${
-                  member.isNoAccount
-                    ? "border border-dashed border-mint-green bg-bg-canvas text-text-muted"
-                    : AVATAR_COLORS[idx % AVATAR_COLORS.length]
-                }`}
-                title={`${member.name}${member.role === "HOST" ? " (Trưởng nhóm)" : ""}`}
-              >
-                {getInitials(member.name)}
-              </div>
-            ))}
-            {remainingCount > 0 && (
-              <div className="inline-flex h-10 w-10 rounded-full ring-2 ring-white bg-surface-container text-yale-blue text-xs font-bold items-center justify-center shadow-xs select-none">
-                +{remainingCount}
-              </div>
-            )}
-          </div>
+          {/* Overlapping Avatars via AvatarGroup */}
+          <AvatarGroup
+            items={sortedMembers.map((m) => ({
+              id: m.id,
+              name: m.name,
+              role: m.role === "HOST" ? "Trưởng nhóm" : undefined,
+              isNoAccount: m.isNoAccount,
+            }))}
+            max={5}
+            size="md"
+            ringColor="ring-white"
+            onOverflowClick={() => setIsExpanded(true)}
+          />
 
           {/* Quick Invite Button */}
           <button

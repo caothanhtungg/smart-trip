@@ -48,6 +48,19 @@ export function isProtectedPath(pathname: string): boolean {
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
+  // Bắt buộc HTTPS ở production. Chỉ tin x-forwarded-proto do reverse proxy/CDN
+  // ghi đè khi origin không được public trực tiếp.
+  const forwardedProtocol = request.headers.get("x-forwarded-proto");
+  if (
+    process.env.NODE_ENV === "production" &&
+    forwardedProtocol !== "https" &&
+    request.nextUrl.protocol !== "https:"
+  ) {
+    const secureUrl = request.nextUrl.clone();
+    secureUrl.protocol = "https:";
+    return NextResponse.redirect(secureUrl, 308);
+  }
+
   // 1. API Route Handlers: pass-through, không redirect sang trang HTML
   if (pathname.startsWith("/api/")) {
     return NextResponse.next();
@@ -83,5 +96,5 @@ export function proxy(request: NextRequest) {
  * Chỉ áp dụng cho các route cần được bảo vệ.
  */
 export const config = {
-  matcher: ["/trips/:path*", "/profile/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

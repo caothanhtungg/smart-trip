@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, CheckCircle, AlertCircle } from "lucide-react";
+import { Compass, CheckCircle, AlertTriangle, AlertCircle } from "lucide-react";
 import { TripDetailData } from "@/types/trip";
 import { formatMoney } from "@/lib/utils";
 import { calculateBudgetStatus } from "@/lib/money/budget";
@@ -23,97 +23,111 @@ export function TripBudgetCard({ trip }: TripBudgetCardProps) {
       : 0;
   const isNearBudget = hasBudget && percentage >= 70 && percentage < 100;
 
-  // Determine progress bar fill color
-  const progressColor = !hasBudget
+  // Determine progress bar fill gradient & glow
+  const progressFillClass = !hasBudget
     ? "bg-transparent"
     : isOverBudget
-    ? "bg-functional-negative"
+    ? "bg-gradient-to-r from-rose-500 to-red-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]"
     : isNearBudget
-    ? "bg-functional-warning"
-    : "bg-emerald";
+    ? "bg-gradient-to-r from-amber-400 to-orange-400 shadow-[0_0_10px_rgba(251,191,36,0.4)]"
+    : "bg-gradient-to-r from-teal-400 via-emerald-400 to-emerald-500 shadow-[0_0_10px_rgba(52,211,153,0.4)]";
 
   return (
-    <section className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(24,78,119,0.04)] border border-border-hairline relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgba(24,78,119,0.07)]">
-      {/* Decorative gentle gradient glow */}
+    <section
+      aria-label="Ngân sách chuyến đi"
+      className="relative overflow-hidden group rounded-2xl sm:rounded-3xl p-5 sm:p-6 bg-white/90 dark:bg-[#111A2E]/90 backdrop-blur-md border border-slate-200/80 dark:border-white/[0.08] shadow-[0_4px_24px_rgba(24,78,119,0.04)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.36)] hover:shadow-[0_12px_36px_rgba(26,117,159,0.15)] dark:hover:shadow-[0_12px_36px_rgba(56,189,248,0.15)] hover:-translate-y-1 transition-all duration-300 ease-out flex flex-col justify-between h-full before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/30 dark:before:via-sky-400/30 before:to-transparent"
+    >
+      {/* Ambient Celestial Glow */}
       <div
-        className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-lime-cream/40 blur-3xl pointer-events-none"
+        className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-sky-500/10 dark:bg-sky-400/15 blur-2xl pointer-events-none group-hover:scale-125 transition-transform duration-500"
         aria-hidden="true"
       />
 
-      {/* Top Header Row: Title & Status Badge Pill */}
-      <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
-        <div className="flex items-center gap-2.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-cerulean inline-block" aria-hidden="true" />
-          <h2 className="text-base sm:text-lg font-bold text-yale-blue tracking-tight">
+      {/* Top Header Row */}
+      <div className="relative z-10">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Ngân sách chuyến đi
-          </h2>
-        </div>
-
-        {/* Status Pill Badge */}
-        <div>
-          {!hasBudget ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-hover-row text-text-muted font-medium text-xs border border-border-hairline">
-              Chưa đặt hạn mức
-            </span>
-          ) : isOverBudget ? (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-functional-negative/10 text-functional-negative font-semibold text-xs border border-functional-negative/20">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>Vượt {percentage}%</span>
-            </span>
-          ) : isNearBudget ? (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-functional-warning-bg text-functional-warning font-semibold text-xs border border-functional-warning/20">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-              <span>Đạt {percentage}%</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-fill/15 text-functional-positive font-semibold text-xs border border-functional-positive/20">
-              <CheckCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>An toàn ({percentage}%)</span>
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Primary Figures: Large Clean Typography */}
-      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3 relative z-10">
-        <div className="flex items-baseline gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">Đã chi</span>
-          <span className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-yale-blue tracking-tight tabular-nums">
-            {formatMoney(trip.totalSpent)}
           </span>
-          {hasBudget && planned !== null && (
-            <span className="text-sm sm:text-base text-text-muted font-normal">
-              / {formatMoney(planned)}
-            </span>
-          )}
+
+          {/* Artistic Glass Icon Badge */}
+          <div className="w-9 h-9 rounded-xl bg-sky-500/10 dark:bg-sky-400/15 border border-sky-500/20 dark:border-sky-400/25 flex items-center justify-center text-sky-600 dark:text-sky-300 shrink-0 shadow-xs group-hover:scale-105 transition-transform duration-300">
+            <Compass className="w-4.5 h-4.5 stroke-[2.2]" />
+          </div>
         </div>
 
-        <div className="text-xs sm:text-sm font-medium text-text-muted">
-          {hasBudget ? (
-            <span>
-              Còn lại <strong className="text-cerulean font-bold tabular-nums">{formatMoney(remainingBudget)}</strong>
+        {/* Primary Figures */}
+        <div>
+          <div className="flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-2xl sm:text-[28px] font-black text-slate-900 dark:text-white tracking-tight tabular-nums">
+              {formatMoney(trip.totalSpent)}
             </span>
-          ) : (
-            <span className="text-text-muted">Tự do chi tiêu</span>
-          )}
+            {hasBudget && planned !== null && (
+              <span className="text-xs sm:text-sm font-medium text-slate-400 dark:text-slate-400">
+                / {formatMoney(planned)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Sleek Slim Progress Bar */}
-      <div
-        className="w-full bg-hover-row h-2 sm:h-2.5 rounded-full overflow-hidden p-0.5 relative z-10"
-        role="progressbar"
-        aria-valuenow={hasBudget ? Math.min(percentage, 100) : 0}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={
-          hasBudget ? `Tiến độ ngân sách: ${percentage}%` : "Chưa đặt hạn mức ngân sách"
-        }
-      >
+      {/* Bottom Row: Remaining Status + Glowing Progress Bar */}
+      <div className="pt-4 relative z-10">
+        <div className="flex items-center justify-between gap-2 text-xs mb-2">
+          <div className="font-medium text-slate-500 dark:text-slate-400">
+            <span>{hasBudget ? "Còn lại: " : "Hạn mức: "}</span>
+            <span className="tabular-nums">
+              {hasBudget ? (
+                <strong className="text-sky-600 dark:text-sky-400 font-bold">
+                  {formatMoney(remainingBudget)}
+                </strong>
+              ) : (
+                <span className="text-slate-600 dark:text-slate-300 font-medium">Tự do chi tiêu</span>
+              )}
+            </span>
+          </div>
+
+          {/* Micro Status Gem Pill */}
+          <div className="shrink-0">
+            {!hasBudget ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold text-[11px] border border-slate-200 dark:border-slate-700">
+                Chưa đặt
+              </span>
+            ) : isOverBudget ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold text-[11px] border border-rose-500/25 shadow-xs">
+                <AlertCircle className="w-3 h-3 shrink-0" />
+                <span>Vượt {percentage}%</span>
+              </span>
+            ) : isNearBudget ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-[11px] border border-amber-500/25 shadow-xs">
+                <AlertTriangle className="w-3 h-3 shrink-0" />
+                <span>Đạt {percentage}%</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[11px] border border-emerald-500/25 shadow-xs">
+                <CheckCircle className="w-3 h-3 shrink-0" />
+                <span>An toàn ({percentage}%)</span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Sleek Luminous Progress Bar */}
         <div
-          className={`${progressColor} h-full rounded-full transition-all duration-700 ease-out`}
-          style={{ width: `${hasBudget ? Math.min(percentage, 100) : 0}%` }}
-        />
+          className="w-full bg-slate-100 dark:bg-white/[0.06] h-1.5 rounded-full overflow-hidden p-0.5 border border-slate-200/40 dark:border-white/5"
+          role="progressbar"
+          aria-valuenow={hasBudget ? Math.min(percentage, 100) : 0}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={
+            hasBudget ? `Tiến độ ngân sách: ${percentage}%` : "Chưa đặt hạn mức ngân sách"
+          }
+        >
+          <div
+            className={`h-full rounded-full transition-all duration-700 ease-out ${progressFillClass}`}
+            style={{ width: `${hasBudget ? Math.min(percentage, 100) : 0}%` }}
+          />
+        </div>
       </div>
     </section>
   );

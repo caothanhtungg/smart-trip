@@ -15,8 +15,22 @@ vi.mock('@/lib/db/prisma', () => ({
   },
 }));
 
-import { requireTripMembership } from '@/lib/api/auth-guard';
+import { requireTripMembership, type TripMembershipAuth } from '@/lib/api/auth-guard';
 import { prisma } from '@/lib/db/prisma';
+
+function createMockMembershipAuth(tripId: string): TripMembershipAuth {
+  return {
+    session: { id: 'session-1' },
+    user: { id: 'user-1' },
+    member: { id: 'member-1', role: 'MEMBER' },
+    trip: {
+      id: tripId,
+      status: 'ACTIVE',
+      startDate: new Date('2026-10-25'),
+      endDate: new Date('2026-10-30'),
+    },
+  } as unknown as TripMembershipAuth;
+}
 
 describe('POST /api/trips/[id]/itinerary/optimize', () => {
   const tripId = '11111111-1111-1111-1111-111111111111';
@@ -26,12 +40,7 @@ describe('POST /api/trips/[id]/itinerary/optimize', () => {
   });
 
   it('trả về 400 nếu ngày không hợp lệ', async () => {
-    vi.mocked(requireTripMembership).mockResolvedValue({
-      session: { id: 'session-1' } as any,
-      user: { id: 'user-1' } as any,
-      member: { id: 'member-1', role: 'MEMBER' } as any,
-      trip: { id: tripId, status: 'ACTIVE', startDate: new Date('2026-10-25'), endDate: new Date('2026-10-30') } as any,
-    });
+    vi.mocked(requireTripMembership).mockResolvedValue(createMockMembershipAuth(tripId));
 
     const req = new Request('http://localhost', {
       method: 'POST',
@@ -43,12 +52,7 @@ describe('POST /api/trips/[id]/itinerary/optimize', () => {
   });
 
   it('tối ưu lại thứ tự và cập nhật sortOrder thành công', async () => {
-    vi.mocked(requireTripMembership).mockResolvedValue({
-      session: { id: 'session-1' } as any,
-      user: { id: 'user-1' } as any,
-      member: { id: 'member-1', role: 'MEMBER' } as any,
-      trip: { id: tripId, status: 'ACTIVE', startDate: new Date('2026-10-25'), endDate: new Date('2026-10-30') } as any,
-    });
+    vi.mocked(requireTripMembership).mockResolvedValue(createMockMembershipAuth(tripId));
 
     const mockItems = [
       { id: 'p1', latitude: 11.940, longitude: 108.440, isLocked: true, sortOrder: 0 },
@@ -57,13 +61,20 @@ describe('POST /api/trips/[id]/itinerary/optimize', () => {
       { id: 'p2', latitude: 11.940, longitude: 108.480, isLocked: false, sortOrder: 3 },
     ];
 
-    vi.mocked(prisma.itineraryItem.findMany).mockResolvedValue(mockItems as any);
-    vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) => {
-      return cb({
-        itineraryItem: {
-          update: vi.fn(),
-        },
-      });
+    vi.mocked(prisma.itineraryItem.findMany).mockResolvedValue(
+      mockItems as unknown as Awaited<ReturnType<typeof prisma.itineraryItem.findMany>>
+    );
+    type TransactionCallback = Parameters<typeof prisma.$transaction>[0];
+    vi.mocked(prisma.$transaction).mockImplementation(async (cb: TransactionCallback) => {
+      if (typeof cb === 'function') {
+        const txMock = {
+          itineraryItem: {
+            update: vi.fn(),
+          },
+        };
+        return cb(txMock as unknown as Parameters<TransactionCallback>[0]);
+      }
+      return cb;
     });
 
     const req = new Request('http://localhost', {
@@ -76,7 +87,7 @@ describe('POST /api/trips/[id]/itinerary/optimize', () => {
 
     const json = await res.json();
     expect(json.success).toBe(true);
-    expect(json.data.map((item: any) => item.id)).toEqual(['hotel', 'mid_east', 'far_east', 'farther_east'].map(k => {
+    expect(json.data.map((item: { id: string }) => item.id)).toEqual(['hotel', 'mid_east', 'far_east', 'farther_east'].map(k => {
       if (k === 'hotel') return 'p1';
       if (k === 'mid_east') return 'p3';
       if (k === 'far_east') return 'p2';

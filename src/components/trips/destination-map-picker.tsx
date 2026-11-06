@@ -29,9 +29,11 @@ export function DestinationMapPicker({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Sync internal query with prop value
-  useEffect(() => {
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
     setQuery(value);
-  }, [value]);
+  }
 
   // Click outside to close dropdown
   useEffect(() => {
@@ -47,9 +49,11 @@ export function DestinationMapPicker({
   // Debounced search
   useEffect(() => {
     if (!query || query.trim().length < 2) {
-      setResults([]);
-      setIsLoading(false);
-      return;
+      const timer = setTimeout(() => {
+        setResults([]);
+        setIsLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     const timer = setTimeout(async () => {
@@ -100,7 +104,7 @@ export function DestinationMapPicker({
       <div className="relative flex items-center">
         <Search className="absolute left-3.5 w-5 h-5 text-text-muted pointer-events-none" />
         <input
-          ref={inputRef as any}
+          ref={inputRef}
           id="trip-destination"
           type="text"
           maxLength={150}
@@ -158,7 +162,7 @@ export function DestinationMapPicker({
 
       {/* Mini Interactive Map Preview */}
       {selectedCoord && (
-        <div className="relative rounded-2xl overflow-hidden border border-border-hairline shadow-xs">
+        <div className="relative isolate z-0 rounded-2xl overflow-hidden border border-border-hairline shadow-xs">
           <div className="absolute top-2.5 left-2.5 z-10 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-lg text-xs font-semibold text-yale-blue shadow-2xs border border-border-hairline flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-cerulean" />
             <span>Xem trước tọa độ điểm đến</span>

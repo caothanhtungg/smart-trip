@@ -4,21 +4,15 @@ import * as React from "react";
 import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
-  Plus,
-  Ticket,
   Compass,
-  Info,
   AlertCircle,
   RotateCw,
   ShieldAlert,
   LogIn,
-  Map as MapIcon,
-  Briefcase,
 } from "lucide-react";
 import { TripSummaryStrip } from "@/components/trips/trip-summary-strip";
 import { TripFilters } from "@/components/trips/trip-filters";
 import { TripCard } from "@/components/trips/trip-card";
-import { TripInviteBanner } from "@/components/trips/trip-invite-banner";
 import { InviteCodeModal } from "@/components/trips/invite-code-modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
@@ -27,12 +21,33 @@ import { filterTrips, sortTrips } from "@/lib/trips/filter-sort";
 import { getOverallBalance } from "@/lib/trips/balance";
 import { toTripCardViews } from "@/lib/view/trip-card";
 import { TripCardView, TripFilterTab, TripSortOption } from "@/types/trip";
-import { getTripStatusLabel, getBalanceTypeLabel } from "@/lib/labels";
+import { getTripStatusLabel } from "@/lib/labels";
 import { useTripsStore } from "@/lib/trips/trips-store-context";
 import { TripsApiError } from "@/lib/services/trips-api";
 import { AppTopBar } from "@/components/layout/AppTopBar";
 import { DiscoverySplitView } from "@/components/trips/discovery/DiscoverySplitView";
 import { matchesSearchQuery } from "@/components/layout/top-bar-logic";
+import { motion, type Variants } from "motion/react";
+
+const pageContainerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const pageItemVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as const },
+  },
+};
 
 /**
  * API CONTRACT & LỌC/SẮP XẾP DANH SÁCH CHUYẾN ĐI (GET /api/trips):
@@ -60,7 +75,6 @@ function TripsContent() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [inviteModalOpen, setInviteModalOpen] = React.useState(false);
   const [selectedTripModal, setSelectedTripModal] = React.useState<TripCardView | null>(null);
-  const [settlementNoticeOpen, setSettlementNoticeOpen] = React.useState(false);
 
   const rawTrips = storeTrips;
 
@@ -110,7 +124,7 @@ function TripsContent() {
         title={isDiscoveryView ? "Khám phá & Bản đồ" : "Chuyến đi của tôi"}
         subtitle={
           isDiscoveryView
-            ? "Bản đồ tương tác 50+ danh lam thắng cảnh Việt Nam & gợi ý thời tiết"
+            ? "Bản đồ tương tác danh lam thắng cảnh Việt Nam & gợi ý thời tiết"
             : "Quản lý lịch trình, thời tiết và chia chi phí thông minh"
         }
         searchValue={searchQuery}
@@ -125,35 +139,22 @@ function TripsContent() {
       <div className="w-full px-4 sm:px-6 lg:px-8 py-5 sm:py-6 max-w-[1600px] mx-auto">
         {/* View Content: Discovery Split-View OR Standard Trips Grid */}
         {isDiscoveryView ? (
-          <DiscoverySplitView
-            trips={cardViews}
-            onCreateTrip={() => router.push("/trips/new")}
-          />
+          <DiscoverySplitView />
         ) : (
           <div>
-            {/* Main Body: Loading vs Error vs Data Grid */}
+            {/* Loading & Skeleton Presentation */}
             {isLoading && !simulateEmptyState ? (
-              <div
-                role="status"
-                aria-label="Đang tải danh sách chuyến đi..."
-                className="mt-6 space-y-6"
-              >
-                {/* Shimmer summary skeleton */}
-                <div className="h-20 rounded-2xl bg-white/70 border border-border-hairline animate-pulse" />
-                {/* Shimmer filter skeleton */}
-                <div className="h-12 rounded-xl bg-white/70 border border-border-hairline animate-pulse" />
-                {/* Shimmer card grid skeleton */}
+              <div className="space-y-6">
+                <div className="h-20 bg-hover-row rounded-2xl animate-pulse" />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="h-64 rounded-2xl bg-white border border-border-hairline p-5 flex flex-col justify-between animate-pulse"
+                      className="h-64 bg-surface-card rounded-2xl border border-border-hairline p-5 space-y-4 animate-pulse"
                     >
-                      <div className="space-y-3">
-                        <div className="h-4 bg-hover-row rounded w-1/3" />
-                        <div className="h-6 bg-hover-row rounded w-3/4" />
-                        <div className="h-4 bg-hover-row rounded w-1/2" />
-                      </div>
+                      <div className="h-6 bg-hover-row rounded-md w-3/4" />
+                      <div className="h-4 bg-hover-row rounded-md w-1/2" />
+                      <div className="h-24 bg-hover-row rounded-xl" />
                       <div className="h-10 bg-hover-row rounded-xl w-full" />
                     </div>
                   ))}
@@ -223,39 +224,50 @@ function TripsContent() {
                 )}
               </div>
             ) : (
-              <>
+              <motion.div
+                variants={pageContainerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-6 sm:space-y-8"
+              >
                 {/* Slim Summary Strip (Balance Overview) */}
                 {!simulateEmptyState && cardViews.length > 0 && (
-                  <TripSummaryStrip
-                    summary={summary}
-                    onViewSettlementDetails={() => setSettlementNoticeOpen(true)}
-                  />
+                  <motion.div variants={pageItemVariants}>
+                    <TripSummaryStrip summary={summary} />
+                  </motion.div>
                 )}
 
                 {/* Filter & Sorting Controls */}
-                <TripFilters
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
-                  sortBy={sortBy}
-                  onSortChange={setSortBy}
-                  counts={{
-                    all: allCount,
-                    active: activeCount,
-                    completed: completedCount,
-                  }}
-                />
+                <motion.div variants={pageItemVariants}>
+                  <TripFilters
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    counts={{
+                      all: allCount,
+                      active: activeCount,
+                      completed: completedCount,
+                    }}
+                  />
+                </motion.div>
 
                 {/* Trips Grid / Empty State Presentation */}
-                <div className="mt-6 sm:mt-8">
+                <motion.div variants={pageItemVariants} className="mt-6 sm:mt-8">
                   {currentTrips.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {currentTrips.map((trip) => (
-                        <TripCard
+                        <motion.div
                           key={trip.id}
-                          trip={trip}
-                          onSelectTrip={(t) => router.push(`/trips/${t.id}`)}
-                          onMoreActions={(t) => setSelectedTripModal(t)}
-                        />
+                          variants={pageItemVariants}
+                          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+                        >
+                          <TripCard
+                            trip={trip}
+                            onSelectTrip={(t) => router.push(`/trips/${t.id}`)}
+                            onMoreActions={(t) => setSelectedTripModal(t)}
+                          />
+                        </motion.div>
                       ))}
                     </div>
                   ) : (
@@ -279,8 +291,8 @@ function TripsContent() {
                       onAction={() => router.push("/trips/new")}
                     />
                   )}
-                </div>
-              </>
+                </motion.div>
+              </motion.div>
             )}
           </div>
         )}
@@ -334,54 +346,6 @@ function TripsContent() {
           </div>
         </Modal>
       )}
-
-      {/* Overall Settlement Notice Modal */}
-      <Modal
-        isOpen={settlementNoticeOpen}
-        onClose={() => setSettlementNoticeOpen(false)}
-        title="Chi tiết công nợ tổng hợp"
-        maxWidth="md"
-      >
-        <div className="space-y-4 text-sm text-text-body">
-          <p className="text-text-muted leading-relaxed">
-            Số dư tổng hợp được tính dựa trên số tiền thực tế bạn đã thanh toán cho cả nhóm trừ đi phần chi phí của cá nhân bạn ở tất cả các chuyến đi đang hoạt động.
-          </p>
-
-          <div className="p-4 rounded-xl bg-bg-canvas border border-border-hairline space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-text-muted">Bạn đang được nhận:</span>
-              <span className="font-bold text-functional-positive tabular-nums">
-                +{summary.toReceive.toLocaleString("vi-VN")}&nbsp;₫
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-text-muted">Bạn cần trả:</span>
-              <span className="font-bold text-functional-negative tabular-nums">
-                -{summary.toPay.toLocaleString("vi-VN")}&nbsp;₫
-              </span>
-            </div>
-            <div className="pt-2 border-t border-border-hairline flex items-center justify-between font-bold">
-              <span>Chênh lệch ròng (Net):</span>
-              <span className="text-cerulean tabular-nums">
-                +{summary.net.toLocaleString("vi-VN")}&nbsp;₫
-              </span>
-            </div>
-          </div>
-
-          <p className="text-xs text-text-muted leading-relaxed">
-            Bảng công nợ chi tiết theo từng giao dịch chuyển tiền (settlement transfers) và mã thanh toán VietQR sẽ được xem trực tiếp tại trang chi tiết từng chuyến đi khi sổ công nợ được chốt.
-          </p>
-
-          <div className="flex justify-end pt-3 border-t border-border-hairline">
-            <Button
-              variant="primary"
-              onClick={() => setSettlementNoticeOpen(false)}
-            >
-              Đã hiểu
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </>
   );
 }

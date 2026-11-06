@@ -26,8 +26,7 @@ export async function getServerSession(
       headers: requestHeaders,
     });
     return session;
-  } catch (error) {
-    console.error("[Auth Security] Lỗi khi trích xuất session từ headers:", error);
+  } catch {
     return null;
   }
 }

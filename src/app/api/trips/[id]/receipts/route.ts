@@ -4,6 +4,7 @@ import {
   BadRequestError,
   NotFoundError,
   ServiceUnavailableError,
+  PayloadTooLargeError,
 } from "@/lib/api";
 import { requireTripMembership, isValidUuid } from "@/lib/api/auth-guard";
 import {
@@ -11,6 +12,7 @@ import {
   generateReceiptObjectKey,
   getReceiptStorageProvider,
   RECEIPT_STORAGE_BUCKET,
+  getMaxReceiptSizeBytes,
 } from "@/lib/storage/receipts";
 
 interface RouteContext {
@@ -65,6 +67,12 @@ export async function POST(
 
     if (!file || !(file instanceof Blob)) {
       throw new BadRequestError("Vui lòng đính kèm tập tin ảnh hóa đơn.");
+    }
+
+    // Chặn theo metadata multipart trước khi nạp toàn bộ file vào bộ nhớ.
+    // Vẫn xác minh lại kích thước thực tế và Magic Bytes sau khi đọc buffer.
+    if (file.size > getMaxReceiptSizeBytes()) {
+      throw new PayloadTooLargeError();
     }
 
     const arrayBuffer = await file.arrayBuffer();

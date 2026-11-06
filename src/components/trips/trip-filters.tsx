@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { ArrowUpDown } from "lucide-react";
+import { motion } from "motion/react";
+import { spring } from "@animate-ui/react/utils/motion";
 import { TripFilterTab, TripSortOption } from "@/types/trip";
 
 interface TripFiltersProps {
@@ -40,20 +42,23 @@ export function TripFilters({
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
-            <button
+            <motion.button
               key={tab.id}
               role="tab"
               aria-selected={isActive}
               onClick={() => onTabChange(tab.id)}
-              className={`py-3 px-1 border-b-[2.5px] flex items-center gap-2 transition-colors cursor-pointer text-sm sm:text-base font-semibold whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist rounded-t ${
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.96 }}
+              transition={spring.press}
+              className={`relative py-3 px-1.5 flex items-center gap-2 transition-colors cursor-pointer text-sm sm:text-base font-semibold whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist rounded-t select-none ${
                 isActive
-                  ? "border-cerulean text-cerulean"
-                  : "border-transparent text-text-muted hover:text-yale-blue"
+                  ? "text-cerulean font-bold"
+                  : "text-text-muted hover:text-yale-blue"
               }`}
             >
-              <span>{tab.label}</span>
+              <span className="relative z-10">{tab.label}</span>
               <span
-                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                className={`relative z-10 px-2 py-0.5 rounded-full text-xs font-bold transition-colors ${
                   isActive
                     ? "bg-cerulean/15 text-cerulean"
                     : "bg-border-hairline/70 text-text-muted"
@@ -61,7 +66,14 @@ export function TripFilters({
               >
                 {tab.count}
               </span>
-            </button>
+              {isActive && (
+                <motion.div
+                  layoutId="trip-filters-active-tab-indicator"
+                  className="absolute bottom-0 inset-x-0 h-[2.5px] bg-cerulean rounded-full shadow-[0_1px_6px_rgba(14,165,233,0.4)]"
+                  transition={spring.selection}
+                />
+              )}
+            </motion.button>
           );
         })}
       </div>
@@ -80,7 +92,7 @@ export function TripFilters({
           value={sortBy}
           onChange={(e) => onSortChange(e.target.value as TripSortOption)}
           aria-label="Chọn tiêu chí sắp xếp chuyến đi"
-          className="bg-white border border-border-hairline rounded-xl px-3 py-1.5 text-xs text-text-body font-semibold hover:border-cerulean focus:outline-none focus:ring-2 focus:ring-ocean-mist cursor-pointer shadow-xs transition-colors"
+          className="bg-white dark:bg-[#1B253B] border border-border-hairline dark:border-[#24314A] rounded-xl px-3 py-1.5 text-xs text-text-body dark:text-white font-semibold hover:border-cerulean dark:hover:border-[#38BDF8]/40 focus:outline-none focus:ring-2 focus:ring-ocean-mist cursor-pointer shadow-xs transition-colors"
         >
           <option value="latest">Cập nhật gần nhất</option>
           <option value="departure">Ngày khởi hành</option>

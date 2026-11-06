@@ -28,7 +28,8 @@ describe('AISuggestionCard Data & Formatter Logic', () => {
 
   it('dispatches custom event smart-trip:focus-map when triggered with coordinates', () => {
     const dispatchMock = vi.fn();
-    (globalThis as any).window = {
+    const globalContext = globalThis as unknown as { window?: { dispatchEvent: (evt: unknown) => boolean } };
+    globalContext.window = {
       dispatchEvent: dispatchMock,
     };
 
@@ -38,7 +39,7 @@ describe('AISuggestionCard Data & Formatter Logic', () => {
       name: mockSuggestion.name,
     };
 
-    (globalThis as any).window.dispatchEvent({
+    globalContext.window.dispatchEvent({
       type: 'smart-trip:focus-map',
       detail: payload,
     });

@@ -110,6 +110,7 @@ export async function PATCH(req: Request): Promise<Response> {
       data: {
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.displayName !== undefined ? { displayName: input.displayName } : {}),
+        ...(input.avatarUrl !== undefined ? { image: input.avatarUrl } : {}),
         ...(isClearingBank
           ? {
               bankBin: null,

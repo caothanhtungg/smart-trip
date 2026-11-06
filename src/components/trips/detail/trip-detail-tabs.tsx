@@ -3,6 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
+import { spring } from "@animate-ui/react/utils/motion";
 
 interface TabItem {
   id: string;
@@ -35,7 +37,7 @@ export function TripDetailTabs({ tripId }: TripDetailTabsProps) {
   }, [pathname, tripId]);
 
   return (
-    <div className="w-full bg-white border-b border-border-hairline">
+    <div className="w-full bg-white dark:bg-[#141C2E] border-b border-border-hairline dark:border-[#24314A]">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
         <nav
           aria-label="Các phân hệ chuyến đi"
@@ -46,23 +48,39 @@ export function TripDetailTabs({ tripId }: TripDetailTabsProps) {
             const tabHref = tab.segment ? `/trips/${tripId}/${tab.segment}` : `/trips/${tripId}`;
 
             return (
-              <Link
+              <motion.div
                 key={tab.id}
-                href={tabHref}
-                className={`py-3 sm:py-3.5 text-sm whitespace-nowrap transition-all duration-150 border-b-[3px] font-medium flex items-center ${
-                  isActive
-                    ? "text-cerulean font-bold border-cerulean"
-                    : "text-text-muted hover:text-yale-blue border-transparent hover:border-border-hairline"
-                }`}
-                aria-current={isActive ? "page" : undefined}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.96 }}
+                transition={spring.press}
+                className="relative"
               >
-                <span>{tab.label}</span>
-                {!tab.isImplemented && (
-                  <span className="ml-1.5 text-[10px] font-semibold text-text-muted/60 bg-surface-container px-1.5 py-0.5 rounded-full align-middle">
-                    Sắp có
+                <Link
+                  href={tabHref}
+                  className={`relative py-3 sm:py-3.5 px-1 sm:px-1.5 text-sm whitespace-nowrap transition-colors font-medium flex items-center group cursor-pointer ${
+                    isActive
+                      ? "text-cerulean dark:text-sky-400 font-bold"
+                      : "text-text-muted dark:text-slate-400 hover:text-yale-blue dark:hover:text-sky-300"
+                  }`}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <span className="relative z-10 transition-transform duration-200 group-hover:scale-105">
+                    {tab.label}
                   </span>
-                )}
-              </Link>
+                  {!tab.isImplemented && (
+                    <span className="relative z-10 ml-1.5 text-[10px] font-semibold text-text-muted/60 dark:text-slate-400 bg-surface-container dark:bg-slate-800 px-1.5 py-0.5 rounded-full align-middle">
+                      Sắp có
+                    </span>
+                  )}
+                  {isActive && (
+                    <motion.div
+                      layoutId="trip-detail-active-tab-indicator"
+                      className="absolute bottom-0 inset-x-0 h-[3px] bg-cerulean dark:bg-sky-400 rounded-full shadow-[0_1px_8px_rgba(14,165,233,0.5)] dark:shadow-[0_1px_8px_rgba(56,189,248,0.5)]"
+                      transition={spring.selection}
+                    />
+                  )}
+                </Link>
+              </motion.div>
             );
           })}
         </nav>

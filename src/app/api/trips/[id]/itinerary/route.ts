@@ -19,15 +19,53 @@ interface RouteContext {
   params: Promise<{ id: string }> | { id: string };
 }
 
+interface ItineraryItemRecord {
+  id: string;
+  tripId: string;
+  dayDate: Date;
+  sortOrder: number;
+  placeName: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  isLocked: boolean;
+  note: string | null;
+  startTime: Date | null;
+  endTime: Date | null;
+  createdByMemberId: string;
+  createdByMember: {
+    id: string;
+    displayName: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+  expenses?: Array<{
+    id: string;
+    title: string;
+    amount: number;
+  }>;
+}
+
+interface RawItineraryQueryRow {
+  id: string;
+  trip_id: string;
+  day_date: string | Date;
+  start_time: Date | null;
+  end_time: Date | null;
+  place_name: string;
+  address: string | null;
+  note: string | null;
+  sort_order: number;
+  created_by_member_id: string;
+  created_at: string | Date;
+  updated_at: string | Date;
+  member_id: string;
+  member_name: string;
+}
+
 /**
  * GET /api/trips/[id]/itinerary
  * Lấy danh sách toàn bộ các điểm dừng lịch trình của chuyến đi (có hỗ trợ lọc theo ?dayDate=YYYY-MM-DD).
- *
- * PHÂN QUYỀN & BẢO MẬT:
- * - Yêu cầu phiên đăng nhập hợp lệ (401 nếu chưa đăng nhập).
- * - Yêu cầu là thành viên ACTIVE của chuyến đi (403 nếu không thuộc chuyến đi hoặc đã LEFT).
- * - Cho phép xem ở mọi trạng thái chuyến đi (kể cả SETTLING, COMPLETED, ARCHIVED).
- * - Trả 404 nếu tripId không hợp lệ hoặc chuyến đi không tồn tại.
  */
 export async function GET(
   req: Request,
@@ -47,7 +85,7 @@ export async function GET(
     // Lọc tham số query (tùy chọn)
     const query = parseQueryParams(req, ItineraryQuerySchema);
 
-    let items: any[] = [];
+    let items: ItineraryItemRecord[] = [];
     try {
       items = await prisma.itineraryItem.findMany({
         where: {
@@ -79,44 +117,54 @@ export async function GET(
           { createdAt: "asc" },
         ],
       });
-    } catch (dbErr: any) {
-      const errStr = String(dbErr?.message || '');
+    } catch (dbErr: unknown) {
+      const errStr = dbErr instanceof Error ? dbErr.message : String(dbErr || "");
+      const errCode = typeof dbErr === "object" && dbErr !== null && "code" in dbErr
+        ? String((dbErr as { code?: unknown }).code)
+        : "";
       if (
-        dbErr?.code === 'P2022' ||
-        errStr.includes('latitude') ||
-        errStr.includes('longitude') ||
-        errStr.includes('is_locked') ||
-        errStr.includes('does not exist')
+        errCode === "P2022" ||
+        errStr.includes("latitude") ||
+        errStr.includes("longitude") ||
+        errStr.includes("is_locked") ||
+        errStr.includes("does not exist")
       ) {
         // Fallback for un-migrated database: query basic columns via raw SQL
-        const rawItems = await prisma.$queryRawUnsafe<any[]>(
-          `SELECT i.id, i.trip_id, i.day_date, i.start_time, i.end_time, i.place_name, i.address, i.note, i.sort_order, i.created_by_member_id, i.created_at, i.updated_at,
-                  m.id as member_id, m.display_name as member_name
-           FROM itinerary_items i
-           JOIN trip_members m ON i.created_by_member_id = m.id
-           WHERE i.trip_id = $1::uuid
-           ${query.dayDate ? 'AND i.day_date = $2::date' : ''}
-           ORDER BY i.day_date ASC, i.sort_order ASC, i.created_at ASC`,
-          ...(query.dayDate ? [tripId, query.dayDate] : [tripId])
-        );
+        const rawItems = query.dayDate
+          ? await prisma.$queryRaw<RawItineraryQueryRow[]>`
+              SELECT i.id, i.trip_id, i.day_date, i.start_time, i.end_time, i.place_name, i.address, i.note, i.sort_order, i.created_by_member_id, i.created_at, i.updated_at,
+                     m.id as member_id, m.display_name as member_name
+              FROM itinerary_items i
+              JOIN trip_members m ON i.created_by_member_id = m.id
+              WHERE i.trip_id = ${tripId}::uuid AND i.day_date = ${query.dayDate}::date
+              ORDER BY i.day_date ASC, i.sort_order ASC, i.created_at ASC
+            `
+          : await prisma.$queryRaw<RawItineraryQueryRow[]>`
+              SELECT i.id, i.trip_id, i.day_date, i.start_time, i.end_time, i.place_name, i.address, i.note, i.sort_order, i.created_by_member_id, i.created_at, i.updated_at,
+                     m.id as member_id, m.display_name as member_name
+              FROM itinerary_items i
+              JOIN trip_members m ON i.created_by_member_id = m.id
+              WHERE i.trip_id = ${tripId}::uuid
+              ORDER BY i.day_date ASC, i.sort_order ASC, i.created_at ASC
+            `;
 
-        items = rawItems.map((r) => ({
+        items = rawItems.map((r: RawItineraryQueryRow) => ({
           id: r.id,
           tripId: r.trip_id,
           dayDate: new Date(r.day_date),
-          sortOrder: r.sort_order ?? 0,
+          sortOrder: r.sort_order,
           placeName: r.place_name,
-          address: r.address ?? null,
+          address: r.address,
           latitude: null,
           longitude: null,
           isLocked: false,
-          note: r.note ?? null,
+          note: r.note,
           startTime: r.start_time,
           endTime: r.end_time,
           createdByMemberId: r.created_by_member_id,
           createdByMember: {
             id: r.member_id,
-            displayName: r.member_name,
+            displayName: r.member_name || "Thành viên",
           },
           createdAt: new Date(r.created_at),
           updatedAt: new Date(r.updated_at),
@@ -147,7 +195,7 @@ export async function GET(
       },
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
-      expenses: (item.expenses || []).map((e: any) => ({
+      expenses: (item.expenses || []).map((e) => ({
         id: e.id,
         title: e.title,
         amount: e.amount,
@@ -163,13 +211,6 @@ export async function GET(
 /**
  * POST /api/trips/[id]/itinerary
  * Thêm một điểm dừng mới vào lịch trình chuyến đi (UC08).
- *
- * PHÂN QUYỀN & BẢO MẬT:
- * - Mọi thành viên ACTIVE của chuyến đi đều có quyền thêm (không giới hạn HOST).
- * - Chuyến đi bắt buộc phải ở trạng thái ACTIVE (chặn khi SETTLING, COMPLETED, ARCHIVED).
- * - createdByMemberId lấy từ membership đã xác minh ở server, không nhận từ client.
- * - Ngày diễn ra hoạt động phải nằm trong khoảng thời gian chuyến đi (trip.startDate -> trip.endDate).
- * - Nếu không gửi sortOrder, server tự động gán sortOrder = (max sortOrder trong ngày đó) + 1.
  */
 export async function POST(
   req: Request,

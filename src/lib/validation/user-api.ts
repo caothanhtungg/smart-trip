@@ -18,7 +18,7 @@ const BANK_ACCOUNT_NO_REGEX = /^[0-9A-Za-z]{6,20}$/;
  *
  * QUY TẮC BẢO MẬT & NGHIỆP VỤ:
  * 1. Strict object: Tuyệt đối không chấp nhận userId, email, id, role, keyVersion hay các trường ngoài spec.
- * 2. Partial updates: Có thể cập nhật chỉ tên hiển thị, hoặc chỉ tài khoản ngân hàng, hoặc cả hai.
+ * 2. Partial updates: Có thể cập nhật chỉ tên hiển thị, ảnh đại diện, hoặc chỉ tài khoản ngân hàng, hoặc cả hai.
  * 3. Quy tắc "all-or-nothing" cho thông tin ngân hàng:
  *    - Nếu thiết lập STK mới: bắt buộc cung cấp đầy đủ cả 3 trường (bankBin, bankAccountNo, bankAccountName).
  *    - Nếu gỡ bỏ STK: cả 3 trường ngân hàng phải cùng là null.
@@ -38,6 +38,10 @@ export const UpdateCurrentUserProfileSchema = z
       .trim()
       .min(2, "Họ và tên phải có ít nhất 2 ký tự.")
       .max(100, "Họ và tên không được vượt quá 100 ký tự.")
+      .optional(),
+    avatarUrl: z
+      .string()
+      .nullable()
       .optional(),
     bankBin: z
       .string()
@@ -72,6 +76,7 @@ export const UpdateCurrentUserProfileSchema = z
     const hasAnyField =
       data.displayName !== undefined ||
       data.name !== undefined ||
+      data.avatarUrl !== undefined ||
       data.bankBin !== undefined ||
       data.bankAccountNo !== undefined ||
       data.bankAccountName !== undefined;

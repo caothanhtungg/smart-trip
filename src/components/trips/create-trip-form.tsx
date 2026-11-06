@@ -8,7 +8,6 @@ import {
   Info,
   ShieldCheck,
   Eye,
-  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -43,7 +42,9 @@ export function CreateTripForm() {
     budgetAmount: null,
   });
 
-  React.useEffect(() => {
+  const [prevDestParam, setPrevDestParam] = React.useState(destParam);
+  if (destParam !== prevDestParam) {
+    setPrevDestParam(destParam);
     if (destParam && !formData.destination) {
       setFormData((prev) => ({
         ...prev,
@@ -51,7 +52,7 @@ export function CreateTripForm() {
         name: prev.name || `Khám phá ${destParam}`,
       }));
     }
-  }, [destParam, formData.destination]);
+  }
 
   const [errors, setErrors] = React.useState<CreateTripValidationErrors>({});
   const [previewModalOpen, setPreviewModalOpen] = React.useState(false);

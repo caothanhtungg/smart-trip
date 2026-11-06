@@ -116,11 +116,7 @@ export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
   }
 
   // 4. Lỗi hệ thống không mong đợi (HTTP 500)
-  // Chỉ ghi log an toàn tại server, không lộ stack trace hay secrets ra client
-  if (process.env.NODE_ENV !== "test") {
-    console.error("[API Error]", error instanceof Error ? error.message : "Unexpected error");
-  }
-
+  // Không log payload lỗi thô vì có thể chứa dữ liệu nhạy cảm; production cần error monitoring đã redaction.
   return apiError("Đã có lỗi hệ thống xảy ra. Vui lòng thử lại sau.", {
     status: 500,
     code: "INTERNAL_SERVER_ERROR",

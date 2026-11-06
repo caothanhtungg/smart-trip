@@ -6,13 +6,11 @@ import { Button } from "@/components/ui/button";
 import {
   Copy,
   Check,
-  Info,
   QrCode,
   AlertCircle,
   RotateCcw,
   Loader2,
   Link as LinkIcon,
-  Sparkles,
 } from "lucide-react";
 import { validateInviteCode } from "@/lib/trips/invite-code";
 import { generateQrDataUrl } from "@/lib/money/vietqr";
@@ -384,25 +382,6 @@ export function TripInviteShareModal({
             )}
           </div>
         )}
-
-        {/* Instructions */}
-        <div className="p-4 rounded-xl bg-bg-canvas border border-border-hairline space-y-1.5 text-xs text-text-muted">
-          <div className="flex items-center gap-1.5 font-semibold text-yale-blue">
-            <Info className="w-4 h-4 text-cerulean shrink-0" />
-            <span>Hướng dẫn dành cho bạn bè:</span>
-          </div>
-          <p className="leading-relaxed">
-            Bạn bè sau khi đăng nhập Smart Trip chỉ cần quét <strong>mã QR</strong> ở trên hoặc truy cập liên kết, hoặc vào mục <strong>Chuyến đi của tôi</strong> và nhấn <strong>“Tham gia bằng mã mời”</strong> để tham gia.
-          </p>
-        </div>
-
-        {/* Security & Boundary Notice */}
-        <div className="p-3.5 rounded-xl bg-surface-container border border-border-hairline/80 text-[11px] text-text-muted leading-relaxed flex items-start gap-2">
-          <Sparkles className="w-4 h-4 text-cerulean shrink-0 mt-0.5" />
-          <span>
-            Mã QR chứa liên kết mời bảo mật và không chứa bất kỳ thông tin tài chính hay chi tiêu riêng tư nào của chuyến đi.
-          </span>
-        </div>
 
         {/* Footer actions */}
         <div className="flex justify-end pt-2 border-t border-border-hairline">

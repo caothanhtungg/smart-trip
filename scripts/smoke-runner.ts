@@ -734,7 +734,6 @@ export async function safeFetch(
     };
   } catch (err: unknown) {
     clearTimeout(timer);
-    const latencyMs = Date.now() - startTime;
     const isAbort = (err as { name?: string })?.name === "AbortError";
     const msg = isAbort
       ? `Request timed out after ${timeoutMs}ms for ${options.method} ${options.path}`

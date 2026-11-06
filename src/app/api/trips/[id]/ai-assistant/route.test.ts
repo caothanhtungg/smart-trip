@@ -14,6 +14,15 @@ vi.mock('@/lib/db/prisma', () => ({
   },
 }));
 
+vi.mock('@/lib/api/rate-limit', () => ({
+  checkPostgresRateLimit: vi.fn(async () => ({
+    allowed: true,
+    remaining: 29,
+    limit: 30,
+    resetAt: new Date(Date.now() + 60_000),
+  })),
+}));
+
 vi.mock('@/lib/ai/travel-assistant-service', () => ({
   generateTravelSuggestions: vi.fn(),
 }));
@@ -21,6 +30,22 @@ vi.mock('@/lib/ai/travel-assistant-service', () => ({
 import { requireTripMembership } from '@/lib/api/auth-guard';
 import { prisma } from '@/lib/db/prisma';
 import { generateTravelSuggestions } from '@/lib/ai/travel-assistant-service';
+import type { TripMembershipAuth } from '@/lib/api/auth-guard';
+
+function createMembershipAuth(tripId: string, tripName: string): TripMembershipAuth {
+  return {
+    session: { id: 'session-1' },
+    user: { id: 'user-1' },
+    member: { id: 'member-1', role: 'MEMBER' },
+    trip: {
+      id: tripId,
+      name: tripName,
+      destination: 'Đà Lạt',
+      startDate: new Date('2026-11-01'),
+      endDate: new Date('2026-11-04'),
+    },
+  } as unknown as TripMembershipAuth;
+}
 
 describe('POST /api/trips/[id]/ai-assistant', () => {
   const tripId = '11111111-1111-1111-1111-111111111111';
@@ -40,18 +65,7 @@ describe('POST /api/trips/[id]/ai-assistant', () => {
   });
 
   it('trả về 400 nếu câu hỏi bị trống', async () => {
-    vi.mocked(requireTripMembership).mockResolvedValue({
-      session: { id: 'session-1' } as any,
-      user: { id: 'user-1' } as any,
-      member: { id: 'member-1', role: 'MEMBER' } as any,
-      trip: {
-        id: tripId,
-        title: 'Đà Lạt Mộng Mơ',
-        destination: 'Đà Lạt',
-        startDate: new Date('2026-11-01'),
-        endDate: new Date('2026-11-04'),
-      } as any,
-    });
+    vi.mocked(requireTripMembership).mockResolvedValue(createMembershipAuth(tripId, 'Đà Lạt Mộng Mơ'));
 
     const req = new Request('http://localhost', {
       method: 'POST',
@@ -63,18 +77,7 @@ describe('POST /api/trips/[id]/ai-assistant', () => {
   });
 
   it('trả về gợi ý thành công kèm ngữ cảnh chuyến đi', async () => {
-    vi.mocked(requireTripMembership).mockResolvedValue({
-      session: { id: 'session-1' } as any,
-      user: { id: 'user-1' } as any,
-      member: { id: 'member-1', role: 'MEMBER' } as any,
-      trip: {
-        id: tripId,
-        title: 'Khám phá Đà Lạt',
-        destination: 'Đà Lạt',
-        startDate: new Date('2026-11-01'),
-        endDate: new Date('2026-11-04'),
-      } as any,
-    });
+    vi.mocked(requireTripMembership).mockResolvedValue(createMembershipAuth(tripId, 'Khám phá Đà Lạt'));
 
     vi.mocked(prisma.tripMember.count).mockResolvedValue(4);
 

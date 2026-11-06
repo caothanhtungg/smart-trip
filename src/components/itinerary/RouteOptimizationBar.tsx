@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Loader2, Compass, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Loader2, Compass } from 'lucide-react';
 import { useToast } from '@/components/ui/toast';
 
 interface RouteOptimizationBarProps {
@@ -44,8 +44,9 @@ export function RouteOptimizationBar({
         `Tối ưu lộ trình thành công! Đã tự động sắp xếp lại ${itemCount} địa điểm theo tuyến đường ngắn nhất.`,
         'success'
       );
-    } catch (err: any) {
-      toast(err.message || 'Lỗi khi tối ưu lộ trình, vui lòng thử lại sau', 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi khi tối ưu lộ trình, vui lòng thử lại sau';
+      toast(msg, 'error');
     } finally {
       setIsOptimizing(false);
     }

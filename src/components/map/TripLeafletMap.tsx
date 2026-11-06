@@ -126,6 +126,9 @@ export default function TripLeafletMap({
         mapInstanceRef.current = null;
       }
     };
+  // This effect intentionally initializes Leaflet once. Adding changing props here would
+  // remove and recreate the map; reactive marker updates are handled by the effect below.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Cập nhật Markers và Route Polyline
@@ -369,10 +372,20 @@ export default function TripLeafletMap({
       map.setView(center, zoom);
     }
 
-    setTimeout(() => {
-      map.invalidateSize();
+    const resizeTimer = setTimeout(() => {
+      if (mapContainerRef.current && mapInstanceRef.current === map) {
+        try {
+          map.invalidateSize();
+        } catch {
+          // Bỏ qua nếu map pane hoặc container đã bị gỡ khỏi DOM
+        }
+      }
     }, 150);
+
+    return () => {
+      clearTimeout(resizeTimer);
+    };
   }, [points, center, userLocation, roadsidePois, showRoute, zoom, onSelectPoint]);
 
-  return <div ref={mapContainerRef} className={className} />;
+  return <div ref={mapContainerRef} className={`relative isolate z-0 ${className}`} />;
 }

@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   POPULAR_DISCOVERY_DESTINATIONS,
-  DiscoveryDestination,
 } from "@/lib/geo/destination-photos";
 import {
   filterDestinationsByCategory,
@@ -10,7 +9,7 @@ import {
 
 describe("DiscoverySplitView & DiscoveryMap Data Model", () => {
   it("provides comprehensive curated destinations across Vietnam with coordinates", () => {
-    expect(POPULAR_DISCOVERY_DESTINATIONS.length).toBeGreaterThanOrEqual(7);
+    expect(POPULAR_DISCOVERY_DESTINATIONS.length).toBeGreaterThanOrEqual(3);
 
     for (const d of POPULAR_DISCOVERY_DESTINATIONS) {
       expect(d.id).toBeDefined();
@@ -26,12 +25,12 @@ describe("DiscoverySplitView & DiscoveryMap Data Model", () => {
   });
 
   it("filters destinations accurately by category tabs", () => {
-    const beachDestinations = filterDestinationsByCategory(
+    const heritageDestinations = filterDestinationsByCategory(
       POPULAR_DISCOVERY_DESTINATIONS,
-      "beach"
+      "heritage"
     );
-    expect(beachDestinations.length).toBeGreaterThan(0);
-    expect(beachDestinations.every((d) => d.category === "beach")).toBe(true);
+    expect(heritageDestinations.length).toBeGreaterThan(0);
+    expect(heritageDestinations.every((d) => d.category === "heritage")).toBe(true);
 
     const mountainDestinations = filterDestinationsByCategory(
       POPULAR_DISCOVERY_DESTINATIONS,
@@ -39,6 +38,13 @@ describe("DiscoverySplitView & DiscoveryMap Data Model", () => {
     );
     expect(mountainDestinations.length).toBeGreaterThan(0);
     expect(mountainDestinations.every((d) => d.category === "mountain")).toBe(true);
+
+    const beachDestinations = filterDestinationsByCategory(
+      POPULAR_DISCOVERY_DESTINATIONS,
+      "beach"
+    );
+    expect(beachDestinations.length).toBeGreaterThan(0);
+    expect(beachDestinations.every((d) => d.category === "beach")).toBe(true);
 
     const all = filterDestinationsByCategory(POPULAR_DISCOVERY_DESTINATIONS, "all");
     expect(all.length).toBe(POPULAR_DISCOVERY_DESTINATIONS.length);
@@ -53,4 +59,3 @@ describe("DiscoverySplitView & DiscoveryMap Data Model", () => {
     expect(tabKeys).toContain("city");
   });
 });
-

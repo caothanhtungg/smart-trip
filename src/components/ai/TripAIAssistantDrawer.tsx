@@ -8,7 +8,7 @@ import AISuggestionCard from './AISuggestionCard';
 export interface TripAIAssistantDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  tripId: string;
+  tripId?: string;
   tripTitle?: string;
   destination?: string;
   onAddToItinerary?: (suggestion: AISuggestionItem) => void;
@@ -22,6 +22,12 @@ const QUICK_PROMPTS = [
   '💰 Dự toán chi phí chuyến đi',
 ];
 
+let globalAiMessageCounter = 0;
+function createAiMessageId(prefix: string): string {
+  globalAiMessageCounter += 1;
+  return `${prefix}-${globalAiMessageCounter}`;
+}
+
 export default function TripAIAssistantDrawer({
   isOpen,
   onClose,
@@ -31,14 +37,14 @@ export default function TripAIAssistantDrawer({
   onAddToItinerary,
   onAddToExpense,
 }: TripAIAssistantDrawerProps) {
-  const [messages, setMessages] = useState<AIAssistantMessage[]>([
+  const [messages, setMessages] = useState<AIAssistantMessage[]>(() => [
     {
       id: 'welcome-msg',
       role: 'assistant',
       content: `Xin chào! Tôi là Trợ lý du lịch Smart Trip. Tôi có thể giúp bạn tìm homestay, tra cứu nhà xe, gợi ý quán ngon hoặc dự toán chi phí cho chuyến đi ${
         destination ? `tại **${destination}**` : ''
       }. Bạn đang quan tâm điều gì?`,
-      timestamp: new Date().toISOString(),
+      timestamp: '2026-10-31T00:00:00.000Z',
     },
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -59,7 +65,7 @@ export default function TripAIAssistantDrawer({
     const text = (textToSend || inputValue).trim();
     if (!text || isLoading) return;
 
-    const userMessageId = `user-${Date.now()}`;
+    const userMessageId = createAiMessageId('user');
     const userMsg: AIAssistantMessage = {
       id: userMessageId,
       role: 'user',
@@ -72,10 +78,13 @@ export default function TripAIAssistantDrawer({
     setIsLoading(true);
 
     try {
-      const res = await fetch(`/api/trips/${tripId}/ai-assistant`, {
+      const endpoint = tripId ? `/api/trips/${tripId}/ai-assistant` : '/api/ai/assistant';
+      const payload = tripId ? { message: text } : { message: text, destination };
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -84,7 +93,7 @@ export default function TripAIAssistantDrawer({
 
       const resData = await res.json();
       const assistantMsg: AIAssistantMessage = {
-        id: `ai-${Date.now()}`,
+        id: createAiMessageId('ai'),
         role: 'assistant',
         content: resData.data.answer,
         suggestions: resData.data.suggestions,
@@ -92,11 +101,11 @@ export default function TripAIAssistantDrawer({
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-    } catch (err: any) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         {
-          id: `ai-err-${Date.now()}`,
+          id: createAiMessageId('ai-err'),
           role: 'assistant',
           content: 'Rất tiếc, đã có sự cố xảy ra khi kết nối trợ lý AI. Bạn hãy thử lại câu hỏi nhé!',
           timestamp: new Date().toISOString(),
