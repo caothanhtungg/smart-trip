@@ -1,6 +1,6 @@
 # Smart Trip — Engineering Standards
 
-This document is the shared quality bar for AI-generated and human-written code. Update it only when a change is intentional and approved.
+This document defines the shared quality bar for the project codebase. Update it only when a change is intentional and approved.
 
 ## 1. Source of truth and change control
 - `PROJECT_CONTEXT.md` summarizes project context; original files under `sodothietke/` remain authoritative for the detailed use cases, ERD, and sequence flows.
@@ -75,7 +75,7 @@ Do not create every folder pre-emptively. Add structure when a concrete feature 
 - Future server code must authenticate and authorize every protected operation independently of what buttons the UI displays.
 - Validate request parameters and payloads at server boundaries; produce safe, consistent errors without leaking sensitive details.
 - Do not log access tokens, bank account details, invitation secrets, or private user information unnecessarily.
-- Rate-limiting is mandatory on all public and quota-sensitive endpoints (OTP sending/verifying and AI queries) via the atomic PostgreSQL rate limiter (`checkPostgresRateLimit`).
+- Rate-limiting is mandatory on all public and quota-sensitive endpoints via the atomic PostgreSQL rate limiter (`checkPostgresRateLimit`).
 - OTP credentials must persist in the central database (`verification` table in PostgreSQL) with SHA-256 hashing and constant-time comparison (`timingSafeEqual`). OTP codes must never be leaked or returned in client API responses.
 
 ## 8. Maintainability and reviews

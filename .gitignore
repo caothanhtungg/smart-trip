@@ -68,3 +68,8 @@ next-env.d.ts
 .superpowers/
 skills-lock.json
 docs/superpowers/
+
+# Local development-assistant instructions; not part of the application source.
+AGENTS.md
+CLAUDE.md
+docs/AI_IMPLEMENTATION_WORKFLOW.md

@@ -1,7 +1,7 @@
 # PROJECT_CONTEXT.md — Smart Trip & Expense Planner (Release 1)
 
-> Tài liệu ngữ cảnh dùng chung cho Antigravity, Claude, Cline và các công cụ AI khác.
-> Cập nhật từ tài liệu dự án hiện có. Khi có mâu thuẫn, không tự suy đoán: chỉ ra mâu thuẫn và hỏi người dùng.
+> Tài liệu ngữ cảnh và phạm vi triển khai của dự án.
+> Cập nhật từ tài liệu dự án hiện có. Khi có mâu thuẫn, cần nêu rõ mâu thuẫn và xin xác nhận trước khi thực hiện.
 > **Tình trạng triển khai hiện tại (Phase 3ZP — 24/10/2026):** Đã hoàn tất toàn bộ Backend API Release 1, xác thực Better Auth, mã hóa STK ngân hàng AES-256-GCM, đối soát công nợ & phân quyền chi tiêu, VietQR chuẩn EMVCo Napas 247 (UC18), QR mời (UC34), Lưu trữ ảnh hóa đơn bền vững (UC32), và GitHub Actions CI. Toàn bộ 75 test files / 1.121 tests offline đạt 100% passed.
 
 ## 1. Tổng quan sản phẩm
@@ -51,8 +51,6 @@ Các màn hình trong thiết kế Google Stitch chứa một số chi tiết n�
 - `sodothietke/release1-erd.dbml`: ERD Release 1 cho PostgreSQL, 11 bảng nghiệp vụ và 9 enum.
 - `sodothietke/release1-sequence.md`: 5 Sequence Diagram cùng quy tắc nghiệp vụ và test quan trọng.
 - `stitch_smart_trip_dashboard_design/`: tài nguyên giao diện xuất từ Google Stitch; theo báo cáo hiện có, có 17 giao diện HTML/CSS độc lập, 2 đặc tả Design System và các tài nguyên liên quan.
-- `.agents/skills/`: skill cài cho Antigravity.
-- `.cline/skills/`: skill cài cho Cline.
 
 Không sửa/xóa/ghi đè các tài liệu nguồn này khi chưa có sự đồng ý của người dùng.
 
@@ -295,18 +293,7 @@ Trước khi thêm trạng thái hoặc modal, đối chiếu bảng UI trong b�
 13. **GitHub Actions CI/CD:** ✅ **ĐÃ TRIỂN KHAI (Phase 3ZP)**. Workflow `.github/workflows/ci.yml` tự động chạy khi push/PR: `npm ci`, `npx tsc --noEmit`, `npm run lint`, `npm test` offline mà không yêu cầu secret thật hay database bên ngoài.
 
 
-## 12. Cách AI phải làm việc với dự án
-
-- Đọc tài liệu này và các tài liệu nguồn liên quan trước khi thực hiện task.
-- Trong giai đoạn UI/frontend hiện tại, không làm backend, không tạo migration PostgreSQL, không tích hợp OAuth thực tế, không thực hiện thanh toán thật.
-- Giữ nguyên phong cách và quy tắc UI từ Stitch; dùng skill UI/UX Pro Max để rà soát khả năng truy cập, responsive và tính nhất quán, không dùng skill làm lý do để tự ý đổi thiết kế đã duyệt.
-- Không tự ý thêm tính năng ngoài Release 1.
-- Không tự quyết định các mục ở Mục 11; báo lại người dùng.
-- Chỉ thực hiện phạm vi task được giao. Với thay đổi lớn, chia nhỏ theo giai đoạn, báo cáo file tạo/sửa và kết quả kiểm thử rồi chờ duyệt.
-- Không để bí mật trong mã nguồn phía client hoặc commit lên Git.
-- Không xóa/ghi đè `sodothietke/`, `stitch_smart_trip_dashboard_design/`, `.agents/` hoặc `.cline/`.
-
-## 13. Quy tắc bảo vệ tài liệu nguồn
+## 12. Quy tắc bảo vệ tài liệu nguồn
 
 - Không sửa các tài liệu nguồn trong `sodothietke/` (ERD, use case, sequence) khi chưa có yêu cầu rõ của người dùng. Nếu thấy cần đổi, hãy đề xuất và chờ duyệt.
 - Các file trong `stitch_smart_trip_dashboard_design/` là tài nguyên tham chiếu; không xóa hoặc ghi đè.
